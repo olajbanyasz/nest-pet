@@ -76,7 +76,7 @@ describe('TodosController', () => {
       const res = await controller.findAll('true');
       expect(mockService.findAll).toHaveBeenCalledWith(true);
       expect(res).toHaveLength(1);
-      expect(res[0].id).toBe('2');
+      expect((res[0] as any).id).toBe('2');
     });
 
     it('filters by completed=false', async () => {
