@@ -72,7 +72,7 @@ describe('TodosService', () => {
       const res = await service.findAll(undefined);
       expect((mockModel as any).find).toHaveBeenCalledWith({ deleted: false });
       expect(res).toHaveLength(2);
-      expect(res.find((r) => r._id === '3')).toBeUndefined();
+      expect(res.find((r) => (r as any)._id === '3')).toBeUndefined();
     });
 
     it('filters by completed=true', async () => {
@@ -82,7 +82,7 @@ describe('TodosService', () => {
         completed: true,
       });
       expect(res).toHaveLength(1);
-      expect(res[0]._id).toBe('2');
+      expect((res[0] as any)._id).toBe('2');
     });
 
     it('filters by completed=false', async () => {
