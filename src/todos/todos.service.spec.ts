@@ -7,15 +7,21 @@ import { getModelToken } from '@nestjs/mongoose';
 import { TodosService } from './todos.service';
 import { CreateTodoDto } from './dto/create-todo.dto';
 import { Todo } from './schemas/todo.schema';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 
 describe('TodosService', () => {
   let service: TodosService;
   let mockModel: jest.Mock;
 
+  // Use ObjectId-like strings so isValidObjectId checks pass/fail predictably
+  const ID1 = '507f1f77bcf86cd799439011';
+  const ID2 = '507f1f77bcf86cd799439012';
+  const ID3 = '507f1f77bcf86cd799439013';
+
   const sampleTodos = [
-    { _id: '1', title: 'A', completed: false, deleted: false },
-    { _id: '2', title: 'B', completed: true, deleted: false },
-    { _id: '3', title: 'C', completed: false, deleted: true },
+    { _id: ID1, title: 'A', completed: false, deleted: false },
+    { _id: ID2, title: 'B', completed: true, deleted: false },
+    { _id: ID3, title: 'C', completed: false, deleted: true },
   ];
 
   beforeEach(async () => {
@@ -72,7 +78,7 @@ describe('TodosService', () => {
       const res = await service.findAll(undefined);
       expect((mockModel as any).find).toHaveBeenCalledWith({ deleted: false });
       expect(res).toHaveLength(2);
-      expect(res.find((r) => (r as any)._id === '3')).toBeUndefined();
+      expect(res.find((r) => (r as any)._id === ID3)).toBeUndefined();
     });
 
     it('filters by completed=true', async () => {
@@ -82,7 +88,7 @@ describe('TodosService', () => {
         completed: true,
       });
       expect(res).toHaveLength(1);
-      expect((res[0] as any)._id).toBe('2');
+      expect((res[0] as any)._id).toBe(ID2);
     });
 
     it('filters by completed=false', async () => {
@@ -95,7 +101,6 @@ describe('TodosService', () => {
     });
 
     it('propagates underlying errors', async () => {
-      // make find throw
       (mockModel as any).find.mockImplementationOnce(() => {
         return { exec: jest.fn().mockRejectedValue(new Error('db failure')) };
       });
@@ -105,25 +110,32 @@ describe('TodosService', () => {
 
   describe('findOne', () => {
     it('returns document when found', async () => {
-      const res = await service.findOne('1');
-      expect((mockModel as any).findById).toHaveBeenCalledWith('1');
+      const res = await service.findOne(ID1);
+      expect((mockModel as any).findById).toHaveBeenCalledWith(ID1);
       expect(res).not.toBeNull();
-      expect((res as any)!._id).toBe('1');
+      expect((res as any)!._id).toBe(ID1);
     });
 
-    it('returns null when not found', async () => {
+    it('throws NotFoundException when not found', async () => {
       (mockModel as any).findById.mockImplementationOnce(() => ({
         exec: jest.fn().mockResolvedValue(null),
       }));
-      const res = await service.findOne('missing');
-      expect(res).toBeNull();
+      await expect(
+        service.findOne('507f1f77bcf86cd799439099'),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('throws BadRequestException for invalid id format', async () => {
+      await expect(service.findOne('bad-id')).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
     });
 
     it('propagates errors from findById', async () => {
       (mockModel as any).findById.mockImplementationOnce(() => ({
         exec: jest.fn().mockRejectedValue(new Error('fail')),
       }));
-      await expect(service.findOne('1')).rejects.toThrow('fail');
+      await expect(service.findOne(ID1)).rejects.toThrow('fail');
     });
   });
 
@@ -131,14 +143,12 @@ describe('TodosService', () => {
     it('creates and returns saved document', async () => {
       const dto: CreateTodoDto = { title: 'New', completed: false };
       const res = await service.create(dto);
-      // ensure constructor was called with dto
       expect(mockModel).toHaveBeenCalledWith(dto);
       expect((res as any)._id).toBe('new');
       expect((res as any).title).toBe('New');
     });
 
     it('propagates save errors', async () => {
-      // make next constructed instance fail on save
       (mockModel as any).mockImplementationOnce(function (dto: any) {
         this.save = jest.fn().mockRejectedValue(new Error('save fail'));
       });
@@ -150,29 +160,36 @@ describe('TodosService', () => {
 
   describe('update', () => {
     it('updates existing document and returns updated', async () => {
-      const res = await service.update('1', { completed: true });
+      const res = await service.update(ID1, { completed: true });
       expect((mockModel as any).findByIdAndUpdate).toHaveBeenCalledWith(
-        '1',
+        ID1,
         { completed: true },
         { new: true },
       );
-      expect((res as any)._id).toBe('1');
+      expect((res as any)._id).toBe(ID1);
       expect((res as any).completed).toBe(true);
     });
 
-    it('returns null when updating non-existent id', async () => {
+    it('throws NotFoundException when updating non-existent id', async () => {
       (mockModel as any).findByIdAndUpdate.mockImplementationOnce(() => ({
         exec: jest.fn().mockResolvedValue(null),
       }));
-      const res = await service.update('nope', { completed: true });
-      expect(res).toBeNull();
+      await expect(
+        service.update('507f1f77bcf86cd799439099', { completed: true }),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('throws BadRequestException for invalid id format', async () => {
+      await expect(
+        service.update('bad-id', { completed: true }),
+      ).rejects.toBeInstanceOf(BadRequestException);
     });
 
     it('propagates update errors', async () => {
       (mockModel as any).findByIdAndUpdate.mockImplementationOnce(() => ({
         exec: jest.fn().mockRejectedValue(new Error('update err')),
       }));
-      await expect(service.update('1', { completed: true })).rejects.toThrow(
+      await expect(service.update(ID1, { completed: true })).rejects.toThrow(
         'update err',
       );
     });
@@ -180,29 +197,36 @@ describe('TodosService', () => {
 
   describe('delete', () => {
     it('soft-deletes document and returns it', async () => {
-      const res = await service.delete('1');
+      const res = await service.delete(ID1);
       expect((mockModel as any).findByIdAndUpdate).toHaveBeenCalledWith(
-        '1',
+        ID1,
         { deleted: true },
         { new: true },
       );
-      expect((res as any)._id).toBe('1');
+      expect((res as any)._id).toBe(ID1);
       expect((res as any).deleted).toBe(true);
     });
 
-    it('returns null when deleting non-existent id', async () => {
+    it('throws NotFoundException when deleting non-existent id', async () => {
       (mockModel as any).findByIdAndUpdate.mockImplementationOnce(() => ({
         exec: jest.fn().mockResolvedValue(null),
       }));
-      const res = await service.delete('nope');
-      expect(res).toBeNull();
+      await expect(
+        service.delete('507f1f77bcf86cd799439099'),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('throws BadRequestException for invalid id format', async () => {
+      await expect(service.delete('bad-id')).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
     });
 
     it('propagates delete errors', async () => {
       (mockModel as any).findByIdAndUpdate.mockImplementationOnce(() => ({
         exec: jest.fn().mockRejectedValue(new Error('delete err')),
       }));
-      await expect(service.delete('1')).rejects.toThrow('delete err');
+      await expect(service.delete(ID1)).rejects.toThrow('delete err');
     });
   });
 });
