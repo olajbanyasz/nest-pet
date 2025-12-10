@@ -33,8 +33,19 @@ export class TodosService {
   }
 
   async create(createDto: CreateTodoDto): Promise<Todo> {
-    const newTodo = new this.todoModel(createDto);
-    return newTodo.save();
+    try {
+      const newTodo = new this.todoModel(createDto);
+      return await newTodo.save();
+    } catch (error: any) {
+      // Handle Mongoose validation errors
+      if (error.name === 'ValidationError') {
+        const messages = Object.values(error.errors)
+          .map((err: any) => (err as { message: string }).message)
+          .join(', ');
+        throw new BadRequestException(`Validation error: ${messages}`);
+      }
+      throw error;
+    }
   }
 
   async update(id: string, todoUpdate: Partial<CreateTodoDto>): Promise<Todo> {
