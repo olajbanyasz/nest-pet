@@ -1,66 +1,43 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { Injectable } from '@nestjs/common';
-
-export interface Todo {
-  id: number;
-  title: string;
-  completed: boolean;
-  deleted?: boolean;
-}
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { Todo, TodoDocument } from './schemas/todo.schema';
+import { CreateTodoDto } from './dto/create-todo.dto';
 
 @Injectable()
 export class TodosService {
-  private todos: Array<Todo> = [
-    { id: 1, title: 'Learn NestJS', completed: false },
-    { id: 2, title: 'Build a REST API', completed: true },
-    { id: 3, title: 'Write unit tests', completed: false },
-  ];
+  constructor(@InjectModel(Todo.name) private todoModel: Model<TodoDocument>) {}
 
-  findAll(completed?: boolean): Todo[] {
-    let todos = this.todos;
-    if (completed === true) {
-      todos = this.todos.filter((todo) => todo.completed);
-    } else if (completed === false) {
-      todos = this.todos.filter((todo) => !todo.completed);
-    }
-    return todos.filter((todo) => !todo.deleted);
+  async findAll(completed?: boolean): Promise<Todo[]> {
+    const filter: any = { deleted: false };
+    if (completed === true) filter.completed = true;
+    if (completed === false) filter.completed = false;
+    return this.todoModel.find(filter).exec();
   }
 
-  findOne(id: number): Todo | undefined {
-    if (Number.isNaN(id)) return undefined;
-    return this.todos.find((todo) => todo.id === id) || undefined;
+  async findOne(id: string): Promise<Todo | null> {
+    return this.todoModel.findById(id).exec();
   }
 
-  create(todo: Omit<Todo, 'id' | 'completed'>): Todo {
-    const newTodo: Todo = {
-      id: this.todos.length + 1,
-      completed: false,
-      ...todo,
-    };
-    this.todos.push(newTodo);
-    return newTodo;
+  async create(createDto: CreateTodoDto): Promise<Todo> {
+    const created = new this.todoModel(createDto);
+    return created.save();
   }
 
-  update(id: number, todoUpdate: Partial<Omit<Todo, 'id'>>): Todo | undefined {
-    const numId = Number(id);
-    if (Number.isNaN(numId)) return undefined;
-    const todoIndex = this.todos.findIndex((todo) => todo.id === numId);
-    if (todoIndex === -1) return undefined;
-    this.todos.map((todo, index) => {
-      if (index === todoIndex) {
-        this.todos[index] = { ...todo, ...todoUpdate };
-      }
-    });
-    return this.todos[todoIndex];
+  async update(
+    id: string,
+    todoUpdate: Partial<CreateTodoDto>,
+  ): Promise<Todo | null> {
+    return this.todoModel
+      .findByIdAndUpdate(id, todoUpdate, { new: true })
+      .exec();
   }
 
-  delete(id: number): Todo | boolean {
-    if (Number.isNaN(id)) return false;
-    this.todos = this.todos.map((todo) => {
-      if (todo.id === id) {
-        return { ...todo, deleted: true };
-      }
-      return todo;
-    });
-    return this.todos[id];
+  async delete(id: string): Promise<Todo | null> {
+    return this.todoModel
+      .findByIdAndUpdate(id, { deleted: true }, { new: true })
+      .exec();
   }
 }

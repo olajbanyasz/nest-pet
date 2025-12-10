@@ -8,38 +8,40 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import * as todosService from './todos.service';
+import { TodosService } from './todos.service';
+import { CreateTodoDto } from './dto/create-todo.dto';
 
 @Controller('todos')
 export class TodosController {
-  constructor(private readonly todosService: todosService.TodosService) {}
+  constructor(private readonly todosService: TodosService) {}
+
   @Get()
-  findAll(@Query('completed') completed?: boolean): Array<todosService.Todo> {
-    return this.todosService.findAll(completed);
+  async findAll(@Query('completed') completed?: string) {
+    const completedBool =
+      completed === undefined ? undefined : completed === 'true';
+    return this.todosService.findAll(completedBool);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string): todosService.Todo | undefined {
-    return this.todosService.findOne(+id);
+  async findOne(@Param('id') id: string) {
+    return this.todosService.findOne(id);
   }
 
   @Post()
-  create(@Body() todo: object): todosService.Todo {
-    return this.todosService.create(
-      todo as Omit<todosService.Todo, 'id' | 'completed'>,
-    );
+  async create(@Body() todo: CreateTodoDto) {
+    return this.todosService.create(todo);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() todoUpdate: object): object {
-    return this.todosService.update(
-      +id,
-      todoUpdate as Partial<Omit<todosService.Todo, 'id'>>,
-    )!;
+  async update(
+    @Param('id') id: string,
+    @Body() todoUpdate: Partial<CreateTodoDto>,
+  ) {
+    return this.todosService.update(id, todoUpdate);
   }
 
   @Delete(':id')
-  delete(@Param('id') id: string): todosService.Todo | boolean {
-    return this.todosService.delete(+id);
+  async delete(@Param('id') id: string) {
+    return this.todosService.delete(id);
   }
 }
