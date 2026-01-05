@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TodosModule } from './todos/todos.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -10,6 +11,7 @@ import { TodosModule } from './todos/todos.module';
       process.env.MONGODB_URI || 'mongodb://localhost:27017/nest-pet',
     ),
     TodosModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

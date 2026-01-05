@@ -7,7 +7,9 @@ import {
   Param,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { TodosService } from './todos.service';
 import { CreateTodoDto } from './dto/create-todo.dto';
 
@@ -28,11 +30,13 @@ export class TodosController {
   }
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   async create(@Body() todo: CreateTodoDto) {
     return this.todosService.create(todo);
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard)
   async update(
     @Param('id') id: string,
     @Body() todoUpdate: Partial<CreateTodoDto>,
@@ -41,6 +45,7 @@ export class TodosController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   async delete(@Param('id') id: string) {
     return this.todosService.delete(id);
   }
