@@ -24,7 +24,7 @@ function Todos() {
       });
       if (response.ok) {
         const data = await response.json();
-        setTodos(data);
+        setTodos(data.reverse());
       } else {
         navigate('/');
       }
