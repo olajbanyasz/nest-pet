@@ -5,18 +5,14 @@ function LogoutButton() {
   const navigate = useNavigate();
 
   const logout = async () => {
-    const token = localStorage.getItem('token');
     try {
       await fetch('/auth/logout', {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: 'include',
       });
     } catch (error) {
       console.error('Error logging out:', error);
     }
-    localStorage.removeItem('token');
     navigate('/');
   };
 
