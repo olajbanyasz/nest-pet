@@ -44,4 +44,9 @@ export class AuthService {
     const payload = { email: user.email, sub: user._id };
     return { access_token: this.jwtService.sign(payload) };
   }
+
+  // eslint-disable-next-line @typescript-eslint/require-await
+  async logout(): Promise<{ message: string }> {
+    return { message: 'Logout successful' };
+  }
 }
