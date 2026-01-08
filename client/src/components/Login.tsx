@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 function Login() {
@@ -7,6 +7,22 @@ function Login() {
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/auth/me', {
+          credentials: 'include',
+        });
+        if (response.ok) {
+          navigate('/todos');
+        }
+      } catch (error) {
+        // Not authenticated, stay on login page
+      }
+    };
+    checkAuth();
+  }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,13 +33,13 @@ function Login() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({ email, password }),
       });
       const data = await response.json();
       if (response.ok) {
         setMessage(isLogin ? 'Login successful!' : 'Registration successful!');
-        if (isLogin && data.access_token) {
-          localStorage.setItem('token', data.access_token);
+        if (isLogin) {
           navigate('/todos');
         }
       } else {

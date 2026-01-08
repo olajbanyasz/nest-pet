@@ -15,12 +15,9 @@ function Todos() {
   const navigate = useNavigate();
 
   const fetchTodos = useCallback(async () => {
-    const token = localStorage.getItem('token');
     try {
       const response = await fetch('/todos', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: 'include',
       });
       if (response.ok) {
         const data = await response.json();
@@ -34,23 +31,17 @@ function Todos() {
   }, [navigate]);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      navigate('/');
-      return;
-    }
     fetchTodos();
   }, [navigate, fetchTodos]);
 
   const addTodo = async (title: string) => {
-    const token = localStorage.getItem('token');
     try {
       const response = await fetch('/todos', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({ title }),
       });
       if (response.ok) {
@@ -62,7 +53,6 @@ function Todos() {
   };
 
   const toggleTodo = async (id: string) => {
-    const token = localStorage.getItem('token');
     const todo = todos.find(t => t._id === id);
     if (!todo) return;
     try {
@@ -70,8 +60,8 @@ function Todos() {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({ completed: !todo.completed }),
       });
       if (response.ok) {
@@ -83,13 +73,10 @@ function Todos() {
   };
 
   const deleteTodo = async (id: string) => {
-    const token = localStorage.getItem('token');
     try {
       const response = await fetch(`/todos/${id}`, {
         method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: 'include',
       });
       if (response.ok) {
         fetchTodos();
