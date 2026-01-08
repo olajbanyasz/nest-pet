@@ -25,7 +25,7 @@ function NewTodoForm({ onAdd }: NewTodoFormProps) {
                 placeholder="Add new todo"
                 style={{ flexGrow: 1 }}
             />
-            <Button label="Add" onClick={handleSubmit} disabled={newTodo.trim().length < 4 } />
+            <Button style={{ width: '80px' }} className="p-button-success" label="Add" onClick={handleSubmit} disabled={newTodo.trim().length < 4 } />
         </div>
 
     );

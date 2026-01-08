@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { checkAuth, login, register } from '../api/authApi';
 
 function Login() {
   const [isLogin, setIsLogin] = useState(true);
@@ -9,44 +10,21 @@ function Login() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const response = await fetch('/auth/me', {
-          credentials: 'include',
-        });
-        if (response.ok) {
-          navigate('/todos');
-        }
-      } catch (error) {
-        // Not authenticated, stay on login page
+    const checkAuthStatus = async () => {
+      const isAuthenticated = await checkAuth();
+      if (isAuthenticated) {
+        navigate('/todos');
       }
     };
-    checkAuth();
+    checkAuthStatus();
   }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const endpoint = isLogin ? 'login' : 'register';
-    try {
-      const response = await fetch(`/auth/${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await response.json();
-      if (response.ok) {
-        setMessage(isLogin ? 'Login successful!' : 'Registration successful!');
-        if (isLogin) {
-          navigate('/todos');
-        }
-      } else {
-        setMessage(data.message || 'Error occurred');
-      }
-    } catch (error) {
-      setMessage('Network error');
+    const result = isLogin ? await login(email, password) : await register(email, password);
+    setMessage(result.message || '');
+    if (result.success && isLogin) {
+      navigate('/todos');
     }
   };
 

@@ -11,9 +11,10 @@ interface TodoListProps {
   todos: Todo[];
   onToggle: (id: string) => void;
   onDelete: (id: string) => void;
+  onUpdateTitle: (id: string, title: string) => void;
 }
 
-function TodoList({ todos, onToggle, onDelete }: TodoListProps) {
+function TodoList({ todos, onToggle, onDelete, onUpdateTitle }: TodoListProps) {
   return (
     <div style={{ border: '1px solid #ccc', borderRadius: '8px', padding: '20px' }}>
       {todos.map((todo) => (
@@ -22,6 +23,7 @@ function TodoList({ todos, onToggle, onDelete }: TodoListProps) {
           todo={todo}
           onToggle={onToggle}
           onDelete={onDelete}
+          onUpdateTitle={onUpdateTitle}
         />
       ))}
     </div>
