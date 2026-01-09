@@ -10,10 +10,13 @@ export const fetchTodos = async (): Promise<Todo[]> => {
   const response = await fetch(API_BASE_URL, {
     credentials: 'include',
   });
+
   if (!response.ok) {
     throw new Error('Failed to fetch todos');
   }
-  return response.json();
+
+  const data = (await response.json()) as Todo[];
+  return data;
 };
 
 export const addTodo = async (title: string): Promise<void> => {
@@ -30,7 +33,10 @@ export const addTodo = async (title: string): Promise<void> => {
   }
 };
 
-export const toggleTodo = async (id: string, completed: boolean): Promise<void> => {
+export const toggleTodo = async (
+  id: string,
+  completed: boolean,
+): Promise<void> => {
   const response = await fetch(`${API_BASE_URL}/${id}`, {
     method: 'PATCH',
     headers: {
@@ -44,7 +50,10 @@ export const toggleTodo = async (id: string, completed: boolean): Promise<void> 
   }
 };
 
-export const updateTodoTitle = async (id: string, title: string): Promise<void> => {
+export const updateTodoTitle = async (
+  id: string,
+  title: string,
+): Promise<void> => {
   const response = await fetch(`${API_BASE_URL}/${id}`, {
     method: 'PATCH',
     headers: {
