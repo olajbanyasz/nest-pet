@@ -43,3 +43,8 @@ li input[type="checkbox"] {
 li span {
   flex-grow: 1;
 }
+
+.p-checkbox.p-highlight .p-checkbox-box {
+  background-color: #0ea5e9;
+  border-color: #0ea5e9;
+}
