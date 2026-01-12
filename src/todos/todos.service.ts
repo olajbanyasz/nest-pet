@@ -14,27 +14,33 @@ import { CreateTodoDto } from './dto/create-todo.dto';
 export class TodosService {
   constructor(@InjectModel(Todo.name) private todoModel: Model<TodoDocument>) {}
 
-  async findAll(completed?: boolean): Promise<Todo[]> {
-    const filter: any = { deleted: false };
+  async findAll(userId: string, completed?: boolean): Promise<Todo[]> {
+    const filter: any = { userId, deleted: false };
     if (completed === true) filter.completed = true;
     if (completed === false) filter.completed = false;
     return this.todoModel.find(filter).exec();
   }
 
-  async findOne(id: string): Promise<Todo> {
+  async findOne(id: string, userId: string): Promise<Todo> {
     if (!isValidObjectId(id)) {
       throw new BadRequestException('Invalid id format');
     }
-    const todo = await this.todoModel.findById(id).exec();
+    const todo = await this.todoModel.findOne({
+      _id: id,
+      userId,
+    });
     if (!todo) {
       throw new NotFoundException(`Todo with id "${id}" not found`);
     }
     return todo;
   }
 
-  async create(createDto: CreateTodoDto): Promise<Todo> {
+  async create(createDto: CreateTodoDto, userId: string): Promise<Todo> {
     try {
-      const newTodo = new this.todoModel(createDto);
+      const newTodo = new this.todoModel({
+        ...createDto,
+        userId,
+      });
       return await newTodo.save();
     } catch (error: any) {
       // Handle Mongoose validation errors
