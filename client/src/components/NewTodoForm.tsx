@@ -17,6 +17,8 @@ function NewTodoForm({ onAdd }: NewTodoFormProps) {
         }
     };
 
+    const isAddButtonDisabled = newTodo.trim().length < 4;
+
     return (
         <div style={{ border: '1px solid #ccc', borderRadius: '8px', padding: '20px', marginBottom: '20px' }} className="p-inputgroup flex-1">
             <InputText
@@ -25,7 +27,7 @@ function NewTodoForm({ onAdd }: NewTodoFormProps) {
                 placeholder="Add new todo"
                 style={{ flexGrow: 1 }}
             />
-            <Button style={{ width: '80px' }} className="p-button-success" label="Add" onClick={handleSubmit} disabled={newTodo.trim().length < 4 } />
+            <Button style={{ width: '80px' }} className={isAddButtonDisabled ? "p-button-secondary" : "p-button-success"} label="Add" onClick={handleSubmit} disabled={isAddButtonDisabled} />
         </div>
 
     );

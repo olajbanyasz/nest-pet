@@ -14,7 +14,7 @@
     "start:prod": "node dist/main",
     "dev": "concurrently \"cross-env PORT=3001 npm run start:dev\" \"cd client && cross-env PORT=8000 npm start\"",
     "prod": "npm run build && cd client && npm run build && cd .. && npm run start:prod",
-    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "lint": "eslint \"{src,apps,libs,test,client}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
