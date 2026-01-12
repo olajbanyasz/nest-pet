@@ -19,7 +19,7 @@ export class Todo {
     required: true,
     index: true,
   })
-  userId: Types.ObjectId;
+  userId: string;
 }
 
 export const TodoSchema = SchemaFactory.createForClass(Todo);

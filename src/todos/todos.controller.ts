@@ -44,15 +44,16 @@ export class TodosController {
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
   async update(
+    @User() user: { userId: string },
     @Param('id') id: string,
     @Body() todoUpdate: Partial<CreateTodoDto>,
   ) {
-    return this.todosService.update(id, todoUpdate);
+    return this.todosService.update(id, user.userId, todoUpdate);
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
-  async delete(@Param('id') id: string) {
-    return this.todosService.delete(id);
+  async delete(@User() user: { userId: string }, @Param('id') id: string) {
+    return this.todosService.delete(id, user.userId);
   }
 }
