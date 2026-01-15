@@ -1,61 +1,98 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { checkAuth, login, register } from '../api/authApi';
+import { checkAuth, login, register, User } from '../api/authApi';
+import { useAuth } from '../contexts/AuthContext';
 
 function Login() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
-  const navigate = useNavigate();
 
+  const navigate = useNavigate();
+  const { login: authLogin } = useAuth();
+
+  // Ellenőrzi a belépést a mountkor
   useEffect(() => {
     const checkAuthStatus = async () => {
-      const isAuthenticated = await checkAuth();
-      if (isAuthenticated) {
+      const user: User | null = await checkAuth();
+      if (user) {
+        authLogin(user); // context feltöltése
         navigate('/todos');
       }
     };
     checkAuthStatus();
-  }, [navigate]);
+  }, [navigate, authLogin]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const result = isLogin ? await login(email, password) : await register(email, password);
-    setMessage(result.message || '');
-    if (result.success && isLogin) {
-      navigate('/todos');
+    setMessage('');
+
+    if (isLogin) {
+      const result = await login(email, password);
+
+      if (result.success && result.user) {
+        authLogin(result.user); // ❗ típusok egyeznek
+        navigate('/todos');
+      } else {
+        setMessage(result.message || 'Login failed');
+      }
+    } else {
+      const result = await register(email, password);
+      setMessage(result.message || '');
     }
   };
 
   return (
-    <div className="App">
-      <h1>{isLogin ? 'Login' : 'Register'}</h1>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Email:</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <label>Password:</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
-        <button type="submit">{isLogin ? 'Login' : 'Register'}</button>
-      </form>
-      <button onClick={() => setIsLogin(!isLogin)}>
-        Switch to {isLogin ? 'Register' : 'Login'}
-      </button>
-      {message && <p>{message}</p>}
+    <div className="login-container">
+      <div style={{ width: '250px', margin: '0 auto' }}>
+        <h1>{isLogin ? 'Login' : 'Register'}</h1>
+
+        <form onSubmit={handleSubmit}>
+          <div style={{ width: '100%' }}>
+            <label>Email:</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              style={{ width: '100%' }}
+            />
+          </div>
+
+          <div style={{ width: '100%' }}>
+            <label>Password:</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              style={{ width: '100%' }}
+            />
+          </div>
+
+          <div
+            style={{
+              width: '100%',
+              display: 'flex',
+              justifyContent: 'space-between',
+              marginTop: '10px',
+            }}
+          >
+            <button type="submit">{isLogin ? 'Login' : 'Register'}</button>
+
+            <button
+              type="button"
+              onClick={() => setIsLogin(!isLogin)}
+              style={{ marginLeft: '10px' }}
+            >
+              Switch to {isLogin ? 'Register' : 'Login'}
+            </button>
+          </div>
+        </form>
+
+        {message && <p>{message}</p>}
+      </div>
     </div>
   );
 }

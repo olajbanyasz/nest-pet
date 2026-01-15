@@ -1,10 +1,10 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-function LogoutButton() {
+function LogoutButton({ logout }: { logout: () => void }) {
   const navigate = useNavigate();
 
-  const logout = async () => {
+  const onLogout = async () => {
     try {
       await fetch('/auth/logout', {
         method: 'POST',
@@ -13,11 +13,12 @@ function LogoutButton() {
     } catch (error) {
       console.error('Error logging out:', error);
     }
+    logout();
     navigate('/');
   };
 
   return (
-    <button onClick={logout} style={{ position: 'absolute', top: '10px', right: '10px' }}>
+    <button onClick={onLogout} style={{ right: '10px' }}>
       Logout
     </button>
   );

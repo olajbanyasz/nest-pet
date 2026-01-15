@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import TodoList from './TodoList';
 import NewTodoForm from './NewTodoForm';
-import LogoutButton from './LogoutButton';
+import NavigationBar from './NavigationBar';
 import { useLoading } from '../contexts/LoadingProvider';
 import { fetchTodos as apiFetchTodos, addTodo as apiAddTodo, toggleTodo as apiToggleTodo, deleteTodo as apiDeleteTodo, updateTodoTitle, Todo } from '../api/todosApi';
 
@@ -62,7 +62,7 @@ function Todos() {
     } catch (error) {
       console.error('Error deleting todo:', error);
     } finally {
-      hide(); 
+      hide();
     }
   };
 
@@ -79,9 +79,8 @@ function Todos() {
   };
 
   return (
-    <div className="App">
-      <LogoutButton />
-      <h1>Todos</h1>
+    <div className="todo-container">
+      <h1 style={{ textAlign: "center" }}>Todos</h1>
       <NewTodoForm onAdd={addTodo} />
       <TodoList todos={todos} onToggle={toggleTodo} onDelete={deleteTodo} onUpdateTitle={updateTitle} />
     </div>
