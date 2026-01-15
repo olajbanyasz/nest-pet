@@ -7,9 +7,11 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, isValidObjectId } from 'mongoose';
 import { Todo, TodoDocument } from './schemas/todo.schema';
 import { CreateTodoDto } from './dto/create-todo.dto';
+import { Logger } from '@nestjs/common';
 
 @Injectable()
 export class TodosService {
+  private readonly logger = new Logger(TodosService.name);
   constructor(@InjectModel(Todo.name) private todoModel: Model<TodoDocument>) {}
 
   async findAll(userId: string, completed?: boolean): Promise<Todo[]> {
@@ -19,6 +21,9 @@ export class TodosService {
     };
     if (completed === true) filter.completed = true;
     if (completed === false) filter.completed = false;
+    this.logger.log(`Todos asked by ${userId}`, {
+      userId,
+    });
     return this.todoModel.find(filter).exec();
   }
 
@@ -28,6 +33,10 @@ export class TodosService {
     }
     const todo = await this.todoModel.findOne({
       _id: id,
+      userId,
+    });
+
+    this.logger.log(`Todo ${id} asked by ${userId}`, {
       userId,
     });
     if (!todo) {
@@ -40,6 +49,9 @@ export class TodosService {
     try {
       const newTodo = new this.todoModel({
         ...createDto,
+        userId,
+      });
+      this.logger.log(`Todo created by ${userId} with name ${newTodo.title}`, {
         userId,
       });
       return await newTodo.save();
@@ -68,10 +80,16 @@ export class TodosService {
     if (!updated) {
       throw new NotFoundException(`Todo with id "${id}" not found`);
     }
+    this.logger.log(
+      `Todo is updated by ${userId} with title: ${todoUpdate.title}, completed: ${todoUpdate.completed}, deleted: ${todoUpdate.deleted}`,
+      {
+        userId,
+      },
+    );
     return updated;
   }
 
-  async delete(id: string, userId): Promise<Todo> {
+  async delete(id: string, userId: string): Promise<Todo> {
     if (!isValidObjectId(id)) {
       throw new BadRequestException('Invalid id format');
     }
@@ -81,6 +99,9 @@ export class TodosService {
     if (!deleted) {
       throw new NotFoundException(`Todo with id "${id}" not found`);
     }
+    this.logger.log(`Todo ${id} is deleted by ${userId}.`, {
+      userId,
+    });
     return deleted;
   }
 }
