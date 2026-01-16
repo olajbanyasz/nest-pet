@@ -9,9 +9,11 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { User, UserDocument } from '../users/schemas/user.schema';
 import { RegisterDto, LoginDto } from './dto/auth.dto';
+import { Logger } from '@nestjs/common';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private jwtService: JwtService,
@@ -30,6 +32,7 @@ export class AuthService {
     await user.save();
 
     const payload = { email: user.email, sub: user._id };
+    this.logger.log(`User ${String(user._id)} is registered.`);
     return { access_token: this.jwtService.sign(payload) };
   }
 
@@ -41,12 +44,15 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    this.logger.log(`User ${String(user._id)} is logged in.`);
+
     const payload = { email: user.email, sub: user._id };
     return { access_token: this.jwtService.sign(payload) };
   }
 
   // eslint-disable-next-line @typescript-eslint/require-await
   async logout(): Promise<{ message: string }> {
+    this.logger.log(`User is logged out.`);
     return { message: 'Logout successful' };
   }
 }
