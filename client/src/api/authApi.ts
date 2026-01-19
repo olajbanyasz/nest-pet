@@ -94,3 +94,10 @@ export const register = async (
     return { success: false, message: 'Network error' };
   }
 };
+
+export const logout = async (): Promise<void> => {
+  await fetch(`${AUTH_BASE_URL}/logout`, {
+    method: 'POST',
+    credentials: 'include',
+  });
+};

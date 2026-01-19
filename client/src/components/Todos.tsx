@@ -79,8 +79,8 @@ function Todos() {
 
   return (
     <div className="todo-container">
-      <h1 style={{ textAlign: "center" }}>Todos</h1>
       <NewTodoForm onAdd={addTodo} />
+      <h1 style={{ textAlign: "center" }}>Todos</h1>
       <TodoList todos={todos} onToggle={toggleTodo} onDelete={deleteTodo} onUpdateTitle={updateTitle} />
     </div>
   );
