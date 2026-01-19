@@ -2,7 +2,9 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './components/Login';
 import Todos from './components/Todos';
+import Admin from './components/Admin';
 import AppLayout from './components/AppLayout';
+import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './contexts/AuthContext';
 import './App.css';
 import 'primereact/resources/themes/lara-light-indigo/theme.css';
@@ -15,8 +17,15 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<Login />} />
-          <Route element={<AppLayout />}>
-            <Route path="/todos" element={<Todos />} />
+          <Route element={<ProtectedRoute />}>
+            <Route element={<AppLayout />}>
+              <Route path="/todos" element={<Todos />} />
+            </Route>
+          </Route>
+          <Route element={<ProtectedRoute requiredRole="ADMIN" />}>
+            <Route element={<AppLayout />}>
+              <Route path="/admin" element={<Admin />} />
+            </Route>
           </Route>
         </Routes>
       </Router>

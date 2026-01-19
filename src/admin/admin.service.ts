@@ -8,7 +8,7 @@ export class AdminService {
   constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
   async getUsers(): Promise<User[]> {
-    return this.userModel.find().select('-password').exec(); // jelszó nélkül
+    return this.userModel.find().select('-password').exec();
   }
 
   async getUserById(id: string): Promise<User> {

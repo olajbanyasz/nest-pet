@@ -1,15 +1,18 @@
 const AUTH_BASE_URL = '/auth';
 
+export type UserRole = 'USER' | 'ADMIN';
+
 export interface User {
   id: string;
-  email: string;
   name?: string;
+  email: string;
+  role: UserRole;
 }
 
 export interface AuthResponse {
   success: boolean;
   message?: string;
-  user?: User; // ❗ user adatok a contextnek
+  user?: User;
 }
 
 async function fetchJson<T>(response: Response): Promise<T> {
@@ -59,7 +62,6 @@ export const login = async (
   }
 };
 
-// Regisztráció
 export const register = async (
   email: string,
   password: string,

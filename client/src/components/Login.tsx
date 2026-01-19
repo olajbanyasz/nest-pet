@@ -12,7 +12,6 @@ function Login() {
   const navigate = useNavigate();
   const { login: authLogin } = useAuth();
 
-  // Ellenőrzi a belépést a mountkor
   useEffect(() => {
     const checkAuthStatus = async () => {
       const user: User | null = await checkAuth();
@@ -32,7 +31,7 @@ function Login() {
       const result = await login(email, password);
 
       if (result.success && result.user) {
-        authLogin(result.user); // ❗ típusok egyeznek
+        authLogin(result.user);
         navigate('/todos');
       } else {
         setMessage(result.message || 'Login failed');

@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import TodoList from './TodoList';
 import NewTodoForm from './NewTodoForm';
-import NavigationBar from './NavigationBar';
 import { useLoading } from '../contexts/LoadingProvider';
 import { fetchTodos as apiFetchTodos, addTodo as apiAddTodo, toggleTodo as apiToggleTodo, deleteTodo as apiDeleteTodo, updateTodoTitle, Todo } from '../api/todosApi';
 
