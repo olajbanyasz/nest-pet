@@ -1,4 +1,4 @@
-.todo-container, .login-container {
+.todo-container, .login-container, .admin-container {
   max-width: 800px;
   margin: 50px auto;
   padding: 20px;

@@ -10,7 +10,7 @@ const AdminPage: React.FC = () => {
   }
 
   return (
-    <div>
+    <div className="admin-container">
       <h1>Admin panel</h1>
       <p>User management ide jön</p>
     </div>
