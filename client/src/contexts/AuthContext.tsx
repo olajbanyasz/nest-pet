@@ -15,27 +15,35 @@ interface AuthContextValue {
   loading: boolean;
   login: (user: User) => void;
   logout: () => void;
+  initialized: boolean; // jelzi, hogy megtörtént a checkAuth
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true); // auth check loading
+  const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
     const initAuth = async () => {
-      const backendUser: ApiUser | null = await checkAuth();
-      if (backendUser) {
-        const normalizedUser: User = {
-          id: backendUser.id,
-          email: backendUser.email,
-          role: backendUser.role.toLowerCase() === 'admin' ? 'admin' : 'user',
-          name: backendUser.name,
-        };
-        setUser(normalizedUser);
+      try {
+        const backendUser: ApiUser | null = await checkAuth();
+        if (backendUser) {
+          const normalizedUser: User = {
+            id: backendUser.id,
+            email: backendUser.email,
+            role: backendUser.role.toLowerCase() === 'admin' ? 'admin' : 'user',
+            name: backendUser.name,
+          };
+          setUser(normalizedUser);
+        }
+      } catch (err) {
+        setUser(null);
+      } finally {
+        setLoading(false);
+        setInitialized(true); // itt jelzi, hogy az auth check befejeződött
       }
-      setLoading(false);
     };
     initAuth();
   }, []);
@@ -44,7 +52,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => setUser(null);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, initialized }}>
       {children}
     </AuthContext.Provider>
   );

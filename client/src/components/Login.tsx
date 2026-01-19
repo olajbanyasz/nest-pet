@@ -11,27 +11,27 @@ function Login() {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const { login: authLogin } = useAuth();
+  const { login: authLogin, initialized } = useAuth();
 
   const from = (location.state as any)?.from?.pathname || '/todos';
 
-  useEffect(() => {
-    const checkAuthStatus = async () => {
-      const user: ApiUser | null = await checkAuth();
-      if (user) {
-        const normalizedUser: AuthUser = {
-          id: user.id,
-          email: user.email,
-          name: user.name ?? undefined,
-          role: user.role.toLowerCase() === 'admin' ? 'admin' : 'user',
-        };
-        console.log('user', user, normalizedUser)
-        authLogin(normalizedUser);
-        navigate(from, { replace: true });
-      }
-    };
-    checkAuthStatus();
-  }, [authLogin, navigate, from]);
+useEffect(() => {
+  if (initialized) return;
+  const checkAuthStatus = async () => {
+    const user: ApiUser | null = await checkAuth();
+    if (user) {
+      const normalizedUser: AuthUser = {
+        id: user.id,
+        email: user.email,
+        name: user.name ?? undefined,
+        role: user.role.toLowerCase() === 'admin' ? 'admin' : 'user',
+      };
+      authLogin(normalizedUser);
+      navigate(from, { replace: true });
+    }
+  };
+  checkAuthStatus();
+}, [authLogin, navigate, from, initialized]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

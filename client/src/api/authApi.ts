@@ -29,7 +29,7 @@ function mapBackendUser(user: BackendUser): User {
   return {
     id: user.userId,
     email: user.email,
-    role: user.role.toLowerCase() as Role
+    role: user.role.toLowerCase() as Role,
   };
 }
 
@@ -60,11 +60,15 @@ export const login = async (
       body: JSON.stringify({ email, password }),
     });
 
-    const backendUser = await fetchJson<BackendUser>(response);
+    const data = await response.json();
+
+    if (!response.ok || !data.user) {
+      return { success: false, message: data.message || 'Login failed' };
+    }
 
     return {
-      success: response.ok,
-      user: mapBackendUser(backendUser),
+      success: true,
+      user: mapBackendUser(data.user),
     };
   } catch {
     return { success: false, message: 'Network error' };
