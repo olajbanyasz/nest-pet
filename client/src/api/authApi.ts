@@ -1,4 +1,4 @@
-const AUTH_BASE_URL = '/auth';
+const AUTH_BASE_URL = '/api/auth';
 
 export type Role = 'user' | 'admin';
 

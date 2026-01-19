@@ -1,24 +1,42 @@
+/* eslint-disable @typescript-eslint/no-floating-promises */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
+import { join } from 'path';
+import * as express from 'express';
 import { AppModule } from './app.module';
 import { logger } from './logger.config';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     abortOnError: false,
-    logger: logger,
+    logger,
   });
+
   app.enableCors({
     origin: 'http://localhost:8000',
     credentials: true,
   });
+
   app.use(cookieParser());
   app.useGlobalPipes(new ValidationPipe());
+  app.setGlobalPrefix('api');
+
+  const clientBuildPath = join(__dirname, '..', 'client', 'build');
+  app.use(express.static(clientBuildPath));
+
+  app.use((req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    res.sendFile(join(clientBuildPath, 'index.html'));
+  });
+
   await app.listen(process.env.PORT ?? 3000);
 }
 
-const app = bootstrap();
-
-export { app };
+bootstrap();

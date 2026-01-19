@@ -19,7 +19,6 @@ function Login() {
     const checkAuthStatus = async () => {
       const user: ApiUser | null = await checkAuth();
       if (user) {
-        // Normalizáljuk a role-t kisbetűsre és name opcionális
         const normalizedUser: AuthUser = {
           id: user.id,
           email: user.email,

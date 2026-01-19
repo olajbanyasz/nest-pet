@@ -1,4 +1,4 @@
-const API_BASE_URL = '/todos';
+const API_BASE_URL = '/api/todos';
 
 export interface Todo {
   _id: string;
