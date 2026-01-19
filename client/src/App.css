@@ -48,3 +48,20 @@ li span {
   background-color: #0ea5e9;
   border-color: #0ea5e9;
 }
+
+.p-menubar .active-menu-item .p-menuitem-link {
+    border-bottom: 3px solid #0ea5e9;
+    border-radius: 0;
+}
+
+.p-menubar .p-menuitem .p-menuitem-content:hover {
+    background-color: white !important;
+}
+
+.p-menubar .p-menuitem.p-focus {
+    background-color: white !important;
+}
+
+.p-menubar .p-menuitem .p-menuitem-content:active {
+    background-color: white !important;
+}

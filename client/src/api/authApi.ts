@@ -21,6 +21,11 @@ interface BackendUser {
   role: 'USER' | 'ADMIN';
 }
 
+interface LoginResponse {
+  user?: BackendUser;
+  message?: string;
+}
+
 async function fetchJson<T>(response: Response): Promise<T> {
   return (await response.json()) as T;
 }
@@ -60,10 +65,13 @@ export const login = async (
       body: JSON.stringify({ email, password }),
     });
 
-    const data = await response.json();
+    const data = await fetchJson<LoginResponse>(response);
 
     if (!response.ok || !data.user) {
-      return { success: false, message: data.message || 'Login failed' };
+      return {
+        success: false,
+        message: data.message ?? 'Login failed',
+      };
     }
 
     return {
