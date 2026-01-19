@@ -50,11 +50,13 @@ const NavigationBar: React.FC = () => {
     ];
 
     return (
-        <Menubar
-            model={user?.role === 'admin' ? adminItems : userItems}
-            end={end}
-            style={{ borderRadius: 0 }}
-        />
+        <div id='navigation-bar'>
+            <Menubar
+                model={user?.role === 'admin' ? adminItems : userItems}
+                end={end}
+                style={{ borderRadius: 0 }}
+            />
+        </div>
     );
 };
 

@@ -49,19 +49,31 @@ li span {
   border-color: #0ea5e9;
 }
 
-.p-menubar .active-menu-item .p-menuitem-link {
+#navigation-bar .p-menubar .active-menu-item .p-menuitem-link {
     border-bottom: 3px solid #0ea5e9;
     border-radius: 0;
 }
 
-.p-menubar .p-menuitem .p-menuitem-content:hover {
-    background-color: white !important;
+#navigation-bar  .p-menubar .p-menuitem .p-menuitem-content:hover {
+    background: white !important;
 }
 
-.p-menubar .p-menuitem.p-focus {
-    background-color: white !important;
+#navigation-bar .p-menubar .p-menuitem.p-focus {
+    background: white !important;
 }
 
-.p-menubar .p-menuitem .p-menuitem-content:active {
-    background-color: white !important;
+#navigation-bar .p-menubar .p-menuitem .p-menuitem-content:active {
+    background: white !important;
+}
+
+.p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content {
+    background: white !important;
+}
+
+#navigation-bar .p-menubar .p-menuitem.p-highlight > .p-menuitem-content {
+    background: white !important;
+}
+
+#navigation-bar .p-menubar .p-menuitem.p-menuitem-active > .p-menuitem-content {
+    background: white !important;
 }
