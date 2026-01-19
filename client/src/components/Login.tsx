@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { checkAuth, login, register, User } from '../api/authApi';
-import { useAuth } from '../contexts/AuthContext';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { checkAuth, login as apiLogin, register as apiRegister, User as ApiUser } from '../api/authApi';
+import { useAuth, User as AuthUser, UserRole } from '../contexts/AuthContext';
 
 function Login() {
   const [isLogin, setIsLogin] = useState(true);
@@ -10,34 +10,51 @@ function Login() {
   const [message, setMessage] = useState('');
 
   const navigate = useNavigate();
+  const location = useLocation();
   const { login: authLogin } = useAuth();
+
+  const from = (location.state as any)?.from?.pathname || '/todos';
 
   useEffect(() => {
     const checkAuthStatus = async () => {
-      const user: User | null = await checkAuth();
+      const user: ApiUser | null = await checkAuth();
       if (user) {
-        authLogin(user); // context feltöltése
-        navigate('/todos');
+        // Normalizáljuk a role-t kisbetűsre és name opcionális
+        const normalizedUser: AuthUser = {
+          id: user.id,
+          email: user.email,
+          name: user.name ?? undefined,
+          role: user.role.toLowerCase() === 'admin' ? 'admin' : 'user',
+        };
+        console.log('user', user, normalizedUser)
+        authLogin(normalizedUser);
+        navigate(from, { replace: true });
       }
     };
     checkAuthStatus();
-  }, [navigate, authLogin]);
+  }, [authLogin, navigate, from]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage('');
 
     if (isLogin) {
-      const result = await login(email, password);
+      const result = await apiLogin(email, password);
 
       if (result.success && result.user) {
-        authLogin(result.user);
-        navigate('/todos');
+        const normalizedUser: AuthUser = {
+          id: result.user.id,
+          email: result.user.email,
+          name: result.user.name ?? undefined,
+          role: result.user.role.toLowerCase() === 'admin' ? 'admin' : 'user',
+        };
+        authLogin(normalizedUser);
+        navigate(from, { replace: true });
       } else {
         setMessage(result.message || 'Login failed');
       }
     } else {
-      const result = await register(email, password);
+      const result = await apiRegister(email, password);
       setMessage(result.message || '');
     }
   };
@@ -53,7 +70,7 @@ function Login() {
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={e => setEmail(e.target.value)}
               required
               style={{ width: '100%' }}
             />
@@ -64,22 +81,14 @@ function Login() {
             <input
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={e => setPassword(e.target.value)}
               required
               style={{ width: '100%' }}
             />
           </div>
 
-          <div
-            style={{
-              width: '100%',
-              display: 'flex',
-              justifyContent: 'space-between',
-              marginTop: '10px',
-            }}
-          >
+          <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', marginTop: '10px' }}>
             <button type="submit">{isLogin ? 'Login' : 'Register'}</button>
-
             <button
               type="button"
               onClick={() => setIsLogin(!isLogin)}

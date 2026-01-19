@@ -1,12 +1,12 @@
 const AUTH_BASE_URL = '/auth';
 
-export type UserRole = 'USER' | 'ADMIN';
+export type Role = 'user' | 'admin';
 
 export interface User {
   id: string;
-  name?: string;
   email: string;
-  role: UserRole;
+  role: Role;
+  name?: string;
 }
 
 export interface AuthResponse {
@@ -15,11 +15,24 @@ export interface AuthResponse {
   user?: User;
 }
 
+interface BackendUser {
+  userId: string;
+  email: string;
+  role: 'USER' | 'ADMIN';
+}
+
 async function fetchJson<T>(response: Response): Promise<T> {
   return (await response.json()) as T;
 }
 
-// Ellenőrzi, hogy be van-e jelentkezve
+function mapBackendUser(user: BackendUser): User {
+  return {
+    id: user.userId,
+    email: user.email,
+    role: user.role.toLowerCase() as Role
+  };
+}
+
 export const checkAuth = async (): Promise<User | null> => {
   try {
     const response = await fetch(`${AUTH_BASE_URL}/me`, {
@@ -28,15 +41,13 @@ export const checkAuth = async (): Promise<User | null> => {
 
     if (!response.ok) return null;
 
-    const user = await fetchJson<User>(response);
-    return user;
-  } catch (error) {
-    console.error('Error checking auth:', error);
+    const backendUser = await fetchJson<BackendUser>(response);
+    return mapBackendUser(backendUser);
+  } catch {
     return null;
   }
 };
 
-// Login
 export const login = async (
   email: string,
   password: string,
@@ -49,15 +60,13 @@ export const login = async (
       body: JSON.stringify({ email, password }),
     });
 
-    if (!response.ok) {
-      const data = await fetchJson<{ message?: string }>(response);
-      return { success: false, message: data.message || 'Login failed' };
-    }
+    const backendUser = await fetchJson<BackendUser>(response);
 
-    const user = await fetchJson<User>(response);
-    return { success: true, user };
-  } catch (error) {
-    console.error('Error during login:', error);
+    return {
+      success: response.ok,
+      user: mapBackendUser(backendUser),
+    };
+  } catch {
     return { success: false, message: 'Network error' };
   }
 };
@@ -74,15 +83,14 @@ export const register = async (
       body: JSON.stringify({ email, password }),
     });
 
-    if (!response.ok) {
-      const data = await fetchJson<{ message?: string }>(response);
-      return { success: false, message: data.message || 'Registration failed' };
-    }
+    const backendUser = await fetchJson<BackendUser>(response);
 
-    const user = await fetchJson<User>(response);
-    return { success: true, user };
-  } catch (error) {
-    console.error('Error during registration:', error);
+    return {
+      success: response.ok,
+      user: mapBackendUser(backendUser),
+      message: response.ok ? 'Registration successful' : 'Registration failed',
+    };
+  } catch {
     return { success: false, message: 'Network error' };
   }
 };

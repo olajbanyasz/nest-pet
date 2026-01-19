@@ -1,21 +1,20 @@
-import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import type { UserRole } from '../contexts/AuthContext';
+import React from 'react';
+import { Navigate } from 'react-router-dom';
+import { useAuth, UserRole } from '../contexts/AuthContext';
 
-type ProtectedRouteProps = {
+interface ProtectedRouteProps {
   requiredRole?: UserRole;
-};
+  children: React.ReactNode;
+}
 
-export default function ProtectedRoute({ requiredRole }: ProtectedRouteProps) {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ requiredRole, children }) => {
   const { user } = useAuth();
 
-  if (!user) {
-    return <Navigate to="/" replace />;
-  }
+  if (!user) return <Navigate to="/" replace />;
 
-  if (requiredRole && user.role !== requiredRole) {
-    return <Navigate to="/todos" replace />;
-  }
+  if (requiredRole && user.role !== requiredRole) return <Navigate to="/todos" replace />;
 
-  return <Outlet />;
-}
+  return <>{children}</>;
+};
+
+export default ProtectedRoute;
