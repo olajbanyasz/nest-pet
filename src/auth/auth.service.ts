@@ -1,19 +1,21 @@
+/* eslint-disable @typescript-eslint/require-await */
 import {
   Injectable,
   UnauthorizedException,
   ConflictException,
+  Logger,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
-import { User, UserDocument } from '../users/schemas/user.schema';
+import { User, UserDocument, UserRole } from '../users/schemas/user.schema';
 import { RegisterDto, LoginDto } from './dto/auth.dto';
-import { Logger } from '@nestjs/common';
 
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
+
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private jwtService: JwtService,
@@ -28,15 +30,33 @@ export class AuthService {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new this.userModel({ email, password: hashedPassword });
+
+    const user = new this.userModel({
+      email,
+      password: hashedPassword,
+      role: UserRole.USER,
+    });
+
     await user.save();
 
-    const payload = { email: user.email, sub: user._id };
-    this.logger.log(`User ${String(user._id)} is registered.`);
-    return { access_token: this.jwtService.sign(payload) };
+    const payload = {
+      sub: String(user._id),
+      email: user.email,
+      role: user.role,
+    };
+
+    this.logger.log(
+      `User ${String(user._id)} registered with role ${user.role}`,
+    );
+
+    return {
+      access_token: this.jwtService.sign(payload),
+    };
   }
 
-  async login(loginDto: LoginDto): Promise<{ access_token: string }> {
+  async login(
+    loginDto: LoginDto,
+  ): Promise<{ access_token: string; user: UserDocument }> {
     const { email, password } = loginDto;
 
     const user = await this.userModel.findOne({ email });
@@ -44,15 +64,24 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    this.logger.log(`User ${String(user._id)} is logged in.`);
+    const payload = {
+      sub: String(user._id),
+      email: user.email,
+      role: user.role,
+    };
 
-    const payload = { email: user.email, sub: user._id };
-    return { access_token: this.jwtService.sign(payload) };
+    this.logger.log(
+      `User ${String(user._id)} logged in with role ${user.role}`,
+    );
+
+    return {
+      access_token: this.jwtService.sign(payload),
+      user,
+    };
   }
 
-  // eslint-disable-next-line @typescript-eslint/require-await
   async logout(): Promise<{ message: string }> {
-    this.logger.log(`User is logged out.`);
+    this.logger.log('User logged out');
     return { message: 'Logout successful' };
   }
 }

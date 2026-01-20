@@ -1,14 +1,22 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import { ExtractJwt, Strategy } from 'passport-jwt';
-import type { StrategyOptions } from 'passport-jwt';
+import { Strategy, ExtractJwt, StrategyOptions } from 'passport-jwt';
+import { Request } from 'express';
+import { UserRole } from '../users/schemas/user.schema';
 
-interface JwtPayload {
+export interface JwtPayload {
   sub: string;
   email: string;
+  role: UserRole;
+}
+
+export interface AuthenticatedUser {
+  userId: string;
+  email: string;
+  role: UserRole;
 }
 
 @Injectable()
@@ -16,16 +24,21 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor() {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-        (req: any) => req.cookies?.access_token,
+        (req: Request): string | null => {
+          return (req && req.cookies && req.cookies.access_token) || null;
+        },
         ExtractJwt.fromAuthHeaderAsBearerToken(),
-      ]),
+      ]) as unknown as (req: Request) => string | null, // 🔹 explicit cast
       ignoreExpiration: false,
-      secretOrKey: process.env.JWT_SECRET || 'secretKey',
+      secretOrKey: process.env.JWT_SECRET ?? 'secretKey',
     } as StrategyOptions);
   }
 
-  validate(payload: JwtPayload) {
-    return { userId: payload.sub, email: payload.email };
+  validate(payload: JwtPayload): AuthenticatedUser {
+    return {
+      userId: payload.sub,
+      email: payload.email,
+      role: payload.role,
+    };
   }
 }

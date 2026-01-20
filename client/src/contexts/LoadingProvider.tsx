@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { ProgressSpinner } from 'primereact/progressspinner';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 type LoadingCtx = { show: () => void; hide: () => void; loading: boolean };
 const LoadingContext = createContext<LoadingCtx | undefined>(undefined);
@@ -19,18 +19,7 @@ export const LoadingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     <LoadingContext.Provider value={{ show, hide, loading }}>
       {children}
       {loading && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0,0,0,0.35)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999,
-          pointerEvents: 'auto'
-        }}>
-          <ProgressSpinner />
-        </div>
+        <LoadingSpinner />
       )}
     </LoadingContext.Provider>
   );

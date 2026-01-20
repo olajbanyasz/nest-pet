@@ -1,22 +1,43 @@
-const AUTH_BASE_URL = '/auth';
+const AUTH_BASE_URL = '/api/auth';
+
+export type Role = 'user' | 'admin';
 
 export interface User {
   id: string;
   email: string;
+  role: Role;
   name?: string;
 }
 
 export interface AuthResponse {
   success: boolean;
   message?: string;
-  user?: User; // ❗ user adatok a contextnek
+  user?: User;
+}
+
+interface BackendUser {
+  userId: string;
+  email: string;
+  role: 'USER' | 'ADMIN';
+}
+
+interface LoginResponse {
+  user?: BackendUser;
+  message?: string;
 }
 
 async function fetchJson<T>(response: Response): Promise<T> {
   return (await response.json()) as T;
 }
 
-// Ellenőrzi, hogy be van-e jelentkezve
+function mapBackendUser(user: BackendUser): User {
+  return {
+    id: user.userId,
+    email: user.email,
+    role: user.role.toLowerCase() as Role,
+  };
+}
+
 export const checkAuth = async (): Promise<User | null> => {
   try {
     const response = await fetch(`${AUTH_BASE_URL}/me`, {
@@ -25,15 +46,13 @@ export const checkAuth = async (): Promise<User | null> => {
 
     if (!response.ok) return null;
 
-    const user = await fetchJson<User>(response);
-    return user;
-  } catch (error) {
-    console.error('Error checking auth:', error);
+    const backendUser = await fetchJson<BackendUser>(response);
+    return mapBackendUser(backendUser);
+  } catch {
     return null;
   }
 };
 
-// Login
 export const login = async (
   email: string,
   password: string,
@@ -46,20 +65,24 @@ export const login = async (
       body: JSON.stringify({ email, password }),
     });
 
-    if (!response.ok) {
-      const data = await fetchJson<{ message?: string }>(response);
-      return { success: false, message: data.message || 'Login failed' };
+    const data = await fetchJson<LoginResponse>(response);
+
+    if (!response.ok || !data.user) {
+      return {
+        success: false,
+        message: data.message ?? 'Login failed',
+      };
     }
 
-    const user = await fetchJson<User>(response);
-    return { success: true, user };
-  } catch (error) {
-    console.error('Error during login:', error);
+    return {
+      success: true,
+      user: mapBackendUser(data.user),
+    };
+  } catch {
     return { success: false, message: 'Network error' };
   }
 };
 
-// Regisztráció
 export const register = async (
   email: string,
   password: string,
@@ -72,15 +95,21 @@ export const register = async (
       body: JSON.stringify({ email, password }),
     });
 
-    if (!response.ok) {
-      const data = await fetchJson<{ message?: string }>(response);
-      return { success: false, message: data.message || 'Registration failed' };
-    }
+    const backendUser = await fetchJson<BackendUser>(response);
 
-    const user = await fetchJson<User>(response);
-    return { success: true, user };
-  } catch (error) {
-    console.error('Error during registration:', error);
+    return {
+      success: response.ok,
+      user: mapBackendUser(backendUser),
+      message: response.ok ? 'Registration successful' : 'Registration failed',
+    };
+  } catch {
     return { success: false, message: 'Network error' };
   }
+};
+
+export const logout = async (): Promise<void> => {
+  await fetch(`${AUTH_BASE_URL}/logout`, {
+    method: 'POST',
+    credentials: 'include',
+  });
 };

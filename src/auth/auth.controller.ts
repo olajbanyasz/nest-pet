@@ -33,9 +33,9 @@ export class AuthController {
     const { access_token } = await this.authService.register(registerDto);
     res.cookie('access_token', access_token, {
       httpOnly: true,
-      secure: false, // development
+      secure: false,
       sameSite: 'lax',
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      maxAge: 24 * 60 * 60 * 1000,
     });
     return { message: 'Registration and login successful' };
   }
@@ -45,14 +45,24 @@ export class AuthController {
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const { access_token } = await this.authService.login(loginDto);
+    const { access_token, user } = await this.authService.login(loginDto);
+
     res.cookie('access_token', access_token, {
       httpOnly: true,
-      secure: false, // development
+      secure: false,
       sameSite: 'lax',
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      maxAge: 24 * 60 * 60 * 1000,
     });
-    return { message: 'Login successful' };
+
+    return {
+      message: 'Login successful',
+      user: {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+        name: user.name,
+      },
+    };
   }
 
   @UseGuards(JwtAuthGuard)
