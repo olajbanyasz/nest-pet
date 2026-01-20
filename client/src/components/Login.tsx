@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { checkAuth, login as apiLogin, register as apiRegister, User as ApiUser } from '../api/authApi';
-import { useAuth, User as AuthUser, UserRole } from '../contexts/AuthContext';
+import { useAuth, User as AuthUser } from '../contexts/AuthContext';
 
 function Login() {
   const [isLogin, setIsLogin] = useState(true);

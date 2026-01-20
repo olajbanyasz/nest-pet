@@ -55,25 +55,25 @@ li span {
 }
 
 #navigation-bar  .p-menubar .p-menuitem .p-menuitem-content:hover {
-    background: white !important;
+    background: #f9fafb;
 }
 
 #navigation-bar .p-menubar .p-menuitem.p-focus {
-    background: white !important;
+    background: #f9fafb;
 }
 
 #navigation-bar .p-menubar .p-menuitem .p-menuitem-content:active {
-    background: white !important;
+    background: #f9fafb;
 }
 
 .p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content {
-    background: white !important;
+    background: #f9fafb;
 }
 
 #navigation-bar .p-menubar .p-menuitem.p-highlight > .p-menuitem-content {
-    background: white !important;
+    background: #f9fafb;
 }
 
 #navigation-bar .p-menubar .p-menuitem.p-menuitem-active > .p-menuitem-content {
-    background: white !important;
+    background: #f9fafb;
 }

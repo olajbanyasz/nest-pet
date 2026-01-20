@@ -21,7 +21,7 @@ function Todos() {
     } finally {
       hide();
     }
-  }, [navigate]);
+  }, [navigate, show, hide]);
 
   useEffect(() => {
     fetchTodos();

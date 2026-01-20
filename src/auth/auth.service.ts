@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/require-await */
 import {
   Injectable,
@@ -24,34 +26,40 @@ export class AuthService {
   async register(registerDto: RegisterDto): Promise<{ access_token: string }> {
     const { email, password } = registerDto;
 
-    const existingUser = await this.userModel.findOne({ email });
-    if (existingUser) {
-      throw new ConflictException('User already exists');
+    try {
+      const existingUser = await this.userModel.findOne({ email });
+      if (existingUser) {
+        this.logger.warn(`Registration failed, user already exists: ${email}`);
+        throw new ConflictException('User already exists');
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      const user = new this.userModel({
+        email,
+        password: hashedPassword,
+        role: UserRole.USER,
+      });
+
+      await user.save();
+
+      const payload = {
+        sub: String(user._id),
+        email: user.email,
+        role: user.role,
+      };
+
+      const token = this.jwtService.sign(payload);
+      this.logger.log(`User registered: ${email} (id: ${user._id})`);
+
+      return { access_token: token };
+    } catch (error) {
+      this.logger.error(
+        `Registration error for ${email}: ${error.message}`,
+        error.stack,
+      );
+      throw error;
     }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const user = new this.userModel({
-      email,
-      password: hashedPassword,
-      role: UserRole.USER,
-    });
-
-    await user.save();
-
-    const payload = {
-      sub: String(user._id),
-      email: user.email,
-      role: user.role,
-    };
-
-    this.logger.log(
-      `User ${String(user._id)} registered with role ${user.role}`,
-    );
-
-    return {
-      access_token: this.jwtService.sign(payload),
-    };
   }
 
   async login(
@@ -59,29 +67,43 @@ export class AuthService {
   ): Promise<{ access_token: string; user: UserDocument }> {
     const { email, password } = loginDto;
 
-    const user = await this.userModel.findOne({ email });
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-      throw new UnauthorizedException('Invalid credentials');
+    try {
+      const user = await this.userModel.findOne({ email });
+      if (!user || !(await bcrypt.compare(password, user.password))) {
+        this.logger.warn(`Invalid login attempt for email: ${email}`);
+        throw new UnauthorizedException('Invalid credentials');
+      }
+
+      const payload = {
+        sub: String(user._id),
+        email: user.email,
+        role: user.role,
+      };
+
+      const token = this.jwtService.sign(payload);
+
+      this.logger.log(
+        `User logged in: ${email} (id: ${user._id}, role: ${user.role})`,
+      );
+
+      return { access_token: token, user };
+    } catch (error) {
+      if (!(error instanceof UnauthorizedException)) {
+        this.logger.error(
+          `Login error for ${email}: ${error.message}`,
+          error.stack,
+        );
+      }
+      throw error;
     }
-
-    const payload = {
-      sub: String(user._id),
-      email: user.email,
-      role: user.role,
-    };
-
-    this.logger.log(
-      `User ${String(user._id)} logged in with role ${user.role}`,
-    );
-
-    return {
-      access_token: this.jwtService.sign(payload),
-      user,
-    };
   }
 
-  async logout(): Promise<{ message: string }> {
-    this.logger.log('User logged out');
+  async logout(user?: UserDocument): Promise<{ message: string }> {
+    if (user) {
+      this.logger.log(`User logged out: ${user.email} (id: ${user._id})`);
+    } else {
+      this.logger.log('User logged out (unknown user)');
+    }
     return { message: 'Logout successful' };
   }
 }
