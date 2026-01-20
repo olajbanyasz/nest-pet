@@ -3,6 +3,11 @@ import { AdminService } from './admin.service';
 import { getModelToken } from '@nestjs/mongoose';
 import { User, UserRole } from '../users/schemas/user.schema';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
+import { TodosService } from '../todos/todos.service';
+
+const mockTodosService = {
+  deleteTodosByUser: jest.fn().mockResolvedValue({ deletedCount: 0 }),
+};
 
 describe('AdminService', () => {
   let service: AdminService;
@@ -38,6 +43,7 @@ describe('AdminService', () => {
       providers: [
         AdminService,
         { provide: getModelToken(User.name), useValue: mockModel },
+        { provide: TodosService, useValue: mockTodosService },
       ],
     }).compile();
 
@@ -51,13 +57,12 @@ describe('AdminService', () => {
 
       const result = await service.deleteUser('1');
       expect(result).toEqual({ message: 'User 1 deleted' });
-      expect(mockModel.findById).toHaveBeenCalledWith('1');
+      expect(mockTodosService.deleteTodosByUser).toHaveBeenCalledWith('1');
       expect(mockModel.findByIdAndDelete).toHaveBeenCalledWith('1');
     });
 
     it('should throw NotFoundException if user not found', async () => {
       mockModel.findById.mockResolvedValue(null);
-
       await expect(service.deleteUser('nonexistent')).rejects.toBeInstanceOf(
         NotFoundException,
       );
@@ -65,7 +70,6 @@ describe('AdminService', () => {
 
     it('should throw ForbiddenException if user is admin', async () => {
       mockModel.findById.mockResolvedValue(USER2);
-
       await expect(service.deleteUser('2')).rejects.toBeInstanceOf(
         ForbiddenException,
       );
@@ -75,7 +79,7 @@ describe('AdminService', () => {
   describe('promoteToAdmin', () => {
     it('should promote user to admin', async () => {
       const user = { ...USER1, save: jest.fn().mockResolvedValue(true) };
-      mockModel.findById.mockResolvedValueOnce(user); // fetch user
+      mockModel.findById.mockResolvedValueOnce(user);
       mockModel.findById.mockReturnValueOnce(
         createQueryMock({ ...user, role: UserRole.ADMIN }),
       );
@@ -87,7 +91,6 @@ describe('AdminService', () => {
 
     it('should throw NotFoundException if user not found', async () => {
       mockModel.findById.mockResolvedValue(null);
-
       await expect(
         service.promoteToAdmin('nonexistent'),
       ).rejects.toBeInstanceOf(NotFoundException);
@@ -109,7 +112,6 @@ describe('AdminService', () => {
 
     it('should throw NotFoundException if user not found', async () => {
       mockModel.findById.mockResolvedValue(null);
-
       await expect(service.demoteToUser('nonexistent')).rejects.toBeInstanceOf(
         NotFoundException,
       );

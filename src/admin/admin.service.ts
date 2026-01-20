@@ -7,6 +7,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument, UserRole } from '../users/schemas/user.schema';
+import { TodosService } from '../todos/todos.service';
 
 @Injectable()
 export class AdminService {
@@ -15,6 +16,7 @@ export class AdminService {
   constructor(
     @InjectModel(User.name)
     private readonly userModel: Model<UserDocument>,
+    private readonly todoService: TodosService,
   ) {}
 
   async getUsers(): Promise<User[]> {
@@ -46,6 +48,8 @@ export class AdminService {
       this.logger.warn(`Attempt to delete admin user: ${id}`);
       throw new ForbiddenException('Admin users cannot be deleted');
     }
+
+    await this.todoService.deleteTodosByUser(id);
 
     await this.userModel.findByIdAndDelete(id).exec();
 

@@ -41,7 +41,6 @@ describe('TodosService', () => {
     save: saveMock,
   }));
 
-  // a mongoose Model egyszerre constructor + static metódusok
   const mockTodoModel = Object.assign(mockModelConstructor, mockModel);
 
   beforeEach(async () => {

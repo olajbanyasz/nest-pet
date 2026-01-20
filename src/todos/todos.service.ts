@@ -104,6 +104,16 @@ export class TodosService {
     });
     return deleted;
   }
+
+  async deleteTodosByUser(userId: string): Promise<{ deletedCount: number }> {
+    const result = await this.todoModel
+      .updateMany({ userId, deleted: false }, { deleted: true })
+      .exec();
+
+    this.logger.log(`Deleted todos for user ${userId}`, { userId });
+
+    return { deletedCount: result.modifiedCount };
+  }
 }
 
 function isValidationError(
