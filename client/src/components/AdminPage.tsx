@@ -95,7 +95,7 @@ const AdminPage: React.FC = () => {
 
   return (
     <div className="admin-container">
-      <h1>Admin panel</h1>
+      <h1 style={{ textAlign: "center" }}>Admin panel</h1>
 
       {error && <p style={{ color: 'red' }}>{error}</p>}
 

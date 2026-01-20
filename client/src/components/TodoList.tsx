@@ -16,7 +16,7 @@ interface TodoListProps {
 
 function TodoList({ todos, onToggle, onDelete, onUpdateTitle }: TodoListProps) {
   return (
-    <div style={{ border: '1px solid #ccc', borderRadius: '8px', padding: '20px' }}>
+    <div>
       {todos.map((todo) => (
         <TodoItem
           key={todo._id}

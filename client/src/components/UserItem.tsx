@@ -1,6 +1,7 @@
 import React from 'react';
 import { AdminUser } from '../api/adminApi';
 import { Button } from 'primereact/button';
+import { Checkbox } from 'primereact/checkbox';
 
 interface UserItemProps {
   user: AdminUser;
@@ -46,8 +47,7 @@ const UserItem: React.FC<UserItemProps> = ({
         opacity: isSelf ? 0.7 : 1,
       }}
     >
-      <input
-        type="checkbox"
+      <Checkbox
         checked={isAdmin}
         disabled={isSelf}
         onChange={handlePromoteChange}
