@@ -7,7 +7,7 @@ import {
   promoteUserToAdmin,
   demoteAdminToUser,
   deleteUser,
-  AdminUser,
+  User,
 } from '../api/adminApi';
 import UserList from './UserList';
 
@@ -15,7 +15,7 @@ const AdminPage: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
   const { show, hide } = useLoading();
 
-  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const loadUsers = useCallback(async () => {

@@ -1,10 +1,10 @@
 import React from 'react';
-import { AdminUser } from '../api/adminApi';
+import { User } from '../api/adminApi';
 import { Button } from 'primereact/button';
 import { Checkbox } from 'primereact/checkbox';
 
 interface UserItemProps {
-  user: AdminUser;
+  user: User;
   currentUserId: string;
   onPromote: (id: string) => void;
   onDemote: (id: string) => void;
@@ -66,6 +66,15 @@ const UserItem: React.FC<UserItemProps> = ({
         <div style={{ fontSize: '0.9em', color: '#666' }}>
           {user.email}
         </div>
+      </div>
+
+      <div style={{ width: '100px', textAlign: 'center' }}>
+        <div style={{ fontSize: '0.9em', color: '#666', textAlign: 'center' }}>Last login</div>
+        <div style={{ fontSize: '0.7em', color: '#666', textAlign: 'center' }}>{user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString() : '—'}</div>
+      </div>
+
+      <div style={{ width: '80px', textAlign: 'center', fontSize: '0.9em', color: '#666' }}>
+        Todos: {user.todoCount}
       </div>
 
       <Button

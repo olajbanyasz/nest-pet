@@ -1,9 +1,9 @@
 import React from 'react';
 import UserItem from './UserItem';
-import { AdminUser } from '../api/adminApi';
+import { User } from '../api/adminApi';
 
 interface UserListProps {
-  users: AdminUser[];
+  users: User[];
   currentUserId: string;
   onPromote: (id: string) => void;
   onDemote: (id: string) => void;
