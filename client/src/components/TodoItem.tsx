@@ -33,7 +33,7 @@ function TodoItem({ todo, onToggle, onDelete, onUpdateTitle }: TodoItemProps) {
   };
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
+    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px', borderBottom: '1px solid #ddd', padding: '8px' }}>
       <Checkbox
         checked={todo.completed}
         onChange={() => onToggle(todo._id)}

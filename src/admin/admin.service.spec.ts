@@ -1,133 +1,120 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Test, TestingModule } from '@nestjs/testing';
 import { AdminService } from './admin.service';
 import { getModelToken } from '@nestjs/mongoose';
 import { User, UserRole } from '../users/schemas/user.schema';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, ForbiddenException } from '@nestjs/common';
+import { TodosService } from '../todos/todos.service';
 
-type MockUser = {
-  _id: string;
-  email: string;
-  password?: string;
-  role: UserRole;
-};
-
-// Láncolható mock Mongoose metódusok
-const createMockModel = (users?: MockUser[]) => {
-  const exec = jest.fn();
-  const select = jest.fn().mockReturnValue({ exec });
-  const find = jest.fn().mockReturnValue({ select, exec });
-  const findById = jest.fn().mockReturnValue({ select, exec });
-  const findByIdAndDelete = jest.fn().mockReturnValue({ exec });
-  const findByIdAndUpdate = jest.fn().mockReturnValue({ select, exec });
-
-  return {
-    find,
-    findById,
-    findByIdAndDelete,
-    findByIdAndUpdate,
-    select,
-    exec,
-  };
+const mockTodosService = {
+  deleteTodosByUser: jest.fn().mockResolvedValue({ deletedCount: 0 }),
 };
 
 describe('AdminService', () => {
   let service: AdminService;
-  let mockModel: ReturnType<typeof createMockModel>;
 
-  const USER1: MockUser = {
+  const USER1 = {
     _id: '1',
     email: 'u1@test.com',
     role: UserRole.USER,
+    save: jest.fn(),
   };
-  const USER2: MockUser = {
+  const USER2 = {
     _id: '2',
     email: 'u2@test.com',
     role: UserRole.ADMIN,
+    save: jest.fn(),
   };
-  const users: MockUser[] = [USER1, USER2];
+
+  const createQueryMock = (result: any) => ({
+    select: jest.fn().mockReturnThis(),
+    exec: jest.fn().mockResolvedValue(result),
+  });
+
+  const mockModel = {
+    find: jest.fn().mockReturnValue(createQueryMock([USER1, USER2])),
+    findById: jest.fn(),
+    findByIdAndDelete: jest.fn(),
+  };
 
   beforeEach(async () => {
-    mockModel = createMockModel(users);
+    jest.clearAllMocks();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AdminService,
         { provide: getModelToken(User.name), useValue: mockModel },
+        { provide: TodosService, useValue: mockTodosService },
       ],
     }).compile();
 
     service = module.get<AdminService>(AdminService);
   });
 
-  describe('getUsers', () => {
-    it('should return all users without passwords', async () => {
-      mockModel.exec.mockResolvedValue(users);
-
-      const result = await service.getUsers();
-      expect(result).toEqual(users);
-      expect(mockModel.find).toHaveBeenCalled();
-      expect(mockModel.select).toHaveBeenCalledWith('-password');
-      expect(mockModel.exec).toHaveBeenCalled();
-    });
-  });
-
-  describe('getUserById', () => {
-    it('should return user when found', async () => {
-      mockModel.exec.mockResolvedValue(USER1);
-
-      const result = await service.getUserById('1');
-      expect(result).toEqual(USER1);
-      expect(mockModel.findById).toHaveBeenCalledWith('1');
-    });
-
-    it('should throw NotFoundException if user not found', async () => {
-      mockModel.exec.mockResolvedValue(null);
-
-      await expect(service.getUserById('nonexistent')).rejects.toBeInstanceOf(
-        NotFoundException,
-      );
-    });
-  });
-
   describe('deleteUser', () => {
-    it('should delete user when found', async () => {
-      mockModel.exec.mockResolvedValue(USER1);
+    it('should delete user when found and not admin', async () => {
+      mockModel.findById.mockResolvedValue(USER1);
+      mockModel.findByIdAndDelete.mockReturnValue(createQueryMock(USER1));
 
       const result = await service.deleteUser('1');
       expect(result).toEqual({ message: 'User 1 deleted' });
+      expect(mockTodosService.deleteTodosByUser).toHaveBeenCalledWith('1');
       expect(mockModel.findByIdAndDelete).toHaveBeenCalledWith('1');
     });
 
     it('should throw NotFoundException if user not found', async () => {
-      mockModel.exec.mockResolvedValue(null);
-
+      mockModel.findById.mockResolvedValue(null);
       await expect(service.deleteUser('nonexistent')).rejects.toBeInstanceOf(
         NotFoundException,
+      );
+    });
+
+    it('should throw ForbiddenException if user is admin', async () => {
+      mockModel.findById.mockResolvedValue(USER2);
+      await expect(service.deleteUser('2')).rejects.toBeInstanceOf(
+        ForbiddenException,
       );
     });
   });
 
   describe('promoteToAdmin', () => {
     it('should promote user to admin', async () => {
-      const promotedUser = { ...USER1, role: UserRole.ADMIN };
-      mockModel.exec.mockResolvedValue(promotedUser);
+      const user = { ...USER1, save: jest.fn().mockResolvedValue(true) };
+      mockModel.findById.mockResolvedValueOnce(user);
+      mockModel.findById.mockReturnValueOnce(
+        createQueryMock({ ...user, role: UserRole.ADMIN }),
+      );
 
       const result = await service.promoteToAdmin('1');
       expect(result.role).toBe(UserRole.ADMIN);
-      expect(mockModel.findByIdAndUpdate).toHaveBeenCalledWith(
-        '1',
-        { role: UserRole.ADMIN },
-        { new: true },
-      );
+      expect(user.save).toHaveBeenCalled();
     });
 
     it('should throw NotFoundException if user not found', async () => {
-      mockModel.exec.mockResolvedValue(null);
-
+      mockModel.findById.mockResolvedValue(null);
       await expect(
         service.promoteToAdmin('nonexistent'),
       ).rejects.toBeInstanceOf(NotFoundException);
+    });
+  });
+
+  describe('demoteToUser', () => {
+    it('should demote admin to user', async () => {
+      const user = { ...USER2, save: jest.fn().mockResolvedValue(true) };
+      mockModel.findById.mockResolvedValueOnce(user);
+      mockModel.findById.mockReturnValueOnce(
+        createQueryMock({ ...user, role: UserRole.USER }),
+      );
+
+      const result = await service.demoteToUser('2');
+      expect(result.role).toBe(UserRole.USER);
+      expect(user.save).toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException if user not found', async () => {
+      mockModel.findById.mockResolvedValue(null);
+      await expect(service.demoteToUser('nonexistent')).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
   });
 });

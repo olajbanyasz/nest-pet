@@ -15,7 +15,7 @@ interface AuthContextValue {
   loading: boolean;
   login: (user: User) => void;
   logout: () => void;
-  initialized: boolean; // jelzi, hogy megtörtént a checkAuth
+  initialized: boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -42,7 +42,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null);
       } finally {
         setLoading(false);
-        setInitialized(true); // itt jelzi, hogy az auth check befejeződött
+        setInitialized(true);
       }
     };
     initAuth();
