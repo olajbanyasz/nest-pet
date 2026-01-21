@@ -19,6 +19,7 @@ interface BackendUser {
   userId: string;
   email: string;
   role: 'USER' | 'ADMIN';
+  name?: string;
 }
 
 interface LoginResponse {
@@ -35,6 +36,7 @@ function mapBackendUser(user: BackendUser): User {
     id: user.userId,
     email: user.email,
     role: user.role.toLowerCase() as Role,
+    name: user.name,
   };
 }
 
@@ -84,6 +86,7 @@ export const login = async (
 };
 
 export const register = async (
+  name: string,
   email: string,
   password: string,
 ): Promise<AuthResponse> => {
@@ -92,7 +95,7 @@ export const register = async (
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ name, email, password }),
     });
 
     const backendUser = await fetchJson<BackendUser>(response);

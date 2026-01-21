@@ -24,6 +24,9 @@ export class User {
 
   @Prop({ required: false, type: String })
   name?: string;
+
+  @Prop({ type: Date })
+  lastLoginAt?: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

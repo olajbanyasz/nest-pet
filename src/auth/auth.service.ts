@@ -24,7 +24,7 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto): Promise<{ access_token: string }> {
-    const { email, password } = registerDto;
+    const { email, password, name } = registerDto;
 
     try {
       const existingUser = await this.userModel.findOne({ email });
@@ -39,6 +39,7 @@ export class AuthService {
         email,
         password: hashedPassword,
         role: UserRole.USER,
+        name,
       });
 
       await user.save();
@@ -47,6 +48,7 @@ export class AuthService {
         sub: String(user._id),
         email: user.email,
         role: user.role,
+        name: user.name,
       };
 
       const token = this.jwtService.sign(payload);
@@ -74,10 +76,14 @@ export class AuthService {
         throw new UnauthorizedException('Invalid credentials');
       }
 
+      user.lastLoginAt = new Date();
+      await user.save();
+
       const payload = {
         sub: String(user._id),
         email: user.email,
         role: user.role,
+        name: user.name,
       };
 
       const token = this.jwtService.sign(payload);

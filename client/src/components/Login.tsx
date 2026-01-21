@@ -5,6 +5,7 @@ import { useAuth, User as AuthUser } from '../contexts/AuthContext';
 
 function Login() {
   const [isLogin, setIsLogin] = useState(true);
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
@@ -15,23 +16,23 @@ function Login() {
 
   const from = (location.state as any)?.from?.pathname || '/todos';
 
-useEffect(() => {
-  if (initialized) return;
-  const checkAuthStatus = async () => {
-    const user: ApiUser | null = await checkAuth();
-    if (user) {
-      const normalizedUser: AuthUser = {
-        id: user.id,
-        email: user.email,
-        name: user.name ?? undefined,
-        role: user.role.toLowerCase() === 'admin' ? 'admin' : 'user',
-      };
-      authLogin(normalizedUser);
-      navigate(from, { replace: true });
-    }
-  };
-  checkAuthStatus();
-}, [authLogin, navigate, from, initialized]);
+  useEffect(() => {
+    if (initialized) return;
+    const checkAuthStatus = async () => {
+      const user: ApiUser | null = await checkAuth();
+      if (user) {
+        const normalizedUser: AuthUser = {
+          id: user.id,
+          email: user.email,
+          name: user.name || 'Anonimous',
+          role: user.role.toLowerCase() === 'admin' ? 'admin' : 'user',
+        };
+        authLogin(normalizedUser);
+        navigate(from, { replace: true });
+      }
+    };
+    checkAuthStatus();
+  }, [authLogin, navigate, from, initialized]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,7 +54,7 @@ useEffect(() => {
         setMessage(result.message || 'Login failed');
       }
     } else {
-      const result = await apiRegister(email, password);
+      const result = await apiRegister(name, email, password);
       setMessage(result.message || '');
     }
   };
@@ -64,6 +65,16 @@ useEffect(() => {
         <h1>{isLogin ? 'Login' : 'Register'}</h1>
 
         <form onSubmit={handleSubmit}>
+          {!isLogin && <div style={{ width: '100%' }}>
+            <label>Name:</label>
+            <input
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              required
+              style={{ width: '100%' }}
+            />
+          </div>}
           <div style={{ width: '100%' }}>
             <label>Email:</label>
             <input

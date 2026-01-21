@@ -43,8 +43,7 @@ const UserItem: React.FC<UserItemProps> = ({
         alignItems: 'center',
         padding: '8px',
         borderBottom: '1px solid #ddd',
-        gap: '12px',
-        opacity: isSelf ? 0.7 : 1,
+        gap: '12px'
       }}
     >
       <Checkbox
