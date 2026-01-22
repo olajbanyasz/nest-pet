@@ -30,7 +30,7 @@ function mapBackendUser(user: BackendUser): User {
     name: user.name,
     createdAt: user.createdAt,
     lastLoginAt: user.lastLoginAt,
-    todoCount: user.todoCount
+    todoCount: user.todoCount,
   };
 }
 

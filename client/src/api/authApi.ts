@@ -147,7 +147,11 @@ export async function fetchWithAuth<T>(
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 
-  let response = await fetch(url, { ...options, headers, credentials: 'include' });
+  let response = await fetch(url, {
+    ...options,
+    headers,
+    credentials: 'include',
+  });
 
   if (response.status === 401) {
     const refreshed = await refreshAccessToken();
@@ -157,11 +161,18 @@ export async function fetchWithAuth<T>(
         ...(options.headers || {}),
         ...(newToken ? { Authorization: `Bearer ${newToken}` } : {}),
       };
-      response = await fetch(url, { ...options, headers: newHeaders, credentials: 'include' });
+      response = await fetch(url, {
+        ...options,
+        headers: newHeaders,
+        credentials: 'include',
+      });
     }
   }
 
-  if (!response.ok) throw new Error(`Request failed with status ${response.status}`);
+  if (!response.ok)
+    throw new Error(`Request failed with status ${response.status}`);
 
   return fetchJson<T>(response);
 }
+
+export class AuthExpiredError extends Error {}
