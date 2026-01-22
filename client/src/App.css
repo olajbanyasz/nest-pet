@@ -77,3 +77,8 @@ li span {
 #navigation-bar .p-menubar .p-menuitem.p-menuitem-active > .p-menuitem-content {
     background: #f9fafb;
 }
+
+.p-disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}

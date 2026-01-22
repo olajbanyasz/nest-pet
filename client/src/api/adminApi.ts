@@ -2,15 +2,19 @@ const ADMIN_BASE_URL = '/api/admin';
 
 export type Role = 'user' | 'admin';
 
-export interface AdminUser {
+export interface User {
   id: string;
   email: string;
   role: Role;
   name?: string;
   createdAt?: string;
+  lastLoginAt?: string;
+  todoCount?: number;
 }
 
 interface BackendUser {
+  lastLoginAt: string | undefined;
+  todoCount: number | undefined;
   _id: string;
   email: string;
   role: 'USER' | 'ADMIN';
@@ -18,13 +22,15 @@ interface BackendUser {
   createdAt?: string;
 }
 
-function mapBackendUser(user: BackendUser): AdminUser {
+function mapBackendUser(user: BackendUser): User {
   return {
     id: user._id,
     email: user.email,
     role: user.role.toLowerCase() as Role,
     name: user.name,
     createdAt: user.createdAt,
+    lastLoginAt: user.lastLoginAt,
+    todoCount: user.todoCount
   };
 }
 
@@ -36,11 +42,7 @@ async function fetchJson<T>(response: Response): Promise<T> {
   return (await response.json()) as T;
 }
 
-/* ======================
-   API CALLS
-====================== */
-
-export const getUsers = async (): Promise<AdminUser[]> => {
+export const getUsers = async (): Promise<User[]> => {
   const response = await fetch(`${ADMIN_BASE_URL}/users`, {
     credentials: 'include',
   });
@@ -49,7 +51,7 @@ export const getUsers = async (): Promise<AdminUser[]> => {
   return users.map(mapBackendUser);
 };
 
-export const getUserById = async (id: string): Promise<AdminUser> => {
+export const getUserById = async (id: string): Promise<User> => {
   const response = await fetch(`${ADMIN_BASE_URL}/users/${id}`, {
     credentials: 'include',
   });
@@ -69,7 +71,7 @@ export const deleteUser = async (id: string): Promise<void> => {
   }
 };
 
-export const promoteUserToAdmin = async (id: string): Promise<AdminUser> => {
+export const promoteUserToAdmin = async (id: string): Promise<User> => {
   const response = await fetch(`${ADMIN_BASE_URL}/users/${id}/promote`, {
     method: 'PATCH',
     credentials: 'include',
@@ -79,7 +81,7 @@ export const promoteUserToAdmin = async (id: string): Promise<AdminUser> => {
   return mapBackendUser(user);
 };
 
-export const demoteAdminToUser = async (id: string): Promise<AdminUser> => {
+export const demoteAdminToUser = async (id: string): Promise<User> => {
   const response = await fetch(`${ADMIN_BASE_URL}/users/${id}/demote`, {
     method: 'PATCH',
     credentials: 'include',

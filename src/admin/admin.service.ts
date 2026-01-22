@@ -5,7 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import mongoose, { Model } from 'mongoose';
 import { User, UserDocument, UserRole } from '../users/schemas/user.schema';
 import { TodosService } from '../todos/todos.service';
 
@@ -19,9 +19,26 @@ export class AdminService {
     private readonly todoService: TodosService,
   ) {}
 
-  async getUsers(): Promise<User[]> {
-    this.logger.log('Fetching all users');
-    return this.userModel.find().select('-password').exec();
+  async getUsers(): Promise<
+    (User & { lastLogin?: Date; todoCount: number })[]
+  > {
+    const users = await this.userModel.find().select('-password').exec();
+
+    const usersWithExtras = await Promise.all(
+      users.map(async (user) => {
+        const todoCount = await this.todoService.countTodosByUser(
+          new mongoose.Types.ObjectId(user._id),
+        );
+
+        return {
+          ...user.toObject(),
+          lastLoginAt: user.lastLoginAt,
+          todoCount,
+        };
+      }),
+    );
+
+    return usersWithExtras;
   }
 
   async getUserById(id: string): Promise<User> {
