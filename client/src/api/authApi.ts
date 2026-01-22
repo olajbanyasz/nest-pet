@@ -23,6 +23,7 @@ interface BackendUser {
 }
 
 interface LoginResponse {
+  access_token: string;
   user?: BackendUser;
   message?: string;
 }
@@ -40,21 +41,6 @@ function mapBackendUser(user: BackendUser): User {
   };
 }
 
-export const checkAuth = async (): Promise<User | null> => {
-  try {
-    const response = await fetch(`${AUTH_BASE_URL}/me`, {
-      credentials: 'include',
-    });
-
-    if (!response.ok) return null;
-
-    const backendUser = await fetchJson<BackendUser>(response);
-    return mapBackendUser(backendUser);
-  } catch {
-    return null;
-  }
-};
-
 export const login = async (
   email: string,
   password: string,
@@ -69,16 +55,16 @@ export const login = async (
 
     const data = await fetchJson<LoginResponse>(response);
 
-    if (!response.ok || !data.user) {
+    if (!response.ok) {
       return {
         success: false,
-        message: data.message ?? 'Login failed',
+        message: data?.message ?? 'Login failed',
       };
     }
 
     return {
       success: true,
-      user: mapBackendUser(data.user),
+      message: data?.message,
     };
   } catch {
     return { success: false, message: 'Network error' };
@@ -98,21 +84,84 @@ export const register = async (
       body: JSON.stringify({ name, email, password }),
     });
 
-    const backendUser = await fetchJson<BackendUser>(response);
+    const data = await fetchJson<LoginResponse>(response);
 
-    return {
-      success: response.ok,
-      user: mapBackendUser(backendUser),
-      message: response.ok ? 'Registration successful' : 'Registration failed',
-    };
+    if (!response.ok || !data.access_token || !data.user) {
+      return { success: false, message: 'Registration failed' };
+    }
+
+    window.sessionStorage.setItem('access_token', data.access_token);
+
+    return { success: true, user: mapBackendUser(data.user) };
   } catch {
     return { success: false, message: 'Network error' };
   }
 };
 
 export const logout = async (): Promise<void> => {
-  await fetch(`${AUTH_BASE_URL}/logout`, {
-    method: 'POST',
-    credentials: 'include',
-  });
+  try {
+    await fetch(`${AUTH_BASE_URL}/logout`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+  } finally {
+    window.sessionStorage.removeItem('access_token');
+  }
 };
+
+export const checkAuth = async (): Promise<User | null> => {
+  try {
+    return await fetchWithAuth<User>(`${AUTH_BASE_URL}/me`);
+  } catch {
+    return null;
+  }
+};
+
+export const refreshAccessToken = async (): Promise<boolean> => {
+  try {
+    const response = await fetch(`${AUTH_BASE_URL}/refresh`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+
+    if (!response.ok) return false;
+
+    const data = await fetchJson<{ access_token: string }>(response);
+
+    window.sessionStorage.setItem('access_token', data.access_token);
+
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+export async function fetchWithAuth<T>(
+  url: string,
+  options: RequestInit = {},
+): Promise<T> {
+  const token = window.sessionStorage.getItem('access_token');
+
+  const headers = {
+    ...(options.headers || {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+
+  let response = await fetch(url, { ...options, headers, credentials: 'include' });
+
+  if (response.status === 401) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) {
+      const newToken = window.sessionStorage.getItem('access_token');
+      const newHeaders = {
+        ...(options.headers || {}),
+        ...(newToken ? { Authorization: `Bearer ${newToken}` } : {}),
+      };
+      response = await fetch(url, { ...options, headers: newHeaders, credentials: 'include' });
+    }
+  }
+
+  if (!response.ok) throw new Error(`Request failed with status ${response.status}`);
+
+  return fetchJson<T>(response);
+}
