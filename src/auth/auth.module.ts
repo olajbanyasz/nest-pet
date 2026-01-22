@@ -6,6 +6,10 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { User, UserSchema } from '../users/schemas/user.schema';
+import {
+  RefreshToken,
+  RefreshTokenSchema,
+} from './schemas/refresh-token.schema';
 
 @Module({
   imports: [
@@ -14,7 +18,13 @@ import { User, UserSchema } from '../users/schemas/user.schema';
       secret: process.env.JWT_SECRET || 'secretKey',
       signOptions: { expiresIn: '1d' },
     }),
-    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+    MongooseModule.forFeature([
+      { name: User.name, schema: UserSchema },
+      {
+        name: RefreshToken.name,
+        schema: RefreshTokenSchema,
+      },
+    ]),
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],
