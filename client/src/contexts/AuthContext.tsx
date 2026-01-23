@@ -1,5 +1,17 @@
-import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
-import { checkAuth as apiCheckAuth, login as apiLogin, logout as apiLogout, refreshAccessToken, AuthResponse } from '../api/authApi';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useRef,
+} from 'react';
+import {
+  checkAuth as apiCheckAuth,
+  login as apiLogin,
+  logout as apiLogout,
+  refreshAccessToken,
+  AuthResponse,
+} from '../api/authApi';
 
 export type UserRole = 'user' | 'admin';
 
@@ -21,17 +33,27 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [user, setUser] = useState<User | null>(null);
   const [initialized, setInitialized] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const isMounted = useRef(true);
+  const loadUser = async (options?: { skipTokenCheck?: boolean }) => {
+    const token = sessionStorage.getItem('access_token');
 
-  const loadUser = async () => {
+    if (!token && !options?.skipTokenCheck) {
+      console.log('[Auth] No token, skipping loadUser');
+      setUser(null);
+      return;
+    }
+
     try {
       console.log('[Auth] Loading user...');
       const backendUser = await apiCheckAuth();
+
       if (!isMounted.current) return;
 
       if (backendUser) {
@@ -39,11 +61,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser({
           id: backendUser.id,
           email: backendUser.email,
-          role: backendUser.role.toLowerCase() === 'admin' ? 'admin' : 'user',
+          role:
+            backendUser.role.toLowerCase() === 'admin'
+              ? 'admin'
+              : 'user',
           name: backendUser.name,
         });
       } else {
-        console.log('[Auth] No user, set null');
+        console.log('[Auth] No user from backend');
         setUser(null);
       }
     } catch (err) {
@@ -54,53 +79,66 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     isMounted.current = true;
+
     loadUser().finally(() => {
       setInitialized(true);
       setLoading(false);
       console.log('[Auth] Initialized');
     });
+
     return () => {
       isMounted.current = false;
     };
   }, []);
 
-  const login = async (email: string, password: string): Promise<AuthResponse> => {
+  const login = async (
+    email: string,
+    password: string,
+  ): Promise<AuthResponse> => {
     console.log('[Auth] Login attempt:', email);
     const result = await apiLogin(email, password);
+
     if (result.success) {
-      await loadUser();
+      await loadUser({ skipTokenCheck: true });
     }
+
     return result;
   };
 
   const logout = () => {
     console.log('[Auth] Logout called');
-    apiLogout().catch(err => console.log('[Auth] Logout API error', err));
-    setUser(null);
+    apiLogout().catch((err) =>
+      console.log('[Auth] Logout API error', err),
+    );
     sessionStorage.removeItem('access_token');
+    setUser(null);
   };
 
   const refresh = async (): Promise<boolean> => {
     console.log('[Auth] Refresh token...');
-    const token = sessionStorage.getItem('access_token');
-    if (!token) {
-      console.log('[Auth] No token, cannot refresh');
-      setUser(null);
-      return false;
-    }
-
     const refreshed = await refreshAccessToken();
+
     if (!refreshed) {
-      console.log('[Auth] Refresh failed, logging out');
+      console.log('[Auth] Refresh failed, logout');
       logout();
       return false;
     }
+
     await loadUser();
     return true;
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, initialized, login, logout, refresh }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        initialized,
+        login,
+        logout,
+        refresh,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -108,6 +146,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useAuth = (): AuthContextValue => {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  if (!ctx) {
+    throw new Error('useAuth must be used within AuthProvider');
+  }
   return ctx;
 };

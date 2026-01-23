@@ -10,10 +10,12 @@ import {
   updateTodoTitle,
   Todo,
 } from '../api/todosApi';
+import { useAuth } from '../contexts/AuthContext';
 
 function Todos() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const { show, hide } = useLoading();
+  const { user, initialized } = useAuth();
 
   const fetchTodos = useCallback(async () => {
     show();
@@ -24,6 +26,15 @@ function Todos() {
       hide();
     }
   }, [show, hide]);
+
+  useEffect(() => {
+  if (!initialized) return;
+  if (!user) return;
+
+  fetchTodos().catch(err => {
+    console.error('[Todos] fetchTodos error', err);
+  });
+}, [initialized, user]);
 
   useEffect(() => {
     fetchTodos();

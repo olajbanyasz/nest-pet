@@ -12,7 +12,7 @@ import {
 import UserList from './UserList';
 
 const AdminPage: React.FC = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, initialized } = useAuth();
   const { show, hide } = useLoading();
 
   const [users, setUsers] = useState<User[]>([]);
@@ -33,6 +33,9 @@ const AdminPage: React.FC = () => {
   }, [show, hide]);
 
   useEffect(() => {
+    if (!initialized || !user) {
+      return;
+    }
     if (user?.role === 'admin') {
       loadUsers();
     }
