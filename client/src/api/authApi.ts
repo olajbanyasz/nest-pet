@@ -1,4 +1,6 @@
-const AUTH_BASE_URL = '/api/auth';
+import api from './axios';
+
+const AUTH_BASE_URL = '/auth';
 
 export type Role = 'user' | 'admin';
 
@@ -28,10 +30,6 @@ interface LoginResponse {
   message?: string;
 }
 
-async function fetchJson<T>(response: Response): Promise<T> {
-  return (await response.json()) as T;
-}
-
 function mapBackendUser(user: BackendUser): User {
   return {
     id: user.userId,
@@ -41,33 +39,39 @@ function mapBackendUser(user: BackendUser): User {
   };
 }
 
+// Type-guard az Axios error-hoz
+function isAxiosError(
+  err: unknown,
+): err is { response?: { data?: { message?: string } } } {
+  return typeof err === 'object' && err !== null && 'response' in err;
+}
+
 export const login = async (
   email: string,
   password: string,
 ): Promise<AuthResponse> => {
   try {
-    const response = await fetch(`${AUTH_BASE_URL}/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ email, password }),
+    const res = await api.post<LoginResponse>(`${AUTH_BASE_URL}/login`, {
+      email,
+      password,
     });
 
-    const data = await fetchJson<LoginResponse>(response);
-
-    if (!response.ok) {
-      return {
-        success: false,
-        message: data?.message ?? 'Login failed',
-      };
+    if (res.data.access_token) {
+      sessionStorage.setItem('access_token', res.data.access_token);
     }
 
     return {
       success: true,
-      message: data?.message,
+      message: res.data.message,
+      user: res.data.user ? mapBackendUser(res.data.user) : undefined,
     };
-  } catch {
-    return { success: false, message: 'Network error' };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      message: isAxiosError(err)
+        ? (err.response?.data?.message ?? 'Login failed')
+        : 'Login failed',
+    };
   }
 };
 
@@ -77,41 +81,50 @@ export const register = async (
   password: string,
 ): Promise<AuthResponse> => {
   try {
-    const response = await fetch(`${AUTH_BASE_URL}/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ name, email, password }),
+    const res = await api.post<LoginResponse>(`${AUTH_BASE_URL}/register`, {
+      name,
+      email,
+      password,
     });
 
-    const data = await fetchJson<LoginResponse>(response);
-
-    if (!response.ok || !data.access_token || !data.user) {
+    if (!res.data.access_token || !res.data.user) {
       return { success: false, message: 'Registration failed' };
     }
 
-    window.sessionStorage.setItem('access_token', data.access_token);
+    sessionStorage.setItem('access_token', res.data.access_token);
 
-    return { success: true, user: mapBackendUser(data.user) };
-  } catch {
-    return { success: false, message: 'Network error' };
+    return {
+      success: true,
+      user: mapBackendUser(res.data.user),
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      message: isAxiosError(err)
+        ? (err.response?.data?.message ?? 'Registration failed')
+        : 'Registration failed',
+    };
   }
 };
 
 export const logout = async (): Promise<void> => {
   try {
-    await fetch(`${AUTH_BASE_URL}/logout`, {
-      method: 'POST',
-      credentials: 'include',
-    });
+    await api.post(
+      `${AUTH_BASE_URL}/logout`,
+      {},
+      { headers: { 'X-Skip-Interceptor': 'true' } },
+    );
+  } catch (err: unknown) {
+    console.log('[authApi] Logout API error', err);
   } finally {
-    window.sessionStorage.removeItem('access_token');
+    sessionStorage.removeItem('access_token');
   }
 };
 
 export const checkAuth = async (): Promise<User | null> => {
   try {
-    return await fetchWithAuth<User>(`${AUTH_BASE_URL}/me`);
+    const res = await api.get<BackendUser>(`${AUTH_BASE_URL}/me`);
+    return mapBackendUser(res.data);
   } catch {
     return null;
   }
@@ -119,60 +132,12 @@ export const checkAuth = async (): Promise<User | null> => {
 
 export const refreshAccessToken = async (): Promise<boolean> => {
   try {
-    const response = await fetch(`${AUTH_BASE_URL}/refresh`, {
-      method: 'POST',
-      credentials: 'include',
-    });
-
-    if (!response.ok) return false;
-
-    const data = await fetchJson<{ access_token: string }>(response);
-
-    window.sessionStorage.setItem('access_token', data.access_token);
-
+    const res = await api.post<{ access_token: string }>(
+      `${AUTH_BASE_URL}/refresh`,
+    );
+    sessionStorage.setItem('access_token', res.data.access_token);
     return true;
   } catch {
     return false;
   }
 };
-
-export async function fetchWithAuth<T>(
-  url: string,
-  options: RequestInit = {},
-): Promise<T> {
-  const token = window.sessionStorage.getItem('access_token');
-
-  const headers = {
-    ...(options.headers || {}),
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-
-  let response = await fetch(url, {
-    ...options,
-    headers,
-    credentials: 'include',
-  });
-
-  if (response.status === 401) {
-    const refreshed = await refreshAccessToken();
-    if (refreshed) {
-      const newToken = window.sessionStorage.getItem('access_token');
-      const newHeaders = {
-        ...(options.headers || {}),
-        ...(newToken ? { Authorization: `Bearer ${newToken}` } : {}),
-      };
-      response = await fetch(url, {
-        ...options,
-        headers: newHeaders,
-        credentials: 'include',
-      });
-    }
-  }
-
-  if (!response.ok)
-    throw new Error(`Request failed with status ${response.status}`);
-
-  return fetchJson<T>(response);
-}
-
-export class AuthExpiredError extends Error {}
