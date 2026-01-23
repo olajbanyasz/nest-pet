@@ -32,7 +32,7 @@ function Todos() {
     } catch (error: any) {
       console.error('Error fetching todos:', error);
 
-      if (error?.message?.includes('401')) {
+      if (error?.statusCode === 401) {
         handleAuthError();
       }
     } finally {

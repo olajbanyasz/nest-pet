@@ -10,21 +10,31 @@ import {
   User,
 } from '../api/adminApi';
 import UserList from './UserList';
+import { useNavigate } from 'react-router-dom';
 
 const AdminPage: React.FC = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, logout } = useAuth();
+  const navigate = useNavigate();
   const { show, hide } = useLoading();
 
   const [users, setUsers] = useState<User[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+    const handleAuthError = useCallback(() => {
+      logout();
+      navigate('/login', { replace: true });
+    }, [logout, navigate]);
 
   const loadUsers = useCallback(async () => {
     try {
       show();
       const data = await getUsers();
       setUsers(data);
-    } catch (err) {
-      console.error(err);
+    } catch (error: any) {
+      console.error(error);
+      if (error?.statusCode === 401) {
+        handleAuthError();
+      }
       setError('Failed to load users');
     } finally {
       hide();
