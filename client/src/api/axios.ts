@@ -1,10 +1,6 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { refreshAccessToken, logout } from './authApi';
 
-/**
- * Kiterjesztjük az Axios configot egy retry flaggel
- * (így nem kell any-zni)
- */
 interface RetryAxiosRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
 }
@@ -32,9 +28,6 @@ const processQueue = (error: Error | null, token: string | null): void => {
   failedQueue = [];
 };
 
-/* =========================
-   REQUEST INTERCEPTOR
-   ========================= */
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const token = sessionStorage.getItem('access_token');
 
@@ -45,32 +38,25 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   return config;
 });
 
-/* =========================
-   RESPONSE INTERCEPTOR
-   ========================= */
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError): Promise<never> => {
     const originalRequest = error.config as RetryAxiosRequestConfig | undefined;
 
-    // nincs config → engedjük tovább
     if (!originalRequest) {
       return Promise.reject(new Error('Axios error without config'));
     }
 
-    // skip interceptor (logout, refresh stb.)
     if (originalRequest.headers?.['X-Skip-Interceptor']) {
       return Promise.reject(new Error('Interceptor skipped'));
     }
 
-    // nem 401 vagy már retry-oltuk
     if (error.response?.status !== 401 || originalRequest._retry) {
       return Promise.reject(new Error(error.message || 'Request failed'));
     }
 
     originalRequest._retry = true;
 
-    /* ======== ha már refresh folyamatban ======== */
     if (isRefreshing) {
       return new Promise((resolve, reject) => {
         failedQueue.push({ resolve, reject });

@@ -39,7 +39,6 @@ function mapBackendUser(user: BackendUser): User {
   };
 }
 
-// Type-guard az Axios error-hoz
 function isAxiosError(
   err: unknown,
 ): err is { response?: { data?: { message?: string } } } {
