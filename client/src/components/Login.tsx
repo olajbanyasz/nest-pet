@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { checkAuth, login as apiLogin, register as apiRegister, User as ApiUser } from '../api/authApi';
-import { useAuth, User as AuthUser } from '../contexts/AuthContext';
+import { register as apiRegister } from '../api/authApi';
+import { useAuth } from '../contexts/AuthContext';
 
-function Login() {
+const Login: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -12,50 +12,51 @@ function Login() {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const { login: authLogin, initialized } = useAuth();
+  const { login: authLogin, user, initialized } = useAuth();
 
   const from = (location.state as any)?.from?.pathname || '/todos';
 
   useEffect(() => {
-    if (initialized) return;
-    const checkAuthStatus = async () => {
-      const user: ApiUser | null = await checkAuth();
-      if (user) {
-        const normalizedUser: AuthUser = {
-          id: user.id,
-          email: user.email,
-          name: user.name || 'Anonimous',
-          role: user.role.toLowerCase() === 'admin' ? 'admin' : 'user',
-        };
-        authLogin(normalizedUser);
+    console.log('[Login] useEffect triggered: initialized=', initialized, 'user=', user);
+    if (!initialized) return;
+
+    if (user) {
+      console.log('[Login] Navigating to:', from);
+      if (window.location.pathname !== from) {
         navigate(from, { replace: true });
       }
-    };
-    checkAuthStatus();
-  }, [authLogin, navigate, from, initialized]);
+    }
+  }, [initialized, user, navigate, from]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage('');
 
-    if (isLogin) {
-      const result = await apiLogin(email, password);
-
-      if (result.success && result.user) {
-        const normalizedUser: AuthUser = {
-          id: result.user.id,
-          email: result.user.email,
-          name: result.user.name ?? undefined,
-          role: result.user.role.toLowerCase() === 'admin' ? 'admin' : 'user',
-        };
-        authLogin(normalizedUser);
-        navigate(from, { replace: true });
+    try {
+      if (isLogin) {
+        console.log('[Login] Logging in:', email);
+        const result = await authLogin(email, password);
+        if (!result.success) {
+          setMessage(result.message || 'Login failed');
+          console.log('[Login] Login failed:', result.message);
+        }
       } else {
-        setMessage(result.message || 'Login failed');
+        console.log('[Login] Registering:', email);
+        const result = await apiRegister(name, email, password);
+        if (!result.success) {
+          setMessage(result.message || 'Registration failed');
+          console.log('[Login] Registration failed:', result.message);
+        } else {
+          const loginResult = await authLogin(email, password);
+          if (!loginResult.success) {
+            setMessage(loginResult.message || 'Login after registration failed');
+            console.log('[Login] Login after registration failed');
+          }
+        }
       }
-    } else {
-      const result = await apiRegister(name, email, password);
-      setMessage(result.message || '');
+    } catch (err) {
+      console.log('[Login] Unexpected error', err);
+      setMessage('Unexpected error occurred');
     }
   };
 
@@ -63,56 +64,32 @@ function Login() {
     <div className="login-container">
       <div style={{ width: '250px', margin: '0 auto' }}>
         <h1>{isLogin ? 'Login' : 'Register'}</h1>
-
         <form onSubmit={handleSubmit}>
-          {!isLogin && <div style={{ width: '100%' }}>
-            <label>Name:</label>
-            <input
-              type="text"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              required
-              style={{ width: '100%' }}
-            />
-          </div>}
+          {!isLogin && (
+            <div style={{ width: '100%' }}>
+              <label>Name:</label>
+              <input type="text" value={name} onChange={e => setName(e.target.value)} required style={{ width: '100%' }} />
+            </div>
+          )}
           <div style={{ width: '100%' }}>
             <label>Email:</label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-              style={{ width: '100%' }}
-            />
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} required style={{ width: '100%' }} />
           </div>
-
           <div style={{ width: '100%' }}>
             <label>Password:</label>
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-              style={{ width: '100%' }}
-            />
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)} required style={{ width: '100%' }} />
           </div>
-
           <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', marginTop: '10px' }}>
             <button type="submit">{isLogin ? 'Login' : 'Register'}</button>
-            <button
-              type="button"
-              onClick={() => setIsLogin(!isLogin)}
-              style={{ marginLeft: '10px' }}
-            >
+            <button type="button" onClick={() => setIsLogin(!isLogin)} style={{ marginLeft: '10px' }}>
               Switch to {isLogin ? 'Register' : 'Login'}
             </button>
           </div>
         </form>
-
-        {message && <p>{message}</p>}
+        {message && <p style={{ color: 'red' }}>{message}</p>}
       </div>
     </div>
   );
-}
+};
 
 export default Login;

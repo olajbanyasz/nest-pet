@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 import {
   Controller,
   Post,
@@ -30,13 +34,23 @@ export class AuthController {
     @Body() registerDto: RegisterDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const { access_token } = await this.authService.register(registerDto);
+    const { access_token, refresh_token } =
+      await this.authService.register(registerDto);
+
     res.cookie('access_token', access_token, {
       httpOnly: true,
       secure: false,
       sameSite: 'lax',
-      maxAge: 24 * 60 * 60 * 1000,
+      maxAge: 15 * 60 * 1000,
     });
+
+    res.cookie('refresh_token', refresh_token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
     return { message: 'Registration and login successful' };
   }
 
@@ -45,13 +59,21 @@ export class AuthController {
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const { access_token, user } = await this.authService.login(loginDto);
+    const { access_token, refresh_token, user } =
+      await this.authService.login(loginDto);
 
     res.cookie('access_token', access_token, {
       httpOnly: true,
       secure: false,
       sameSite: 'lax',
-      maxAge: 24 * 60 * 60 * 1000,
+      maxAge: 15 * 60 * 1000,
+    });
+
+    res.cookie('refresh_token', refresh_token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     return {
@@ -65,18 +87,49 @@ export class AuthController {
     };
   }
 
+  @Post('refresh')
+  async refresh(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const refreshToken = req.cookies?.refresh_token;
+
+    const { access_token, refresh_token } =
+      await this.authService.refreshTokens(refreshToken);
+
+    res.cookie('access_token', access_token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      maxAge: 15 * 60 * 1000,
+    });
+
+    res.cookie('refresh_token', refresh_token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return { message: 'Token refreshed' };
+  }
+
   @UseGuards(JwtAuthGuard)
   @Post('logout')
-  // eslint-disable-next-line @typescript-eslint/require-await
-  async logout(@Res({ passthrough: true }) res: Response) {
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const userId = req.user?.sub;
+
+    await this.authService.logout(userId);
+
     res.clearCookie('access_token');
+    res.clearCookie('refresh_token');
+
     return { message: 'Logout successful' };
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
   getProfile(@Req() req: Request) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return req.user;
   }
 }

@@ -1,4 +1,6 @@
-const AUTH_BASE_URL = '/api/auth';
+import api from './axios';
+
+const AUTH_BASE_URL = '/auth';
 
 export type Role = 'user' | 'admin';
 
@@ -23,12 +25,9 @@ interface BackendUser {
 }
 
 interface LoginResponse {
+  access_token: string;
   user?: BackendUser;
   message?: string;
-}
-
-async function fetchJson<T>(response: Response): Promise<T> {
-  return (await response.json()) as T;
 }
 
 function mapBackendUser(user: BackendUser): User {
@@ -40,48 +39,38 @@ function mapBackendUser(user: BackendUser): User {
   };
 }
 
-export const checkAuth = async (): Promise<User | null> => {
-  try {
-    const response = await fetch(`${AUTH_BASE_URL}/me`, {
-      credentials: 'include',
-    });
-
-    if (!response.ok) return null;
-
-    const backendUser = await fetchJson<BackendUser>(response);
-    return mapBackendUser(backendUser);
-  } catch {
-    return null;
-  }
-};
+function isAxiosError(
+  err: unknown,
+): err is { response?: { data?: { message?: string } } } {
+  return typeof err === 'object' && err !== null && 'response' in err;
+}
 
 export const login = async (
   email: string,
   password: string,
 ): Promise<AuthResponse> => {
   try {
-    const response = await fetch(`${AUTH_BASE_URL}/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ email, password }),
+    const res = await api.post<LoginResponse>(`${AUTH_BASE_URL}/login`, {
+      email,
+      password,
     });
 
-    const data = await fetchJson<LoginResponse>(response);
-
-    if (!response.ok || !data.user) {
-      return {
-        success: false,
-        message: data.message ?? 'Login failed',
-      };
+    if (res.data.access_token) {
+      sessionStorage.setItem('access_token', res.data.access_token);
     }
 
     return {
       success: true,
-      user: mapBackendUser(data.user),
+      message: res.data.message,
+      user: res.data.user ? mapBackendUser(res.data.user) : undefined,
     };
-  } catch {
-    return { success: false, message: 'Network error' };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      message: isAxiosError(err)
+        ? (err.response?.data?.message ?? 'Login failed')
+        : 'Login failed',
+    };
   }
 };
 
@@ -91,28 +80,63 @@ export const register = async (
   password: string,
 ): Promise<AuthResponse> => {
   try {
-    const response = await fetch(`${AUTH_BASE_URL}/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ name, email, password }),
+    const res = await api.post<LoginResponse>(`${AUTH_BASE_URL}/register`, {
+      name,
+      email,
+      password,
     });
 
-    const backendUser = await fetchJson<BackendUser>(response);
+    if (!res.data.access_token || !res.data.user) {
+      return { success: false, message: 'Registration failed' };
+    }
+
+    sessionStorage.setItem('access_token', res.data.access_token);
 
     return {
-      success: response.ok,
-      user: mapBackendUser(backendUser),
-      message: response.ok ? 'Registration successful' : 'Registration failed',
+      success: true,
+      user: mapBackendUser(res.data.user),
     };
-  } catch {
-    return { success: false, message: 'Network error' };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      message: isAxiosError(err)
+        ? (err.response?.data?.message ?? 'Registration failed')
+        : 'Registration failed',
+    };
   }
 };
 
 export const logout = async (): Promise<void> => {
-  await fetch(`${AUTH_BASE_URL}/logout`, {
-    method: 'POST',
-    credentials: 'include',
-  });
+  try {
+    await api.post(
+      `${AUTH_BASE_URL}/logout`,
+      {},
+      { headers: { 'X-Skip-Interceptor': 'true' } },
+    );
+  } catch (err: unknown) {
+    console.log('[authApi] Logout API error', err);
+  } finally {
+    sessionStorage.removeItem('access_token');
+  }
+};
+
+export const checkAuth = async (): Promise<User | null> => {
+  try {
+    const res = await api.get<BackendUser>(`${AUTH_BASE_URL}/me`);
+    return mapBackendUser(res.data);
+  } catch {
+    return null;
+  }
+};
+
+export const refreshAccessToken = async (): Promise<boolean> => {
+  try {
+    const res = await api.post<{ access_token: string }>(
+      `${AUTH_BASE_URL}/refresh`,
+    );
+    sessionStorage.setItem('access_token', res.data.access_token);
+    return true;
+  } catch {
+    return false;
+  }
 };

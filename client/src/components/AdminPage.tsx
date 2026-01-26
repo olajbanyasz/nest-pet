@@ -12,17 +12,18 @@ import {
 import UserList from './UserList';
 
 const AdminPage: React.FC = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, initialized } = useAuth();
   const { show, hide } = useLoading();
 
   const [users, setUsers] = useState<User[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const loadUsers = useCallback(async () => {
+    show();
     try {
-      show();
       const data = await getUsers();
       setUsers(data);
+      setError(null);
     } catch (err) {
       console.error(err);
       setError('Failed to load users');
@@ -32,19 +33,20 @@ const AdminPage: React.FC = () => {
   }, [show, hide]);
 
   useEffect(() => {
+    if (!initialized || !user) {
+      return;
+    }
     if (user?.role === 'admin') {
       loadUsers();
     }
   }, [user, loadUsers]);
 
   const handlePromote = async (id: string) => {
+    show();
     try {
-      show();
       await promoteUserToAdmin(id);
       setUsers(prev =>
-        prev.map(u =>
-          u.id === id ? { ...u, role: 'admin' } : u,
-        ),
+        prev.map(u => (u.id === id ? { ...u, role: 'admin' } : u)),
       );
     } catch (err) {
       console.error(err);
@@ -54,14 +56,12 @@ const AdminPage: React.FC = () => {
     }
   };
 
-    const handleDemote = async (id: string) => {
+  const handleDemote = async (id: string) => {
+    show();
     try {
-      show();
       await demoteAdminToUser(id);
       setUsers(prev =>
-        prev.map(u =>
-          u.id === id ? { ...u, role: 'user' } : u,
-        ),
+        prev.map(u => (u.id === id ? { ...u, role: 'user' } : u)),
       );
     } catch (err) {
       console.error(err);
@@ -72,11 +72,13 @@ const AdminPage: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    const confirmed = window.confirm('Are you sure you want to delete this user?');
+    const confirmed = window.confirm(
+      'Are you sure you want to delete this user?',
+    );
     if (!confirmed) return;
 
+    show();
     try {
-      show();
       await deleteUser(id);
       setUsers(prev => prev.filter(u => u.id !== id));
     } catch (err) {
@@ -95,7 +97,7 @@ const AdminPage: React.FC = () => {
 
   return (
     <div className="admin-container">
-      <h1 style={{ textAlign: "center" }}>Admin panel</h1>
+      <h1 style={{ textAlign: 'center' }}>Admin panel</h1>
 
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
@@ -103,8 +105,8 @@ const AdminPage: React.FC = () => {
         users={users}
         currentUserId={user.id}
         onPromote={handlePromote}
-        onDelete={handleDelete}
         onDemote={handleDemote}
+        onDelete={handleDelete}
       />
     </div>
   );

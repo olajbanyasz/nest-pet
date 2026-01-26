@@ -1,39 +1,50 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import TodoList from './TodoList';
 import NewTodoForm from './NewTodoForm';
 import { useLoading } from '../contexts/LoadingProvider';
-import { fetchTodos as apiFetchTodos, addTodo as apiAddTodo, toggleTodo as apiToggleTodo, deleteTodo as apiDeleteTodo, updateTodoTitle, Todo } from '../api/todosApi';
+import {
+  fetchTodos as apiFetchTodos,
+  addTodo as apiAddTodo,
+  toggleTodo as apiToggleTodo,
+  deleteTodo as apiDeleteTodo,
+  updateTodoTitle,
+  Todo,
+} from '../api/todosApi';
+import { useAuth } from '../contexts/AuthContext';
 
 function Todos() {
   const [todos, setTodos] = useState<Todo[]>([]);
-  const navigate = useNavigate();
   const { show, hide } = useLoading();
+  const { user, initialized } = useAuth();
 
   const fetchTodos = useCallback(async () => {
+    show();
     try {
-      show();
       const data = await apiFetchTodos();
       setTodos(data.reverse());
-    } catch (error) {
-      console.error('Error fetching todos:', error);
-      navigate('/');
     } finally {
       hide();
     }
-  }, [navigate, show, hide]);
+  }, [show, hide]);
+
+  useEffect(() => {
+  if (!initialized) return;
+  if (!user) return;
+
+  fetchTodos().catch(err => {
+    console.error('[Todos] fetchTodos error', err);
+  });
+}, [initialized, user]);
 
   useEffect(() => {
     fetchTodos();
-  }, [navigate, fetchTodos]);
+  }, [fetchTodos]);
 
   const addTodo = async (title: string) => {
+    show();
     try {
-      show();
       await apiAddTodo(title);
-      fetchTodos();
-    } catch (error) {
-      console.error('Error adding todo:', error);
+      await fetchTodos();
     } finally {
       hide();
     }
@@ -42,36 +53,31 @@ function Todos() {
   const toggleTodo = async (id: string) => {
     const todo = todos.find(t => t._id === id);
     if (!todo) return;
+
+    show();
     try {
-      show();
       await apiToggleTodo(id, !todo.completed);
-      fetchTodos();
-    } catch (error) {
-      console.error('Error updating todo:', error);
+      await fetchTodos();
     } finally {
       hide();
     }
   };
 
   const deleteTodo = async (id: string) => {
+    show();
     try {
-      show();
       await apiDeleteTodo(id);
-      fetchTodos();
-    } catch (error) {
-      console.error('Error deleting todo:', error);
+      await fetchTodos();
     } finally {
       hide();
     }
   };
 
   const updateTitle = async (id: string, title: string) => {
+    show();
     try {
-      show();
       await updateTodoTitle(id, title);
-      fetchTodos();
-    } catch (error) {
-      console.error('Error updating todo title:', error);
+      await fetchTodos();
     } finally {
       hide();
     }
@@ -80,8 +86,13 @@ function Todos() {
   return (
     <div className="todo-container">
       <NewTodoForm onAdd={addTodo} />
-      <h1 style={{ textAlign: "center" }}>Todos</h1>
-      <TodoList todos={todos} onToggle={toggleTodo} onDelete={deleteTodo} onUpdateTitle={updateTitle} />
+      <h1 style={{ textAlign: 'center' }}>Todos</h1>
+      <TodoList
+        todos={todos}
+        onToggle={toggleTodo}
+        onDelete={deleteTodo}
+        onUpdateTitle={updateTitle}
+      />
     </div>
   );
 }
