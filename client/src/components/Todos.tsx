@@ -25,20 +25,16 @@ function Todos() {
     } finally {
       hide();
     }
-  }, [show, hide]);
+  }, []);
 
   useEffect(() => {
-  if (!initialized) return;
-  if (!user) return;
+    if (!initialized) return;
+    if (!user) return;
 
-  fetchTodos().catch(err => {
-    console.error('[Todos] fetchTodos error', err);
-  });
-}, [initialized, user]);
-
-  useEffect(() => {
-    fetchTodos();
-  }, [fetchTodos]);
+    fetchTodos().catch(err => {
+      console.error('[Todos] fetchTodos error', err);
+    });
+  }, [initialized, user, fetchTodos]);
 
   const addTodo = async (title: string) => {
     show();
