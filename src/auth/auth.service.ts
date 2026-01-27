@@ -165,7 +165,7 @@ export class AuthService {
     await this.refreshTokenModel.create({
       userId,
       tokenHash,
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 nap
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     });
 
     return token;

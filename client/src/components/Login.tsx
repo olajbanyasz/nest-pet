@@ -17,11 +17,9 @@ const Login: React.FC = () => {
   const from = (location.state as any)?.from?.pathname || '/todos';
 
   useEffect(() => {
-    console.log('[Login] useEffect triggered: initialized=', initialized, 'user=', user);
     if (!initialized) return;
 
     if (user) {
-      console.log('[Login] Navigating to:', from);
       if (window.location.pathname !== from) {
         navigate(from, { replace: true });
       }
@@ -34,28 +32,22 @@ const Login: React.FC = () => {
 
     try {
       if (isLogin) {
-        console.log('[Login] Logging in:', email);
         const result = await authLogin(email, password);
         if (!result.success) {
           setMessage(result.message || 'Login failed');
-          console.log('[Login] Login failed:', result.message);
         }
       } else {
-        console.log('[Login] Registering:', email);
         const result = await apiRegister(name, email, password);
         if (!result.success) {
           setMessage(result.message || 'Registration failed');
-          console.log('[Login] Registration failed:', result.message);
         } else {
           const loginResult = await authLogin(email, password);
           if (!loginResult.success) {
             setMessage(loginResult.message || 'Login after registration failed');
-            console.log('[Login] Login after registration failed');
           }
         }
       }
     } catch (err) {
-      console.log('[Login] Unexpected error', err);
       setMessage('Unexpected error occurred');
     }
   };

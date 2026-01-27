@@ -114,7 +114,7 @@ export const logout = async (): Promise<void> => {
       { headers: { 'X-Skip-Interceptor': 'true' } },
     );
   } catch (err: unknown) {
-    console.log('[authApi] Logout API error', err);
+    console.error('[Auth API] Logout error:', String(err));
   } finally {
     sessionStorage.removeItem('access_token');
   }
@@ -124,8 +124,9 @@ export const checkAuth = async (): Promise<User | null> => {
   try {
     const res = await api.get<BackendUser>(`${AUTH_BASE_URL}/me`);
     return mapBackendUser(res.data);
-  } catch {
-    return null;
+  } catch (err) {
+    console.error('[Auth API] Check auth error:', String(err));
+    throw err;
   }
 };
 

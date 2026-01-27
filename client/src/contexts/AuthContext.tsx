@@ -12,6 +12,7 @@ import {
   refreshAccessToken,
   AuthResponse,
 } from '../api/authApi';
+import { setAuthLogoutCallback } from '../api/axios';
 
 export type UserRole = 'user' | 'admin';
 
@@ -39,26 +40,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<User | null>(null);
   const [initialized, setInitialized] = useState(false);
   const [loading, setLoading] = useState(true);
-
   const isMounted = useRef(true);
+  const setUserWithStorage = (user: User | null) => {
+    setUser(user);
+    if (user) {
+      sessionStorage.setItem('user', JSON.stringify(user));
+    } else {
+      sessionStorage.removeItem('user');
+    }
+  };
+
   const loadUser = async (options?: { skipTokenCheck?: boolean }) => {
     const token = sessionStorage.getItem('access_token');
 
     if (!token && !options?.skipTokenCheck) {
-      console.log('[Auth] No token, skipping loadUser');
-      setUser(null);
+      setUserWithStorage(null);
       return;
     }
 
     try {
-      console.log('[Auth] Loading user...');
       const backendUser = await apiCheckAuth();
-
       if (!isMounted.current) return;
-
       if (backendUser) {
-        console.log('[Auth] User loaded:', backendUser);
-        setUser({
+        setUserWithStorage({
           id: backendUser.id,
           email: backendUser.email,
           role:
@@ -68,62 +72,87 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           name: backendUser.name,
         });
       } else {
-        console.log('[Auth] No user from backend');
-        setUser(null);
+        setUserWithStorage(null);
       }
     } catch (err) {
-      console.log('[Auth] loadUser error:', err);
-      setUser(null);
     }
   };
 
   useEffect(() => {
     isMounted.current = true;
+    const handleLogout = () => {
+      apiLogout().catch((err) =>
+        console.log('[Auth] Logout API error', err),
+      );
+      sessionStorage.removeItem('access_token');
+      sessionStorage.removeItem('user');
+      if (isMounted.current) {
+        setUser(null);
+        setInitialized(true);
+        setLoading(false);
+      }
+    };
 
-    loadUser().finally(() => {
+    setAuthLogoutCallback(handleLogout);
+
+    const storedUser = sessionStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const user = JSON.parse(storedUser);
+        setUser(user);
+      } catch (err) {
+      }
+    }
+    if (isMounted.current) {
       setInitialized(true);
       setLoading(false);
-      console.log('[Auth] Initialized');
-    });
-
+    }
     return () => {
       isMounted.current = false;
     };
   }, []);
 
+  useEffect(() => {
+    if (!initialized) return;
+    const token = sessionStorage.getItem('access_token');
+    if (!token) return;
+  
+    loadUser().catch((err) => {
+      console.log('[Auth] Failed to refresh user from API:', err);
+    });
+  }, [initialized]);
+
   const login = async (
     email: string,
     password: string,
   ): Promise<AuthResponse> => {
-    console.log('[Auth] Login attempt:', email);
     const result = await apiLogin(email, password);
-
-    if (result.success) {
-      await loadUser({ skipTokenCheck: true });
+    if (result.success && result.user) {
+      setUserWithStorage({
+        id: result.user.id,
+        email: result.user.email,
+        role: result.user.role,
+        name: result.user.name,
+      });
     }
-
     return result;
   };
 
   const logout = () => {
-    console.log('[Auth] Logout called');
     apiLogout().catch((err) =>
       console.log('[Auth] Logout API error', err),
     );
     sessionStorage.removeItem('access_token');
+    sessionStorage.removeItem('user');
     setUser(null);
   };
 
   const refresh = async (): Promise<boolean> => {
-    console.log('[Auth] Refresh token...');
     const refreshed = await refreshAccessToken();
-
     if (!refreshed) {
-      console.log('[Auth] Refresh failed, logout');
       logout();
       return false;
     }
-
     await loadUser();
     return true;
   };

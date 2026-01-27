@@ -11,12 +11,16 @@ const api = axios.create({
 });
 
 let isRefreshing = false;
+let authLogoutCallback: (() => void) | null = null;
 
 let failedQueue: Array<{
   resolve: (token: string) => void;
   reject: (error: Error) => void;
 }> = [];
 
+export const setAuthLogoutCallback = (callback: () => void): void => {
+  authLogoutCallback = callback;
+};
 const processQueue = (error: Error | null, token: string | null): void => {
   failedQueue.forEach(({ resolve, reject }) => {
     if (error) {
@@ -27,79 +31,84 @@ const processQueue = (error: Error | null, token: string | null): void => {
   });
   failedQueue = [];
 };
-
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const token = sessionStorage.getItem('access_token');
-
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-
   return config;
 });
 
 api.interceptors.response.use(
   (response) => response,
-  async (error: AxiosError): Promise<never> => {
+  async (error: AxiosError): Promise<any> => {
     const originalRequest = error.config as RetryAxiosRequestConfig | undefined;
-
     if (!originalRequest) {
       return Promise.reject(new Error('Axios error without config'));
     }
-
     if (originalRequest.headers?.['X-Skip-Interceptor']) {
-      return Promise.reject(new Error('Interceptor skipped'));
+      const errorMessage = error.message || 'Request failed';
+      return Promise.reject(new Error(errorMessage));
     }
-
     if (error.response?.status !== 401 || originalRequest._retry) {
       return Promise.reject(new Error(error.message || 'Request failed'));
     }
-
     originalRequest._retry = true;
-
     if (isRefreshing) {
       return new Promise((resolve, reject) => {
         failedQueue.push({ resolve, reject });
-      }).then((token) => {
-        originalRequest.headers.Authorization = `Bearer ${String(token)}`;
-        return api(originalRequest);
-      });
+      })
+        .then((token) => {
+          originalRequest.headers.Authorization = `Bearer ${String(token)}`;
+          return api(originalRequest);
+        })
+        .catch((err) => {
+          const errorObj =
+            err instanceof Error ? err : new Error('Queue error');
+          return Promise.reject(errorObj);
+        });
     }
-
     isRefreshing = true;
-
     try {
       const currentToken = sessionStorage.getItem('access_token');
-
       if (!currentToken) {
-        void logout();
+        if (authLogoutCallback) {
+          authLogoutCallback();
+        } else {
+          void logout();
+        }
         throw new Error('No access token');
       }
-
       const refreshed = await refreshAccessToken();
-
       if (!refreshed) {
-        void logout();
+        if (authLogoutCallback) {
+          authLogoutCallback();
+        } else {
+          void logout();
+        }
         throw new Error('Token refresh failed');
       }
-
       const newToken = sessionStorage.getItem('access_token');
-
       if (!newToken) {
-        void logout();
+        if (authLogoutCallback) {
+          authLogoutCallback();
+        } else {
+          void logout();
+        }
         throw new Error('No new token after refresh');
       }
-
       processQueue(null, newToken);
-
       originalRequest.headers.Authorization = `Bearer ${newToken}`;
       return api(originalRequest);
     } catch (err) {
       const errorObj =
         err instanceof Error ? err : new Error('Unknown refresh error');
-
       processQueue(errorObj, null);
-      void logout();
+      if (authLogoutCallback) {
+        authLogoutCallback();
+      } else {
+        void logout();
+      }
 
       return Promise.reject(errorObj);
     } finally {
