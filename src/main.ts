@@ -10,6 +10,7 @@ import { join } from 'path';
 import * as express from 'express';
 import { AppModule } from './app.module';
 import { logger } from './logger.config';
+import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -24,6 +25,7 @@ async function bootstrap() {
 
   app.use(cookieParser());
   app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalFilters(new AllExceptionsFilter());
   app.setGlobalPrefix('api');
 
   const clientBuildPath = join(__dirname, '..', 'client', 'build');
