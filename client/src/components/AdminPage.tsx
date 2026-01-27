@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLoading } from '../contexts/LoadingProvider';
 import { useNotification } from '../contexts/NotificationContext';
+import { useNavigate } from 'react-router-dom';
 import {
   getUsers,
   promoteUserToAdmin,
@@ -16,6 +17,7 @@ const AdminPage: React.FC = () => {
   const { user, loading: authLoading, initialized } = useAuth();
   const { show, hide } = useLoading();
   const { notify } = useNotification();
+  const navigate = useNavigate();
 
   const [users, setUsers] = useState<User[]>([]);
 
@@ -47,7 +49,9 @@ const AdminPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (!initialized || !user) {
+    if (!initialized) return;
+    if (!user) {
+      navigate('/login', { replace: true });
       return;
     }
     if (user?.role === 'admin') {

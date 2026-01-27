@@ -12,12 +12,15 @@ import {
 } from '../api/todosApi';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
+import { useNavigate } from 'react-router-dom';
+
 
 function Todos() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const { show, hide } = useLoading();
   const { user, initialized } = useAuth();
   const { notify } = useNotification();
+  const navigate = useNavigate();
 
   const fetchTodos = useCallback(async () => {
     try {
@@ -44,7 +47,10 @@ function Todos() {
 
   useEffect(() => {
     if (!initialized) return;
-    if (!user) return;
+    if (!user) {
+      navigate('/login', { replace: true });
+      return;
+    }
 
     fetchTodosWithNotification().catch(err => {
       console.error('[Todos] fetchTodosWithNotification error', err);
