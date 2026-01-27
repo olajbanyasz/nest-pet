@@ -3,7 +3,6 @@ import * as winston from 'winston';
 import 'winston-mongodb';
 
 export const logger = WinstonModule.createLogger({
-  level: 'debug',
   transports: [
     new winston.transports.MongoDB({
       level: 'info',
@@ -20,7 +19,6 @@ export const logger = WinstonModule.createLogger({
     }),
 
     new winston.transports.Console({
-      level: 'debug',
       format: winston.format.combine(
         winston.format.colorize(),
         winston.format.timestamp(),
