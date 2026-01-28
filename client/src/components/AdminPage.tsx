@@ -12,6 +12,7 @@ import {
   User,
 } from '../api/adminApi';
 import UserList from './UserList';
+import UserFilter from './UserFilter';
 
 const AdminPage: React.FC = () => {
   const { user, loading: authLoading, initialized } = useAuth();
@@ -20,6 +21,7 @@ const AdminPage: React.FC = () => {
   const navigate = useNavigate();
 
   const [users, setUsers] = useState<User[]>([]);
+  const [userFilter, setUserFilter] = useState<string>('');
 
   const loadUsers = useCallback(async () => {
     show();
@@ -119,7 +121,7 @@ const AdminPage: React.FC = () => {
   return (
     <div className="admin-container">
       <h1 style={{ textAlign: 'center' }}>Admin panel</h1>
-
+      <UserFilter userFilter={userFilter} setUserFilter={setUserFilter} />
       <UserList
         users={users}
         currentUserId={user.id}

@@ -15,6 +15,7 @@ function UserFilter({ userFilter, setUserFilter }: UserFilterProps) {
                 value={userFilter}
                 onChange={(e) => setUserFilter(e.target.value)}
                 style={{ flexGrow: 1, marginRight: '10px' }}
+                placeholder="Filter users by email"
             />
         </div>);
 };
