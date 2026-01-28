@@ -9,7 +9,8 @@ export interface Todo {
 }
 
 export const fetchTodos = async (todoFilter: string): Promise<Todo[]> => {
-  const query = todoFilter === 'all' ? '' : `?completed=${todoFilter === 'completed'}`;
+  const query =
+    todoFilter === 'all' ? '' : `?completed=${todoFilter === 'completed'}`;
   const res = await api.get<Todo[]>(`${API_BASE_URL}${query}`);
   return res.data;
 };

@@ -82,3 +82,16 @@ li span {
     opacity: 0.6;
     cursor: not-allowed;
 }
+
+.p-dropdown-panel .p-dropdown-items .p-dropdown-item.p-highlight {
+  color: #4b5563;
+}
+
+.p-dropdown-panel .p-dropdown-items .p-dropdown-item.p-highlight.p-focus {
+  background-color: lightgrey;
+}
+
+.card {
+    padding: 2rem;
+    margin-bottom: 1rem;
+}
