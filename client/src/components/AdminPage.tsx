@@ -21,26 +21,15 @@ const AdminPage: React.FC = () => {
   const navigate = useNavigate();
 
   const [users, setUsers] = useState<User[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [userFilter, setUserFilter] = useState<string>('');
-
-  const loadUsers = useCallback(async () => {
-    show();
-    try {
-      const data = await getUsers();
-      setUsers(data);
-    } catch (err) {
-      console.error(err);
-      notify('Failed to load users', 'error', 5000);
-    } finally {
-      hide();
-    }
-  }, [show, hide, notify]);
+  const isValidFilter = userFilter.trim().length >= 3;
 
   const loadUsersWithNotification = useCallback(async () => {
     show();
     try {
-      const data = await getUsers();
-      setUsers(data);
+      const data = await getUsers(isValidFilter ? userFilter : undefined);
+      isValidFilter ? setFilteredUsers(data) : setUsers(data);
       notify('Users loaded successfully', 'success', 3000);
     } catch (err) {
       console.error(err);
@@ -48,7 +37,18 @@ const AdminPage: React.FC = () => {
     } finally {
       hide();
     }
-  }, []);
+  }, [userFilter]);
+
+  useEffect(() => {
+    if (!initialized) return;
+    if (!user) {
+      navigate('/login', { replace: true });
+      return;
+    }
+    if (user?.role === 'admin' && isValidFilter) {
+      loadUsersWithNotification();
+    }
+  }, [initialized, user, userFilter]);
 
   useEffect(() => {
     if (!initialized) return;
@@ -123,7 +123,7 @@ const AdminPage: React.FC = () => {
       <h1 style={{ textAlign: 'center' }}>Admin panel</h1>
       <UserFilter userFilter={userFilter} setUserFilter={setUserFilter} />
       <UserList
-        users={users}
+        users={isValidFilter ? filteredUsers : users}
         currentUserId={user.id}
         onPromote={handlePromote}
         onDemote={handleDemote}

@@ -36,8 +36,9 @@ function mapBackendUser(user: BackendUser): User {
   };
 }
 
-export const getUsers = async (): Promise<User[]> => {
-  const res = await api.get<BackendUser[]>(`${ADMIN_BASE_URL}/users`);
+export const getUsers = async (email?: string): Promise<User[]> => {
+  const query = email ? `?email=${encodeURIComponent(email)}` : '';
+  const res = await api.get<BackendUser[]>(`${ADMIN_BASE_URL}/users${query}`);
   return res.data.map(mapBackendUser);
 };
 

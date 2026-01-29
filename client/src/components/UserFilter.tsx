@@ -13,7 +13,7 @@ function UserFilter({ userFilter, setUserFilter }: UserFilterProps) {
             <i className="pi pi-filter" style={{ fontSize: '1.5rem', marginRight: '8px', color: '#0ea5e9' }}></i>
             <InputText
                 value={userFilter}
-                onChange={(e) => setUserFilter(e.target.value)}
+                onChange={(e) => setUserFilter(e.target.value.trim())}
                 style={{ flexGrow: 1, marginRight: '10px' }}
                 placeholder="Filter users by email"
             />
