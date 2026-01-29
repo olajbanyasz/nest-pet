@@ -7,6 +7,7 @@ import {
   UseGuards,
   Req,
   ForbiddenException,
+  Query,
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { AdminService } from './admin.service';
@@ -31,8 +32,8 @@ export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
   @Get('users')
-  getUsers() {
-    return this.adminService.getUsers();
+  getUsers(@Query('email') email?: string) {
+    return this.adminService.getUsers(email);
   }
 
   @Get('users/:id')
