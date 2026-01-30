@@ -64,3 +64,27 @@ export const demoteAdminToUser = async (id: string): Promise<User> => {
   );
   return mapBackendUser(res.data);
 };
+
+export const getApplicationDetails = async (): Promise<{
+  totalUsers: number;
+  totalAdmins: number;
+  totalTodos: number;
+  totalCompletedTodos: number;
+  totalActiveTodos: number;
+  totalDeletedTodos: number;
+}> => {
+  try {
+    const response = await api.get<{
+      totalUsers: number;
+      totalAdmins: number;
+      totalTodos: number;
+      totalCompletedTodos: number;
+      totalActiveTodos: number;
+      totalDeletedTodos: number;
+    }>(`/admin/details`);
+    return response.data;
+  } catch (err) {
+    console.error('[Admin API] Get application details error:', String(err));
+    throw err;
+  }
+};

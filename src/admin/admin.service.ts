@@ -130,4 +130,33 @@ export class AdminService {
       .select('-password')
       .exec() as Promise<User>;
   }
+
+  async getApplicationDetails(): Promise<{
+    totalUsers: number;
+    totalAdmins: number;
+    totalTodos: number;
+    totalCompletedTodos: number;
+    totalActiveTodos: number;
+    totalDeletedTodos: number;
+  }> {
+    const totalUsers = await this.userModel.countDocuments({
+      role: UserRole.USER,
+    });
+    const totalAdmins = await this.userModel.countDocuments({
+      role: UserRole.ADMIN,
+    });
+    const totalTodos = await this.todoService.countAllTodos();
+    const totalCompletedTodos = await this.todoService.countCompletedTodos();
+    const totalActiveTodos = await this.todoService.countActiveTodos();
+    const totalDeletedTodos = await this.todoService.countDeletedTodos();
+
+    return {
+      totalUsers,
+      totalAdmins,
+      totalTodos,
+      totalCompletedTodos,
+      totalActiveTodos,
+      totalDeletedTodos,
+    };
+  }
 }

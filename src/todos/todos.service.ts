@@ -141,4 +141,24 @@ export class TodosService {
 
     return this.todoModel.countDocuments({ userId: id, deleted: false }).exec();
   }
+
+  async countAllTodos(): Promise<number> {
+    return this.todoModel.countDocuments().exec();
+  }
+
+  async countCompletedTodos(): Promise<number> {
+    return this.todoModel
+      .countDocuments({ completed: true, deleted: false })
+      .exec();
+  }
+
+  async countActiveTodos(): Promise<number> {
+    return this.todoModel
+      .countDocuments({ completed: false, deleted: false })
+      .exec();
+  }
+
+  async countDeletedTodos(): Promise<number> {
+    return this.todoModel.countDocuments({ deleted: true }).exec();
+  }
 }

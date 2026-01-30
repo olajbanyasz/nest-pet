@@ -47,6 +47,11 @@ const NavigationBar: React.FC = () => {
             command: () => navigate('/admin'),
             className: isActive('/admin') ? 'active-menu-item' : '',
         },
+                {
+            label: 'Dashboard',
+            command: () => navigate('/dashboard'),
+            className: isActive('/dashboard') ? 'active-menu-item' : '',
+        },
     ];
 
     return (

@@ -64,4 +64,9 @@ export class AdminController {
     }
     return this.adminService.demoteToUser(id);
   }
+
+  @Get('details')
+  getApplicationDetails() {
+    return this.adminService.getApplicationDetails();
+  }
 }
