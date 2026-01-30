@@ -5,7 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import mongoose, { Model } from 'mongoose';
+import mongoose, { FilterQuery, Model } from 'mongoose';
 import { User, UserDocument, UserRole } from '../users/schemas/user.schema';
 import { TodosService } from '../todos/todos.service';
 
@@ -19,10 +19,19 @@ export class AdminService {
     private readonly todoService: TodosService,
   ) {}
 
-  async getUsers(): Promise<
-    (User & { lastLogin?: Date; todoCount: number })[]
-  > {
-    const users = await this.userModel.find().select('-password').exec();
+  async getUsers(
+    email?: string,
+  ): Promise<(User & { lastLogin?: Date; todoCount: number })[]> {
+    const filter: FilterQuery<UserDocument> = {};
+
+    if (email && email.trim().length > 2) {
+      filter.email = {
+        $regex: email,
+        $options: 'i',
+      };
+    }
+
+    const users = await this.userModel.find(filter).select('-password').exec();
 
     const usersWithExtras = await Promise.all(
       users.map(async (user) => {

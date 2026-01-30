@@ -13,10 +13,11 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { useNavigate } from 'react-router-dom';
-
+import TodoFilter from './TodoFilter';
 
 function Todos() {
   const [todos, setTodos] = useState<Todo[]>([]);
+  const [todoFilter, setTodoFilter] = useState<string>('all');
   const { show, hide } = useLoading();
   const { user, initialized } = useAuth();
   const { notify } = useNotification();
@@ -24,17 +25,17 @@ function Todos() {
 
   const fetchTodos = useCallback(async () => {
     try {
-      const data = await apiFetchTodos();
+      const data = await apiFetchTodos(todoFilter);
       setTodos(data.reverse());
     } catch (err) {
       console.error('[Todos] fetchTodos error:', err);
     }
-  }, []);
+  }, [todoFilter]);
 
   const fetchTodosWithNotification = useCallback(async () => {
     show();
     try {
-      const data = await apiFetchTodos();
+      const data = await apiFetchTodos(todoFilter);
       setTodos(data.reverse());
       notify('Todos loaded successfully', 'success', 3000);
     } catch (err) {
@@ -43,8 +44,7 @@ function Todos() {
     } finally {
       hide();
     }
-  }, []);
-
+  }, [todoFilter]);
   useEffect(() => {
     if (!initialized) return;
     if (!user) {
@@ -55,7 +55,7 @@ function Todos() {
     fetchTodosWithNotification().catch(err => {
       console.error('[Todos] fetchTodosWithNotification error', err);
     });
-  }, [initialized, user]);
+  }, [initialized, user, todoFilter, fetchTodosWithNotification]);
 
   const addTodo = async (title: string) => {
     show();
@@ -116,6 +116,7 @@ function Todos() {
     <div className="todo-container">
       <NewTodoForm onAdd={addTodo} />
       <h1 style={{ textAlign: 'center' }}>Todos</h1>
+      <TodoFilter todoFilter={todoFilter} setTodoFilter={setTodoFilter} />
       <TodoList
         todos={todos}
         onToggle={toggleTodo}
