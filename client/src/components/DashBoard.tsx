@@ -6,11 +6,7 @@ import { useNotification } from '../contexts/NotificationContext';
 import { useNavigate } from 'react-router-dom';
 import ApplicationDetails from './ApplicationDetails';
 import {
-    getUsers,
-    promoteUserToAdmin,
-    demoteAdminToUser,
-    deleteUser,
-    User,
+    getApplicationDetails,
 } from '../api/adminApi';
 
 const DashBoard: React.FC = () => {
@@ -19,6 +15,22 @@ const DashBoard: React.FC = () => {
     const { notify } = useNotification();
     const navigate = useNavigate();
 
+    const [appDetails, setAppDetails] = useState<any>({});
+
+    const loadAppDetailsWithNotification = useCallback(async () => {
+        show();
+        try {
+            const data = await getApplicationDetails();
+            setAppDetails(data);
+            notify('Application details loaded successfully', 'success', 3000);
+        } catch (err) {
+            console.error(err);
+            notify('Failed to load application details', 'error', 5000);
+        } finally {
+            hide();
+        }
+    }, []);
+
     useEffect(() => {
         if (!initialized) return;
         if (!user) {
@@ -26,7 +38,7 @@ const DashBoard: React.FC = () => {
             return;
         }
         if (user?.role === 'admin') {
-            //loadUsersWithNotification();
+            loadAppDetailsWithNotification();
         }
     }, []);
 
@@ -39,7 +51,7 @@ const DashBoard: React.FC = () => {
     return (
         <div className="dashboard-container">
             <h1 style={{ textAlign: 'center' }}>Dashboard</h1>
-            <ApplicationDetails />
+            <ApplicationDetails appDetails={appDetails} />
         </div>
     );
 };
