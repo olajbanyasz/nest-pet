@@ -19,10 +19,10 @@ export class AdminService {
 
   constructor(
     @InjectModel(User.name)
-    @Inject(CACHE_MANAGER)
-    private cacheManager: Cache,
     private readonly userModel: Model<UserDocument>,
     private readonly todoService: TodosService,
+    @Inject(CACHE_MANAGER)
+    private cacheManager: Cache,
   ) {}
 
   async getUsers(
