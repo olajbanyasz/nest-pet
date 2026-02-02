@@ -65,25 +65,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         setUserWithStorage({
           id: backendUser.id,
           email: backendUser.email,
-          role:
-            backendUser.role.toLowerCase() === 'admin'
-              ? 'admin'
-              : 'user',
+          role: backendUser.role.toLowerCase() === 'admin' ? 'admin' : 'user',
           name: backendUser.name,
         });
       } else {
         setUserWithStorage(null);
       }
-    } catch (err) {
-    }
+    } catch (err) {}
   };
 
   useEffect(() => {
     isMounted.current = true;
     const handleLogout = () => {
-      apiLogout().catch((err) =>
-        console.log('[Auth] Logout API error', err),
-      );
+      apiLogout().catch((err) => console.log('[Auth] Logout API error', err));
       sessionStorage.removeItem('access_token');
       sessionStorage.removeItem('user');
       if (isMounted.current) {
@@ -100,8 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       try {
         const user = JSON.parse(storedUser);
         setUser(user);
-      } catch (err) {
-      }
+      } catch (err) {}
     }
     if (isMounted.current) {
       setInitialized(true);
@@ -116,7 +109,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!initialized) return;
     const token = sessionStorage.getItem('access_token');
     if (!token) return;
-  
+
     loadUser().catch((err) => {
       console.log('[Auth] Failed to refresh user from API:', err);
     });
@@ -139,9 +132,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const logout = () => {
-    apiLogout().catch((err) =>
-      console.log('[Auth] Logout API error', err),
-    );
+    apiLogout().catch((err) => console.log('[Auth] Logout API error', err));
     sessionStorage.removeItem('access_token');
     sessionStorage.removeItem('user');
     setUser(null);

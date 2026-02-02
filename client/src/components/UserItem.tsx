@@ -43,7 +43,7 @@ const UserItem: React.FC<UserItemProps> = ({
         alignItems: 'center',
         padding: '8px',
         borderBottom: '1px solid #ddd',
-        gap: '12px'
+        gap: '12px',
       }}
     >
       <Checkbox
@@ -54,8 +54,8 @@ const UserItem: React.FC<UserItemProps> = ({
           isSelf
             ? 'You cannot change your own role'
             : isAdmin
-            ? 'Admin user'
-            : 'Promote to admin'
+              ? 'Admin user'
+              : 'Promote to admin'
         }
       />
 
@@ -63,17 +63,28 @@ const UserItem: React.FC<UserItemProps> = ({
         <div style={{ fontWeight: 600 }}>
           {user.name || '—'} {isSelf && '(you)'}
         </div>
-        <div style={{ fontSize: '0.9em', color: '#666' }}>
-          {user.email}
-        </div>
+        <div style={{ fontSize: '0.9em', color: '#666' }}>{user.email}</div>
       </div>
 
       <div style={{ width: '100px', textAlign: 'center' }}>
-        <div style={{ fontSize: '0.9em', color: '#666', textAlign: 'center' }}>Last login</div>
-        <div style={{ fontSize: '0.7em', color: '#666', textAlign: 'center' }}>{user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString() : '—'}</div>
+        <div style={{ fontSize: '0.9em', color: '#666', textAlign: 'center' }}>
+          Last login
+        </div>
+        <div style={{ fontSize: '0.7em', color: '#666', textAlign: 'center' }}>
+          {user.lastLoginAt
+            ? new Date(user.lastLoginAt).toLocaleDateString()
+            : '—'}
+        </div>
       </div>
 
-      <div style={{ width: '80px', textAlign: 'center', fontSize: '0.9em', color: '#666' }}>
+      <div
+        style={{
+          width: '80px',
+          textAlign: 'center',
+          fontSize: '0.9em',
+          color: '#666',
+        }}
+      >
         Todos: {user.todoCount}
       </div>
 
@@ -81,9 +92,7 @@ const UserItem: React.FC<UserItemProps> = ({
         label="Delete"
         onClick={handleDelete}
         disabled={isAdmin || isSelf}
-        className={
-          isAdmin || isSelf ? 'p-button-secondary' : 'p-button-danger'
-        }
+        className={isAdmin || isSelf ? 'p-button-secondary' : 'p-button-danger'}
         style={{ width: '80px' }}
       />
     </div>

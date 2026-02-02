@@ -66,8 +66,8 @@ const AdminPage: React.FC = () => {
     try {
       await promoteUserToAdmin(id);
       notify('User promoted to admin successfully', 'success', 3000);
-      setUsers(prev =>
-        prev.map(u => (u.id === id ? { ...u, role: 'admin' } : u)),
+      setUsers((prev) =>
+        prev.map((u) => (u.id === id ? { ...u, role: 'admin' } : u)),
       );
     } catch (err) {
       console.error(err);
@@ -82,8 +82,8 @@ const AdminPage: React.FC = () => {
     try {
       await demoteAdminToUser(id);
       notify('Admin demoted to user successfully', 'success', 3000);
-      setUsers(prev =>
-        prev.map(u => (u.id === id ? { ...u, role: 'user' } : u)),
+      setUsers((prev) =>
+        prev.map((u) => (u.id === id ? { ...u, role: 'user' } : u)),
       );
     } catch (err) {
       console.error(err);
@@ -103,7 +103,7 @@ const AdminPage: React.FC = () => {
     try {
       await deleteUser(id);
       notify('User deleted successfully', 'success', 3000);
-      setUsers(prev => prev.filter(u => u.id !== id));
+      setUsers((prev) => prev.filter((u) => u.id !== id));
     } catch (err) {
       console.error(err);
       notify('Failed to delete user', 'error', 5000);

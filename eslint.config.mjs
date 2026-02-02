@@ -5,11 +5,7 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: [
-      'eslint.config.mjs',
-      '**/dist/**',
-      '**/node_modules/**',
-    ],
+    ignores: ['eslint.config.mjs', '**/dist/**', '**/node_modules/**'],
   },
 
   eslint.configs.recommended,
@@ -20,9 +16,7 @@ export default tseslint.config(
   // ======================
   {
     files: ['src/**/*.ts'],
-    extends: [
-      ...tseslint.configs.recommendedTypeChecked,
-    ],
+    extends: [...tseslint.configs.recommendedTypeChecked],
     languageOptions: {
       globals: {
         ...globals.node,
@@ -48,9 +42,7 @@ export default tseslint.config(
   // ======================
   {
     files: ['client/src/**/*.{ts,tsx}'],
-    extends: [
-      ...tseslint.configs.recommendedTypeChecked,
-    ],
+    extends: [...tseslint.configs.recommendedTypeChecked],
     languageOptions: {
       globals: {
         ...globals.browser,
