@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './components/Login';
 import Todos from './components/Todos';
+import DashBoard from './components/DashBoard';
 import AdminPage from './components/AdminPage';
 import AppLayout from './components/AppLayout';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -12,6 +13,7 @@ import './App.css';
 import 'primereact/resources/themes/lara-light-indigo/theme.css';
 import 'primereact/resources/primereact.min.css';
 import 'primeicons/primeicons.css';
+import Dashboard from './components/DashBoard';
 
 const RootRedirect: React.FC = () => {
   const { user, initialized } = useAuth();
@@ -39,6 +41,11 @@ function App() {
               <Route path="/admin" element={
                 <ProtectedRoute requiredRole="admin">
                   <AdminPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/dashboard" element={
+                <ProtectedRoute requiredRole="admin">
+                  <DashBoard />
                 </ProtectedRoute>
               } />
             </Route>
