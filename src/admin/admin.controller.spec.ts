@@ -5,6 +5,7 @@ import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
 import { UserRole } from '../users/schemas/user.schema';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
 type AuthRequestMock = {
   user: {
@@ -35,6 +36,12 @@ describe('AdminController', () => {
   };
   const users: MockUser[] = [USER1, USER2];
 
+  const mockCacheManager = {
+    get: jest.fn(),
+    set: jest.fn(),
+    del: jest.fn(),
+  };
+
   beforeEach(async () => {
     const mockService: Partial<Record<keyof AdminService, jest.Mock>> = {
       getUsers: jest.fn(),
@@ -46,7 +53,10 @@ describe('AdminController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AdminController],
-      providers: [{ provide: AdminService, useValue: mockService }],
+      providers: [
+        { provide: AdminService, useValue: mockService },
+        { provide: CACHE_MANAGER, useValue: mockCacheManager },
+      ],
     }).compile();
 
     controller = module.get<AdminController>(AdminController);

@@ -8,16 +8,20 @@ interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ requiredRole, children }) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+  requiredRole,
+  children,
+}) => {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <LoadingSpinner />; 
+    return <LoadingSpinner />;
   }
 
   if (!user) return <Navigate to="/" replace />;
 
-  if (requiredRole && user.role !== requiredRole) return <Navigate to="/todos" replace />;
+  if (requiredRole && user.role !== requiredRole)
+    return <Navigate to="/todos" replace />;
 
   return <>{children}</>;
 };

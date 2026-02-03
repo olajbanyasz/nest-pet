@@ -52,7 +52,7 @@ function Todos() {
       return;
     }
 
-    fetchTodosWithNotification().catch(err => {
+    fetchTodosWithNotification().catch((err) => {
       console.error('[Todos] fetchTodosWithNotification error', err);
     });
   }, [initialized, user, todoFilter, fetchTodosWithNotification]);
@@ -71,7 +71,7 @@ function Todos() {
   };
 
   const toggleTodo = async (id: string) => {
-    const todo = todos.find(t => t._id === id);
+    const todo = todos.find((t) => t._id === id);
     if (!todo) return;
 
     show();

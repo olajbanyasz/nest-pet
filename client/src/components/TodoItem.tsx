@@ -33,7 +33,15 @@ function TodoItem({ todo, onToggle, onDelete, onUpdateTitle }: TodoItemProps) {
   };
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px', borderBottom: '1px solid #ddd', padding: '8px' }}>
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        marginBottom: '10px',
+        borderBottom: '1px solid #ddd',
+        padding: '8px',
+      }}
+    >
       <Checkbox
         checked={todo.completed}
         onChange={() => onToggle(todo._id)}
@@ -51,7 +59,11 @@ function TodoItem({ todo, onToggle, onDelete, onUpdateTitle }: TodoItemProps) {
         />
       ) : (
         <span
-          style={{ flexGrow: 1, textDecoration: todo.completed ? 'line-through' : 'none', cursor: 'pointer' }}
+          style={{
+            flexGrow: 1,
+            textDecoration: todo.completed ? 'line-through' : 'none',
+            cursor: 'pointer',
+          }}
           onClick={() => setIsEditing(true)}
         >
           {todo.title}
@@ -77,7 +89,7 @@ function TodoItem({ todo, onToggle, onDelete, onUpdateTitle }: TodoItemProps) {
           <Button
             label="Edit"
             onClick={() => setIsEditing(true)}
-            style={{ width: '80px',marginLeft: '5px' }}
+            style={{ width: '80px', marginLeft: '5px' }}
             className="p-button-info"
           />
           <Button

@@ -4,6 +4,7 @@ import { getModelToken } from '@nestjs/mongoose';
 import { User, UserRole } from '../users/schemas/user.schema';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
 import { TodosService } from '../todos/todos.service';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
 const mockTodosService = {
   deleteTodosByUser: jest.fn().mockResolvedValue({ deletedCount: 0 }),
@@ -25,6 +26,12 @@ describe('AdminService', () => {
     save: jest.fn(),
   };
 
+  const mockCache = {
+    get: jest.fn(),
+    set: jest.fn(),
+    del: jest.fn(),
+  };
+
   const createQueryMock = (result: any) => ({
     select: jest.fn().mockReturnThis(),
     exec: jest.fn().mockResolvedValue(result),
@@ -44,6 +51,7 @@ describe('AdminService', () => {
         AdminService,
         { provide: getModelToken(User.name), useValue: mockModel },
         { provide: TodosService, useValue: mockTodosService },
+        { provide: CACHE_MANAGER, useValue: mockCache },
       ],
     }).compile();
 

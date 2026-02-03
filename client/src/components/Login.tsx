@@ -43,7 +43,9 @@ const Login: React.FC = () => {
         } else {
           const loginResult = await authLogin(email, password);
           if (!loginResult.success) {
-            setMessage(loginResult.message || 'Login after registration failed');
+            setMessage(
+              loginResult.message || 'Login after registration failed',
+            );
           }
         }
       }
@@ -60,20 +62,49 @@ const Login: React.FC = () => {
           {!isLogin && (
             <div style={{ width: '100%' }}>
               <label>Name:</label>
-              <input type="text" value={name} onChange={e => setName(e.target.value)} required style={{ width: '100%' }} />
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                style={{ width: '100%' }}
+              />
             </div>
           )}
           <div style={{ width: '100%' }}>
             <label>Email:</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} required style={{ width: '100%' }} />
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              style={{ width: '100%' }}
+            />
           </div>
           <div style={{ width: '100%' }}>
             <label>Password:</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} required style={{ width: '100%' }} />
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              style={{ width: '100%' }}
+            />
           </div>
-          <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', marginTop: '10px' }}>
+          <div
+            style={{
+              width: '100%',
+              display: 'flex',
+              justifyContent: 'space-between',
+              marginTop: '10px',
+            }}
+          >
             <button type="submit">{isLogin ? 'Login' : 'Register'}</button>
-            <button type="button" onClick={() => setIsLogin(!isLogin)} style={{ marginLeft: '10px' }}>
+            <button
+              type="button"
+              onClick={() => setIsLogin(!isLogin)}
+              style={{ marginLeft: '10px' }}
+            >
               Switch to {isLogin ? 'Register' : 'Login'}
             </button>
           </div>

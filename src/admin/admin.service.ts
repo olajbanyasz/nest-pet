@@ -3,7 +3,11 @@ import {
   NotFoundException,
   ForbiddenException,
   Logger,
+  Inject,
 } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
+
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { FilterQuery, Model } from 'mongoose';
 import { User, UserDocument, UserRole } from '../users/schemas/user.schema';
@@ -17,11 +21,23 @@ export class AdminService {
     @InjectModel(User.name)
     private readonly userModel: Model<UserDocument>,
     private readonly todoService: TodosService,
+    @Inject(CACHE_MANAGER)
+    private cacheManager: Cache,
   ) {}
 
   async getUsers(
     email?: string,
   ): Promise<(User & { lastLogin?: Date; todoCount: number })[]> {
+    const cacheKey = email ? `users_email_${email}` : 'users_all';
+    const cached =
+      await this.cacheManager.get<
+        (User & { lastLogin?: Date; todoCount: number })[]
+      >(cacheKey);
+
+    if (cached) {
+      this.logger.log(`Returning cached users for key: ${cacheKey}`);
+      return cached;
+    }
     const filter: FilterQuery<UserDocument> = {};
 
     if (email && email.trim().length > 2) {
@@ -46,6 +62,10 @@ export class AdminService {
         };
       }),
     );
+
+    await this.cacheManager.set(cacheKey, usersWithExtras, 60);
+
+    this.logger.log(`Cached users for key: ${cacheKey}`);
 
     return usersWithExtras;
   }
@@ -80,6 +100,10 @@ export class AdminService {
     await this.userModel.findByIdAndDelete(id).exec();
 
     this.logger.log(`User deleted: ${id}`);
+
+    await this.cacheManager.del(`users_email_${user.email}`);
+    await this.cacheManager.del('users_all');
+
     return { message: `User ${id} deleted` };
   }
 
@@ -100,6 +124,9 @@ export class AdminService {
     await user.save();
 
     this.logger.log(`User promoted to admin: ${id}`);
+
+    await this.cacheManager.del(`users_email_${user.email}`);
+    await this.cacheManager.del('users_all');
 
     return this.userModel
       .findById(id)
@@ -124,6 +151,9 @@ export class AdminService {
     await user.save();
 
     this.logger.log(`Admin demoted to user: ${id}`);
+
+    await this.cacheManager.del(`users_email_${user.email}`);
+    await this.cacheManager.del('users_all');
 
     return this.userModel
       .findById(id)

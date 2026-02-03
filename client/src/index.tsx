@@ -5,7 +5,7 @@ import App from './App';
 import { LoadingProvider } from './contexts/LoadingProvider';
 
 const root = ReactDOM.createRoot(
-  document.getElementById('root') as HTMLElement
+  document.getElementById('root') as HTMLElement,
 );
 
 root.render(
@@ -13,5 +13,5 @@ root.render(
     <LoadingProvider>
       <App />
     </LoadingProvider>
-  </React.StrictMode>
+  </React.StrictMode>,
 );

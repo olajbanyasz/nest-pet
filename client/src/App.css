@@ -1,4 +1,7 @@
-.todo-container, .login-container, .admin-container, .dashboard-container {
+.todo-container,
+.login-container,
+.admin-container,
+.dashboard-container {
   max-width: 800px;
   margin: 50px auto;
   padding: 20px;
@@ -36,7 +39,7 @@ li {
   margin-bottom: 10px;
 }
 
-li input[type="checkbox"] {
+li input[type='checkbox'] {
   margin-right: 10px;
 }
 
@@ -50,37 +53,37 @@ li span {
 }
 
 #navigation-bar .p-menubar .active-menu-item .p-menuitem-link {
-    border-bottom: 3px solid #0ea5e9;
-    border-radius: 0;
+  border-bottom: 3px solid #0ea5e9;
+  border-radius: 0;
 }
 
-#navigation-bar  .p-menubar .p-menuitem .p-menuitem-content:hover {
-    background: #f9fafb;
+#navigation-bar .p-menubar .p-menuitem .p-menuitem-content:hover {
+  background: #f9fafb;
 }
 
 #navigation-bar .p-menubar .p-menuitem.p-focus {
-    background: #f9fafb;
+  background: #f9fafb;
 }
 
 #navigation-bar .p-menubar .p-menuitem .p-menuitem-content:active {
-    background: #f9fafb;
+  background: #f9fafb;
 }
 
 .p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content {
-    background: #f9fafb;
+  background: #f9fafb;
 }
 
 #navigation-bar .p-menubar .p-menuitem.p-highlight > .p-menuitem-content {
-    background: #f9fafb;
+  background: #f9fafb;
 }
 
 #navigation-bar .p-menubar .p-menuitem.p-menuitem-active > .p-menuitem-content {
-    background: #f9fafb;
+  background: #f9fafb;
 }
 
 .p-disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .p-dropdown-panel .p-dropdown-items .p-dropdown-item.p-highlight {
@@ -92,6 +95,6 @@ li span {
 }
 
 .card {
-    padding: 2rem;
-    margin-bottom: 1rem;
+  padding: 2rem;
+  margin-bottom: 1rem;
 }

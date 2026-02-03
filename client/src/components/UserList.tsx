@@ -19,7 +19,7 @@ const UserList: React.FC<UserListProps> = ({
 }) => {
   return (
     <div>
-      {users.map(user => (
+      {users.map((user) => (
         <UserItem
           key={user.id}
           user={user}

@@ -1,5 +1,10 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from 'react-router-dom';
 import Login from './components/Login';
 import Todos from './components/Todos';
 import DashBoard from './components/DashBoard';
@@ -33,21 +38,30 @@ function App() {
             <Route path="/" element={<RootRedirect />} />
             <Route path="/login" element={<Login />} />
             <Route element={<AppLayout />}>
-              <Route path="/todos" element={
-                <ProtectedRoute>
-                  <Todos />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin" element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/dashboard" element={
-                <ProtectedRoute requiredRole="admin">
-                  <DashBoard />
-                </ProtectedRoute>
-              } />
+              <Route
+                path="/todos"
+                element={
+                  <ProtectedRoute>
+                    <Todos />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <DashBoard />
+                  </ProtectedRoute>
+                }
+              />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
