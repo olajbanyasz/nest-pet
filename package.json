@@ -22,6 +22,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@keyv/redis": "^5.1.6",
     "@nestjs/cache-manager": "^3.1.0",
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
@@ -33,9 +34,12 @@
     "@types/cookie-parser": "^1.4.10",
     "bcryptjs": "^3.0.3",
     "cache-manager": "^7.2.8",
+    "cache-manager-ioredis-yet": "^2.1.2",
+    "cacheable": "^2.3.2",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.3",
     "cookie-parser": "^1.4.7",
+    "ioredis": "^5.9.2",
     "mongoose": "^8.20.2",
     "nest-winston": "^1.10.2",
     "passport": "^0.7.0",
