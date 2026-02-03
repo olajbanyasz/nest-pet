@@ -16,13 +16,12 @@ import { CacheableMemory } from 'cacheable';
   imports: [
     CacheModule.register({
       isGlobal: true,
-      store: (() => {
-        const memoryStore = new Keyv({
+      stores: [
+        new Keyv({
           store: new CacheableMemory({ ttl: 60000, lruSize: 5000 }),
-        });
-        const redisStore = new KeyvRedis('redis://127.0.0.1:6379');
-        return [memoryStore, redisStore];
-      })() as unknown as CacheModuleOptions['store'],
+        }),
+        new KeyvRedis('redis://localhost:6379'),
+      ],
     }),
     MongooseModule.forRoot(
       process.env.MONGODB_URI || 'mongodb://localhost:27017/nest-pet',
