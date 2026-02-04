@@ -5,7 +5,7 @@ import {
   Logger,
   Inject,
 } from '@nestjs/common';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { CACHE_MANAGER, CacheTTL } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 
 import { InjectModel } from '@nestjs/mongoose';
@@ -14,6 +14,7 @@ import { User, UserDocument, UserRole } from '../users/schemas/user.schema';
 import { TodosService } from '../todos/todos.service';
 
 @Injectable()
+@CacheTTL(60 * 1000)
 export class AdminService {
   private readonly logger = new Logger(AdminService.name);
 
@@ -29,15 +30,17 @@ export class AdminService {
     email?: string,
   ): Promise<(User & { lastLogin?: Date; todoCount: number })[]> {
     const cacheKey = email ? `users_email_${email}` : 'users_all';
+
     const cached =
       await this.cacheManager.get<
         (User & { lastLogin?: Date; todoCount: number })[]
       >(cacheKey);
 
-    if (cached) {
+    if (cached !== undefined) {
       this.logger.log(`Returning cached users for key: ${cacheKey}`);
       return cached;
     }
+
     const filter: FilterQuery<UserDocument> = {};
 
     if (email && email.trim().length > 2) {
@@ -63,7 +66,7 @@ export class AdminService {
       }),
     );
 
-    await this.cacheManager.set(cacheKey, usersWithExtras, 60);
+    await this.cacheManager.set(cacheKey, usersWithExtras, 60 * 1000);
 
     this.logger.log(`Cached users for key: ${cacheKey}`);
 

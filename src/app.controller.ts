@@ -9,4 +9,10 @@ export class AppController {
   getHello(): string {
     return this.appService.getHello();
   }
+
+  @Get('test-redis')
+  async testRedis(): Promise<string> {
+    await this.appService.testRedis();
+    return 'Redis test completed';
+  }
 }

@@ -16,7 +16,7 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../users/schemas/user.schema';
 import { UseInterceptors } from '@nestjs/common';
-import { CacheInterceptor } from '@nestjs/cache-manager';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 
 interface AuthRequest extends Request {
   user: {
@@ -30,6 +30,7 @@ interface AuthRequest extends Request {
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
 @UseInterceptors(CacheInterceptor)
+@CacheTTL(60)
 @Controller('admin')
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
