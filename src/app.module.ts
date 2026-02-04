@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { CacheModule } from '@nestjs/cache-manager';
@@ -18,7 +16,7 @@ import { CacheableMemory } from 'cacheable';
       isGlobal: true,
       stores: [
         new Keyv({
-          store: new CacheableMemory({ ttl: 60000, lruSize: 5000 }),
+          store: new CacheableMemory({ ttl: 60, lruSize: 5000 }),
         }),
         new KeyvRedis('redis://localhost:6379'),
       ],
