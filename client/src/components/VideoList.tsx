@@ -15,7 +15,6 @@ const VideoList: React.FC<VideoListProps> = ({
 }) => {
 
     const onSelect = (video: VideoItem) => {
-        console.log('click', video)
         selectVideo(video);
     }
 

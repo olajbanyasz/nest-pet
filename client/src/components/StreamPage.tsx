@@ -41,9 +41,19 @@ const StreamPage: React.FC = () => {
         }}>
             <h1>Stream panel</h1>
             <UploadVideo onUpload={uploadVideo} />
-            {selectedVideo && (<video width="640" height="400" controls style={{ margin: "20px 0" }} loop autoPlay>
+            {selectedVideo && (
+                <video
+                    width="640"
+                    height="400"
+                    controls
+                    style={{ margin: "20px 0" }}
+                    loop
+                    autoPlay
+                    key={selectedVideo.filename}
+                >
                 <source src={getVideoStreamUrl(selectedVideo?.filename!)} type="video/mp4" />
-            </video>)}
+            </video>
+        )}
             <VideoList videoList={videos} selectVideo={setSelectedVideo} />
         </div>
     );

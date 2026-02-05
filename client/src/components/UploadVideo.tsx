@@ -1,88 +1,135 @@
-import React, { useRef, useState } from 'react';
+import React, { useState, useRef } from 'react';
+import { useLoading } from '../contexts/LoadingProvider';
+import { FileUpload } from 'primereact/fileupload';
+import type {
+    FileUploadHandlerEvent,
+    FileUploadHeaderTemplateOptions,
+    FileUploadSelectEvent
+} from 'primereact/fileupload';
+import { ProgressBar } from 'primereact/progressbar';
 
 interface UploadVideoProps {
-  onUpload: (file: File) => Promise<void> | void;
+    onUpload: (file: File, onProgress?: (percent: number) => void) => Promise<void> | void;
 }
 
 const UploadVideo: React.FC<UploadVideoProps> = ({ onUpload }) => {
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [loading, setLoading] = useState(false);
+    const { show, hide } = useLoading();
+    const [progress, setProgress] = useState(0);
+    const [fileSize, setFileSize] = useState(0);
+    const fileUploadRef = useRef<FileUpload>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] ?? null;
-    setSelectedFile(file);
-  };
+    const customUpload = async (event: FileUploadHandlerEvent) => {
+        if (!event.files || event.files.length === 0) return;
+        const file = event.files[0] as File;
 
-  const clearSelection = () => {
-    setSelectedFile(null);
-    if (inputRef.current) {
-      inputRef.current.value = '';
-    }
-  };
+        show();
+        setProgress(0);
 
-  const handleUpload = async () => {
-    if (!selectedFile) return;
+        try {
+            await onUpload(file, (percent: number) => {
+                setProgress(percent);
+            });
+            event.options.clear();
+            setFileSize(0);
+        } finally {
+            hide();
+            setProgress(0);
+        }
+    };
 
-    try {
-      setLoading(true);
-      await onUpload(selectedFile);
-      clearSelection();
-    } finally {
-      setLoading(false);
-    }
-  };
+    const onSelect = (event: FileUploadSelectEvent) => {
+        const file = event.files?.[0];
+        if (file) {
+            setFileSize(file.size);
+            setProgress(0);
+        }
+    };
 
-  return (
-    <div
-      style={{
-        margin: '24px 0',
-        padding: '16px',
-        border: '1px solid #ddd',
-        borderRadius: '8px',
-        maxWidth: '640px',
-      }}
-    >
-      <h3 style={{ marginBottom: '12px' }}>🎥 Upload Video</h3>
+    const onClear = () => {
+        setFileSize(0);
+        setProgress(0);
+    };
 
-      <input
-        ref={inputRef}
-        type="file"
-        accept="video/*"
-        onChange={handleFileChange}
-        style={{ marginBottom: '12px' }}
-      />
+    const chooseOptions = {
+        icon: 'pi pi-fw pi-images',
+        iconOnly: true,
+        className: 'custom-choose-btn p-button-rounded p-button-outlined',
+    };
 
-      {selectedFile && (
+    const uploadOptions = {
+        icon: 'pi pi-fw pi-cloud-upload',
+        iconOnly: true,
+        className: `custom-upload-btn ${!fileSize ? 'p-button-secondary' : 'p-button-success'
+            } p-button-rounded p-button-outlined`,
+    };
+
+    const cancelOptions = {
+        icon: 'pi pi-fw pi-times',
+        iconOnly: true,
+        className: `custom-cancel-btn ${!fileSize ? 'p-button-secondary' : 'p-button-danger'
+            } p-button-rounded p-button-outlined`,
+    };
+
+    const headerTemplate = (options: FileUploadHeaderTemplateOptions) => {
+        const { className, chooseButton, uploadButton, cancelButton } = options;
+        const formattedValue =
+            fileUploadRef.current?.formatSize(fileSize) ?? '0 B';
+
+        return (
+            <div
+                className={className}
+                style={{
+                    backgroundColor: 'transparent',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                }}
+            >
+                <div>
+                    {chooseButton} {uploadButton} {cancelButton}
+                </div>
+
+                <div style={{ color: '#888', fontWeight: 700 }}>
+                    Upload Video
+                </div>
+
+                <div className="flex align-items-center gap-3 ml-auto">
+                    <div style={{textAlign: 'center'}}>{formattedValue}</div>
+                    <ProgressBar
+                        value={progress}
+                        showValue={false}
+                        style={{ width: '10rem', height: '12px' }}
+                    />
+                </div>
+            </div>
+        );
+    };
+
+    return (
         <div
-          style={{
-            marginBottom: '12px',
-            fontSize: '14px',
-            color: '#666',
-          }}
+            style={{
+                border: '1px solid #ddd',
+                borderRadius: '8px',
+                width: '640px',
+            }}
         >
-          Kiválasztva: <strong>{selectedFile.name}</strong>
+            <FileUpload
+                ref={fileUploadRef}
+                name="video"
+                customUpload
+                uploadHandler={customUpload}
+                accept="video/*"
+                maxFileSize={1024 * 1024 * 1024}
+                chooseOptions={chooseOptions}
+                uploadOptions={uploadOptions}
+                cancelOptions={cancelOptions}
+                headerTemplate={headerTemplate}
+                emptyTemplate={<p className="m-0">No video selected.</p>}
+                onSelect={onSelect}
+                onClear={onClear}
+            />
         </div>
-      )}
-
-      <div style={{ display: 'flex', gap: '8px' }}>
-        <button
-          onClick={handleUpload}
-          disabled={!selectedFile || loading}
-        >
-          {loading ? 'Uploading...' : 'Upload'}
-        </button>
-
-        <button
-          onClick={clearSelection}
-          disabled={!selectedFile || loading}
-          style={{ opacity: 0.7 }}
-        >
-          Törlés
-        </button>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default UploadVideo;
