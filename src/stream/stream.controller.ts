@@ -123,7 +123,6 @@ export class StreamController {
 
     const writeStream = fs.createWriteStream(filePath);
 
-    // 👇 CAST: Express Request → Node stream
     (req as unknown as NodeJS.ReadableStream).pipe(writeStream);
 
     writeStream.on('finish', () => {
