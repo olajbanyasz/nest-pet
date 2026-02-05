@@ -19,9 +19,12 @@ export const getVideoStreamUrl = (filename: string): string => {
 };
 
 export const uploadVideo = async (file: File): Promise<void> => {
-  await api.post(`${STREAM_BASE_URL}/upload/${file.name}`, file, {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  await api.post('/stream/upload', formData, {
     headers: {
-      'Content-Type': 'application/octet-stream',
+      'Content-Type': 'multipart/form-data',
     },
   });
 };

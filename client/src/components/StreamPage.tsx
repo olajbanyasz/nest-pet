@@ -1,16 +1,17 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import VideoList from './VideoList';
+import UploadVideo from './UploadVideo';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../contexts/NotificationContext';
-import { getVideos, VideoItem } from '../api/streamApi';
+import { getVideos, VideoItem, uploadVideo, getVideoStreamUrl } from '../api/streamApi';
 
 const StreamPage: React.FC = () => {
     const { user, initialized } = useAuth();
     const { notify } = useNotification();
     const navigate = useNavigate();
     const [videos, setVideos] = useState<VideoItem[]>([]);
-    const [selectVideo, setSelectedVideo] = useState<VideoItem | null>(null);
+    const [selectedVideo, setSelectedVideo] = useState<VideoItem | null>(null);
 
     const fetchVideoList = useCallback(async () => {
         try {
@@ -39,10 +40,11 @@ const StreamPage: React.FC = () => {
             alignItems: 'center',
         }}>
             <h1>Stream panel</h1>
-            <video width="640" controls style={{ margin: "20px 0" }} loop autoPlay>
-                <source src="http://localhost:3001/api/stream/video" type="video/mp4" />
-            </video>
-            <VideoList videoList={videos} selectVideo={setSelectedVideo}/>
+            <UploadVideo onUpload={uploadVideo} />
+            {selectedVideo && (<video width="640" height="400" controls style={{ margin: "20px 0" }} loop autoPlay>
+                <source src={getVideoStreamUrl(selectedVideo?.filename!)} type="video/mp4" />
+            </video>)}
+            <VideoList videoList={videos} selectVideo={setSelectedVideo} />
         </div>
     );
 };

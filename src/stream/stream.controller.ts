@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import {
   Controller,
   Get,
@@ -7,71 +10,50 @@ import {
   Logger,
   Post,
   Param,
-  Req,
+  UploadedFile,
+  UseInterceptors,
+  BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
-import type { Response, Request } from 'express';
+import { FileInterceptor } from '@nestjs/platform-express';
+import type { Response } from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
+
+interface VideoItem {
+  filename: string;
+  url: string;
+}
 
 @Controller('stream')
 export class StreamController {
   private readonly logger = new Logger(StreamController.name);
-
-  @Get('video')
-  streamSampleVideo(@Headers('range') range: string, @Res() res: Response) {
-    const videoPath = path.join(process.cwd(), 'media/sample.mp4');
-    const stat = fs.statSync(videoPath);
-    const fileSize = stat.size;
-
-    if (!range) {
-      res.status(HttpStatus.BAD_REQUEST).send('Range header required');
-      return;
-    }
-
-    const parts = range.replace(/bytes=/, '').split('-');
-    const start = parseInt(parts[0], 10);
-    const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
-
-    const chunkSize = end - start + 1;
-    const file = fs.createReadStream(videoPath, { start, end });
-
-    res.writeHead(HttpStatus.PARTIAL_CONTENT, {
-      'Content-Range': `bytes ${start}-${end}/${fileSize}`,
-      'Accept-Ranges': 'bytes',
-      'Content-Length': chunkSize,
-      'Content-Type': 'video/mp4',
-    });
-
-    file.pipe(res);
-  }
+  private readonly mediaDir = path.join(process.cwd(), 'media');
 
   @Get('video/:filename')
   streamVideo(
     @Param('filename') filename: string,
-    @Headers('range') range: string,
+    @Headers('range') range: string | undefined,
     @Res() res: Response,
-  ) {
-    const videoPath = path.join(process.cwd(), 'media', filename);
+  ): void {
+    const videoPath = path.join(this.mediaDir, filename);
 
     if (!fs.existsSync(videoPath)) {
-      res.status(HttpStatus.NOT_FOUND).send('File not found');
-      return;
+      throw new NotFoundException('File not found');
+    }
+
+    if (!range) {
+      throw new BadRequestException('Range header required');
     }
 
     const stat = fs.statSync(videoPath);
     const fileSize = stat.size;
 
-    if (!range) {
-      res.status(HttpStatus.BAD_REQUEST).send('Range header required');
-      return;
-    }
-
-    const parts = range.replace(/bytes=/, '').split('-');
-    const start = parseInt(parts[0], 10);
-    const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+    const [startStr, endStr] = range.replace(/bytes=/, '').split('-');
+    const start = Number(startStr);
+    const end = endStr ? Number(endStr) : fileSize - 1;
 
     const chunkSize = end - start + 1;
-    const file = fs.createReadStream(videoPath, { start, end });
 
     res.writeHead(HttpStatus.PARTIAL_CONTENT, {
       'Content-Range': `bytes ${start}-${end}/${fileSize}`,
@@ -80,65 +62,49 @@ export class StreamController {
       'Content-Type': 'video/mp4',
     });
 
-    file.pipe(res);
+    fs.createReadStream(videoPath, { start, end }).pipe(res);
   }
 
   @Get('videos')
-  getVideoList(@Res() res: Response) {
-    const mediaDir = path.join(process.cwd(), 'media');
-
-    if (!fs.existsSync(mediaDir)) {
+  getVideoList(): VideoItem[] {
+    if (!fs.existsSync(this.mediaDir)) {
       this.logger.warn('Media directory does not exist');
-      return res.status(HttpStatus.OK).json([]);
+      return [];
     }
 
-    const videoExtensions = ['.mp4', '.webm', '.mov', '.mkv'];
+    const videoExtensions = new Set(['.mp4', '.webm', '.mov', '.mkv']);
 
-    const files = fs.readdirSync(mediaDir);
-
-    const videos = files
-      .filter((file) =>
-        videoExtensions.includes(path.extname(file).toLowerCase()),
-      )
+    return fs
+      .readdirSync(this.mediaDir)
+      .filter((file) => videoExtensions.has(path.extname(file).toLowerCase()))
       .map((file) => ({
         filename: file,
         url: `/api/stream/video/${file}`,
       }));
-
-    return res.status(HttpStatus.OK).json(videos);
   }
 
-  @Post('upload/:filename')
-  uploadVideo(
-    @Param('filename') filename: string,
-    @Req() req: Request,
-    @Res() res: Response,
-  ) {
-    const mediaDir = path.join(process.cwd(), 'media');
-    const filePath = path.join(mediaDir, filename);
-
-    if (!fs.existsSync(mediaDir)) {
-      fs.mkdirSync(mediaDir, { recursive: true });
+  @Post('upload')
+  @UseInterceptors(FileInterceptor('file'))
+  uploadVideo(@UploadedFile() file: Express.Multer.File): {
+    message: string;
+    filename: string;
+  } {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
     }
 
-    const writeStream = fs.createWriteStream(filePath);
+    if (!fs.existsSync(this.mediaDir)) {
+      fs.mkdirSync(this.mediaDir);
+    }
 
-    (req as unknown as NodeJS.ReadableStream).pipe(writeStream);
+    const targetPath = path.join(this.mediaDir, file.originalname);
+    fs.writeFileSync(targetPath, file.buffer);
 
-    writeStream.on('finish', () => {
-      this.logger.log(`Upload completed: ${filename}`);
-      res.status(HttpStatus.CREATED).json({
-        message: 'Upload complete',
-        filename,
-      });
-    });
+    this.logger.log(`Uploaded video: ${file.originalname}`);
 
-    writeStream.on('error', (err) => {
-      this.logger.error(`Upload failed: ${err.message}`);
-      res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-        message: 'Upload failed',
-        error: err.message,
-      });
-    });
+    return {
+      message: 'Upload successful',
+      filename: file.originalname,
+    };
   }
 }
