@@ -4,7 +4,8 @@ import UploadVideo from './UploadVideo';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../contexts/NotificationContext';
-import { getVideos, VideoItem, uploadVideo, getVideoStreamUrl } from '../api/streamApi';
+import { getVideos, VideoItem, uploadVideo, getVideoStreamUrl, deleteVideo } from '../api/streamApi';
+import { Role } from '../api/authApi';
 
 const StreamPage: React.FC = () => {
     const { user, initialized } = useAuth();
@@ -13,16 +14,38 @@ const StreamPage: React.FC = () => {
     const [videos, setVideos] = useState<VideoItem[]>([]);
     const [selectedVideo, setSelectedVideo] = useState<VideoItem | null>(null);
 
-    const fetchVideoList = useCallback(async () => {
+    const isAdmin = user?.role === 'admin';
+
+    const fetchVideoList = useCallback(async (shouldNotify: boolean = false) => {
         try {
             const res = await getVideos();
             setVideos(res);
             setSelectedVideo(res[0]);
-            notify('Videos loaded successfully', 'success', 3000);
+            shouldNotify && notify('Videos loaded successfully', 'success', 3000);
         } catch {
-            notify('Failed to load videos', 'error', 5000);
+            shouldNotify && notify('Failed to load videos', 'error', 5000);
         }
     }, []);
+
+    const onVideoDelete = async (fileName: string) => {
+        try {
+            const res = await deleteVideo(fileName);
+            notify('Video deleted successfully', 'success', 3000);
+            fetchVideoList(false);
+        } catch (error) {
+            notify('Failed to delete video', 'error', 5000);
+        }
+    };
+
+    const onVideoUpload = async (file: File) => {
+        try {
+            const res = await uploadVideo(file);
+            notify('Video uploaded successfully', 'success', 3000);
+            fetchVideoList(false);
+        } catch (error) {
+            notify('Failed to upload video', 'error', 5000);
+        }
+    };
 
     useEffect(() => {
         if (!initialized) return;
@@ -30,7 +53,7 @@ const StreamPage: React.FC = () => {
             navigate('/login', { replace: true });
             return;
         }
-        fetchVideoList();
+        fetchVideoList(true);
     }, [initialized, user, fetchVideoList]);
 
     return (
@@ -40,7 +63,7 @@ const StreamPage: React.FC = () => {
             alignItems: 'center',
         }}>
             <h1>Stream panel</h1>
-            <UploadVideo onUpload={uploadVideo} />
+            {isAdmin && <UploadVideo onUpload={onVideoUpload} />}
             {selectedVideo && (
                 <video
                     width="640"
@@ -51,10 +74,10 @@ const StreamPage: React.FC = () => {
                     autoPlay
                     key={selectedVideo.filename}
                 >
-                <source src={getVideoStreamUrl(selectedVideo?.filename!)} type="video/mp4" />
-            </video>
-        )}
-            <VideoList videoList={videos} selectVideo={setSelectedVideo} />
+                    <source src={getVideoStreamUrl(selectedVideo?.filename!)} type="video/mp4" />
+                </video>
+            )}
+            <VideoList videoList={videos} selectVideo={setSelectedVideo} deleteVideo={onVideoDelete} isAdmin={isAdmin}/>
         </div>
     );
 };
