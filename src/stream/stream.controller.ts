@@ -12,7 +12,12 @@ import {
   BadRequestException,
   NotFoundException,
   Delete,
+  UseGuards,
 } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
+import { UserRole } from '../users/schemas/user.schema';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
 import * as fs from 'fs';
@@ -23,6 +28,7 @@ interface VideoItem {
   url: string;
 }
 
+@UseGuards(JwtAuthGuard)
 @Controller('stream')
 export class StreamController {
   private readonly logger = new Logger(StreamController.name);
@@ -63,6 +69,8 @@ export class StreamController {
     fs.createReadStream(videoPath, { start, end }).pipe(res);
   }
 
+  @Roles(UserRole.ADMIN)
+  @UseGuards(RolesGuard)
   @Delete('video/:filename')
   deleteVideo(@Param('filename') filename: string): {
     message: string;
@@ -107,6 +115,8 @@ export class StreamController {
       }));
   }
 
+  @Roles(UserRole.ADMIN)
+  @UseGuards(RolesGuard)
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
   uploadVideo(@UploadedFile() file: Express.Multer.File): {
