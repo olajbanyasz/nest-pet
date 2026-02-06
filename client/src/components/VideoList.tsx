@@ -29,8 +29,14 @@ const VideoList: React.FC<VideoListProps> = ({
                 margin: '0 auto',
             }}
         >
-            {videoList.map((v) => (
-                <VideoItemComponent video={v} onSelect={onSelect} onDelete={deleteVideo} isAdmin={isAdmin}/>
+            {videoList.map((video) => (
+                <VideoItemComponent
+                    video={video}
+                    onSelect={onSelect}
+                    onDelete={deleteVideo}
+                    isAdmin={isAdmin}
+                    key={video.filename}
+                />
             ))}
         </div>
     );
