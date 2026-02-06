@@ -36,3 +36,9 @@ export const uploadVideo = async (
     },
   });
 };
+
+export const deleteVideo = async (filename: string): Promise<void> => {
+  await api.delete(
+    `${STREAM_BASE_URL}/${encodeURIComponent(filename)}`,
+  );
+};

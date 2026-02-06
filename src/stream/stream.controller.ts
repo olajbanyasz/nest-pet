@@ -11,6 +11,7 @@ import {
   UseInterceptors,
   BadRequestException,
   NotFoundException,
+  Delete,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
@@ -60,6 +61,32 @@ export class StreamController {
     });
 
     fs.createReadStream(videoPath, { start, end }).pipe(res);
+  }
+
+  @Delete('video/:filename')
+  deleteVideo(@Param('filename') filename: string): {
+    message: string;
+    filename: string;
+  } {
+    if (!filename) {
+      throw new BadRequestException('Filename is required');
+    }
+
+    const safeFilename = path.basename(filename);
+    const videoPath = path.join(this.mediaDir, safeFilename);
+
+    if (!fs.existsSync(videoPath)) {
+      throw new NotFoundException('File not found');
+    }
+
+    fs.unlinkSync(videoPath);
+
+    this.logger.log(`Deleted video: ${safeFilename}`);
+
+    return {
+      message: 'Video deleted',
+      filename: safeFilename,
+    };
   }
 
   @Get('videos')
