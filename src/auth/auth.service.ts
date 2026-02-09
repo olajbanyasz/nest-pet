@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
@@ -92,9 +91,10 @@ export class AuthService {
     const decoded = this.jwtService.decode(accessToken);
 
     if (decoded?.exp) {
+      const expiresInMs = decoded.exp * 1000 - Date.now();
       this.tokenExpiryService.scheduleTokenExpiryWarning(
         user._id.toString(),
-        decoded.exp,
+        expiresInMs,
       );
     } else {
       this.logger.warn(
@@ -153,6 +153,19 @@ export class AuthService {
 
     const newAccessToken = await this.generateAccessToken(user);
     const newRefreshToken = await this.generateRefreshToken(user._id);
+
+    const decoded = this.jwtService.decode(newAccessToken);
+    if (decoded?.exp) {
+      const expiresInMs = decoded.exp * 1000 - Date.now();
+      this.tokenExpiryService.scheduleTokenExpiryWarning(
+        user._id.toString(),
+        expiresInMs,
+      );
+    } else {
+      this.logger.warn(
+        `Could not decode exp from access token for user ${user._id}`,
+      );
+    }
 
     return {
       access_token: newAccessToken,

@@ -25,5 +25,7 @@ export const disconnectAuthSocket = () => {
 };
 
 export const onTokenExpiring = (cb: () => void) => {
-  socket?.on('TOKEN_EXPIRING', cb);
+  if (!socket) return;
+  socket.off('TOKEN_EXPIRING');
+  socket.on('TOKEN_EXPIRING', cb);
 };

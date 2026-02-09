@@ -8,7 +8,10 @@ export class TokenExpiryService {
   constructor(private readonly authGateway: AuthGateway) {}
 
   scheduleTokenExpiryWarning(userId: string, tokenExpiresInMs: number): void {
-    const warningDelay = tokenExpiresInMs - 30_000;
+    const overrideDelayMs = Number(process.env.TOKEN_WARNING_DELAY_MS);
+    const warningDelay = Number.isFinite(overrideDelayMs)
+      ? overrideDelayMs
+      : tokenExpiresInMs - 30_000;
 
     if (warningDelay <= 0) {
       this.logger.warn('Token expiry warning skipped (too short)');

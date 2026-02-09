@@ -4,6 +4,7 @@ import React, {
   useEffect,
   useState,
   useRef,
+  useCallback,
 } from 'react';
 import {
   checkAuth as apiCheckAuth,
@@ -46,38 +47,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [showRefreshModal, setShowRefreshModal] = useState(false);
 
   const isMounted = useRef(true);
-  const setUserWithStorage = (user: User | null) => {
+  const setUserWithStorage = useCallback((user: User | null) => {
     setUser(user);
     if (user) {
       sessionStorage.setItem('user', JSON.stringify(user));
     } else {
       sessionStorage.removeItem('user');
     }
-  };
+  }, []);
 
-  const loadUser = async (options?: { skipTokenCheck?: boolean }) => {
-    const token = sessionStorage.getItem('access_token');
+  const loadUser = useCallback(
+    async (options?: { skipTokenCheck?: boolean }) => {
+      const token = sessionStorage.getItem('access_token');
 
-    if (!token && !options?.skipTokenCheck) {
-      setUserWithStorage(null);
-      return;
-    }
-
-    try {
-      const backendUser = await apiCheckAuth();
-      if (!isMounted.current) return;
-      if (backendUser) {
-        setUserWithStorage({
-          id: backendUser.id,
-          email: backendUser.email,
-          role: backendUser.role.toLowerCase() === 'admin' ? 'admin' : 'user',
-          name: backendUser.name,
-        });
-      } else {
+      if (!token && !options?.skipTokenCheck) {
         setUserWithStorage(null);
+        return;
       }
-    } catch (err) { }
-  };
+
+      try {
+        const backendUser = await apiCheckAuth();
+        if (!isMounted.current) return;
+        if (backendUser) {
+          setUserWithStorage({
+            id: backendUser.id,
+            email: backendUser.email,
+            role: backendUser.role.toLowerCase() === 'admin' ? 'admin' : 'user',
+            name: backendUser.name,
+          });
+        } else {
+          setUserWithStorage(null);
+        }
+      } catch (err) { }
+    },
+    [setUserWithStorage],
+  );
 
   useEffect(() => {
     isMounted.current = true;
@@ -119,6 +123,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       console.log('[Auth] Failed to refresh user from API:', err);
     });
   }, [initialized, loadUser]);
+
+  useEffect(() => {
+    if (!initialized) return;
+    const token = sessionStorage.getItem('access_token');
+    if (!token) return;
+
+    connectAuthSocket();
+    onTokenExpiring(() => {
+      setShowRefreshModal(true);
+    });
+
+    return () => {
+      disconnectAuthSocket();
+    };
+  }, [initialized]);
 
 const login = async (
   email: string,
