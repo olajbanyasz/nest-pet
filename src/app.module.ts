@@ -9,6 +9,7 @@ import { AdminModule } from './admin/admin.module';
 import KeyvRedis from '@keyv/redis';
 import { Keyv } from 'keyv';
 import { CacheableMemory } from 'cacheable';
+import { StreamModule } from './stream/stream.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { CacheableMemory } from 'cacheable';
     TodosModule,
     AuthModule,
     AdminModule,
+    StreamModule,
   ],
   controllers: [AppController],
   providers: [AppService],

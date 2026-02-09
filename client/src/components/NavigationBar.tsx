@@ -34,6 +34,11 @@ const NavigationBar: React.FC = () => {
       command: () => navigate('/todos'),
       className: isActive('/todos') ? 'active-menu-item' : '',
     },
+    {
+      label: 'Stream',
+      command: () => navigate('/stream'),
+      className: isActive('/stream') ? 'active-menu-item' : '',
+    },
   ];
 
   const adminItems = [
@@ -51,6 +56,11 @@ const NavigationBar: React.FC = () => {
       label: 'Dashboard',
       command: () => navigate('/dashboard'),
       className: isActive('/dashboard') ? 'active-menu-item' : '',
+    },
+    {
+      label: 'Stream',
+      command: () => navigate('/stream'),
+      className: isActive('/stream') ? 'active-menu-item' : '',
     },
   ];
 
