@@ -1,15 +1,17 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
 import {
   Injectable,
   UnauthorizedException,
   ConflictException,
   Logger,
-  BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { JwtService } from '@nestjs/jwt';
+import { TokenExpiryService } from './token-expiry.service';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 
@@ -32,6 +34,7 @@ export class AuthService {
     private readonly refreshTokenModel: Model<RefreshTokenDocument>,
 
     private readonly jwtService: JwtService,
+    private readonly tokenExpiryService: TokenExpiryService,
   ) {}
 
   async register(
@@ -83,10 +86,21 @@ export class AuthService {
     user.lastLoginAt = new Date();
     await user.save();
 
-    // one device! await this.refreshTokenModel.deleteMany({ userId: user._id });
-
     const accessToken = await this.generateAccessToken(user);
     const refreshToken = await this.generateRefreshToken(user._id);
+
+    const decoded = this.jwtService.decode(accessToken);
+
+    if (decoded?.exp) {
+      this.tokenExpiryService.scheduleTokenExpiryWarning(
+        user._id.toString(),
+        decoded.exp,
+      );
+    } else {
+      this.logger.warn(
+        `Could not decode exp from access token for user ${user._id}`,
+      );
+    }
 
     this.logger.log(
       `User logged in: ${email} (id: ${user._id}, role: ${user.role})`,

@@ -13,8 +13,13 @@ export interface User {
 
 export interface AuthResponse {
   success: boolean;
-  message?: string;
-  user?: User;
+  user?: {
+    id: string;
+    email: string;
+    role: 'user' | 'admin';
+    name?: string;
+  };
+  message?: string
 }
 
 interface BackendUser {

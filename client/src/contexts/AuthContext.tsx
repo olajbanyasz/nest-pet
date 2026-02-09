@@ -12,6 +12,7 @@ import {
   refreshAccessToken,
   AuthResponse,
 } from '../api/authApi';
+import { connectAuthSocket, disconnectAuthSocket, onTokenExpiring } from '../socket/authSocket';
 import { setAuthLogoutCallback } from '../api/axios';
 
 export type UserRole = 'user' | 'admin';
@@ -27,6 +28,8 @@ interface AuthContextValue {
   user: User | null;
   loading: boolean;
   initialized: boolean;
+  showRefreshModal: boolean;
+  setShowRefreshModal: (value: boolean) => void;
   login: (email: string, password: string) => Promise<AuthResponse>;
   logout: () => void;
   refresh: () => Promise<boolean>;
@@ -40,6 +43,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<User | null>(null);
   const [initialized, setInitialized] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showRefreshModal, setShowRefreshModal] = useState(false);
+
   const isMounted = useRef(true);
   const setUserWithStorage = (user: User | null) => {
     setUser(user);
@@ -71,7 +76,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       } else {
         setUserWithStorage(null);
       }
-    } catch (err) {}
+    } catch (err) { }
   };
 
   useEffect(() => {
@@ -94,7 +99,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       try {
         const user = JSON.parse(storedUser);
         setUser(user);
-      } catch (err) {}
+      } catch (err) { }
     }
     if (isMounted.current) {
       setInitialized(true);
@@ -113,28 +118,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     loadUser().catch((err) => {
       console.log('[Auth] Failed to refresh user from API:', err);
     });
-  }, [initialized]);
+  }, [initialized, loadUser]);
 
-  const login = async (
-    email: string,
-    password: string,
-  ): Promise<AuthResponse> => {
-    const result = await apiLogin(email, password);
-    if (result.success && result.user) {
-      setUserWithStorage({
-        id: result.user.id,
-        email: result.user.email,
-        role: result.user.role,
-        name: result.user.name,
-      });
-    }
-    return result;
-  };
+const login = async (
+  email: string,
+  password: string,
+): Promise<AuthResponse> => {
+  const result = await apiLogin(email, password);
+
+  if (result.success && result.user) {
+    setUserWithStorage({
+      id: result.user.id,
+      email: result.user.email,
+      role: result.user.role,
+      name: result.user.name,
+    });
+
+    connectAuthSocket();
+    onTokenExpiring(() => {
+      setShowRefreshModal(true);
+    });
+  }
+
+  return result;
+};
+
 
   const logout = () => {
     apiLogout().catch((err) => console.log('[Auth] Logout API error', err));
     sessionStorage.removeItem('access_token');
     sessionStorage.removeItem('user');
+
+    disconnectAuthSocket();
+    setShowRefreshModal(false);
     setUser(null);
   };
 
@@ -144,9 +160,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       logout();
       return false;
     }
+
+    const newToken = sessionStorage.getItem('access_token');
+    if (newToken) {
+      connectAuthSocket();
+    }
+
+    setShowRefreshModal(false);
     await loadUser();
     return true;
   };
+
 
   return (
     <AuthContext.Provider
@@ -157,6 +181,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         login,
         logout,
         refresh,
+        showRefreshModal,
+        setShowRefreshModal
       }}
     >
       {children}
