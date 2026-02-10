@@ -14,7 +14,7 @@ import {
   AuthResponse,
 } from '../api/authApi';
 import { connectAuthSocket, disconnectAuthSocket, onTokenExpiring } from '../socket/authSocket';
-import { setAuthLogoutCallback } from '../api/axios';
+import { setAuthLogoutCallback, setLogoutInProgress } from '../api/axios';
 
 export type UserRole = 'user' | 'admin';
 
@@ -47,6 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [showRefreshModal, setShowRefreshModal] = useState(false);
 
   const isMounted = useRef(true);
+  const isLoggingOut = useRef(false);
   const setUserWithStorage = useCallback((user: User | null) => {
     setUser(user);
     if (user) {
@@ -83,20 +84,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     [setUserWithStorage],
   );
 
-  useEffect(() => {
-    isMounted.current = true;
-    const handleLogout = () => {
-      apiLogout().catch((err) => console.log('[Auth] Logout API error', err));
+  const performLogout = useCallback(
+    (options?: { skipApi?: boolean }) => {
+      if (isLoggingOut.current) return;
+      isLoggingOut.current = true;
+      setLogoutInProgress(true);
+
+      const token = sessionStorage.getItem('access_token');
+      if (!options?.skipApi && token) {
+        apiLogout().catch((err) =>
+          console.log('[Auth] Logout API error', err),
+        );
+      }
+
       sessionStorage.removeItem('access_token');
       sessionStorage.removeItem('user');
+
+      disconnectAuthSocket();
+      setShowRefreshModal(false);
       if (isMounted.current) {
         setUser(null);
         setInitialized(true);
         setLoading(false);
       }
-    };
+    },
+    [],
+  );
 
-    setAuthLogoutCallback(handleLogout);
+  useEffect(() => {
+    isMounted.current = true;
+    setAuthLogoutCallback(() => performLogout({ skipApi: true }));
 
     const storedUser = sessionStorage.getItem('user');
     if (storedUser) {
@@ -112,7 +129,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     return () => {
       isMounted.current = false;
     };
-  }, []);
+  }, [performLogout]);
 
   useEffect(() => {
     if (!initialized) return;
@@ -146,6 +163,8 @@ const login = async (
   const result = await apiLogin(email, password);
 
   if (result.success && result.user) {
+    isLoggingOut.current = false;
+    setLogoutInProgress(false);
     setUserWithStorage({
       id: result.user.id,
       email: result.user.email,
@@ -164,13 +183,7 @@ const login = async (
 
 
   const logout = () => {
-    apiLogout().catch((err) => console.log('[Auth] Logout API error', err));
-    sessionStorage.removeItem('access_token');
-    sessionStorage.removeItem('user');
-
-    disconnectAuthSocket();
-    setShowRefreshModal(false);
-    setUser(null);
+    performLogout();
   };
 
   const refresh = async (): Promise<boolean> => {
