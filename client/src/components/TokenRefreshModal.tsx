@@ -2,6 +2,7 @@ import React from 'react';
 import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
 import { useAuth } from '../contexts/AuthContext';
+import { useLoading } from '../contexts/LoadingProvider'; 
 
 const TokenRefreshModal: React.FC = () => {
   const {
@@ -10,9 +11,18 @@ const TokenRefreshModal: React.FC = () => {
     refresh
   } = useAuth();
 
+  const { show, hide } = useLoading();
+
   const onConfirm = async () => {
-    await refresh();
-    setShowRefreshModal(false);
+    try {
+      show();
+      await refresh();
+    } catch(error) {
+      console.error(error);
+    } finally {
+      hide();
+      setShowRefreshModal(false);
+    }
   };
 
   return (
@@ -31,9 +41,16 @@ const TokenRefreshModal: React.FC = () => {
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
         <Button
-          label="OK"
+          label="Cancel"
+          icon="pi pi-times"
+          onClick={() => setShowRefreshModal(false)}
+          className="p-button-secondary"
+        />
+        <Button
+          label="Refresh"
           icon="pi pi-refresh"
           onClick={onConfirm}
+          className="p-button-info"
         />
       </div>
     </Dialog>

@@ -111,7 +111,7 @@ export class AuthController {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    return { message: 'Token refreshed' };
+    return { message: 'Token refreshed', access_token };
   }
 
   @UseGuards(JwtAuthGuard)

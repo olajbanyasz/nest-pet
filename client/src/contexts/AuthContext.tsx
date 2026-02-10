@@ -175,18 +175,19 @@ const login = async (
 
   const refresh = async (): Promise<boolean> => {
     const refreshed = await refreshAccessToken();
+
     if (!refreshed) {
       logout();
       return false;
     }
 
     const newToken = sessionStorage.getItem('access_token');
+
     if (newToken) {
       connectAuthSocket();
     }
 
     setShowRefreshModal(false);
-    await loadUser();
     return true;
   };
 
