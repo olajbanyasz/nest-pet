@@ -8,7 +8,7 @@ import ApplicationDetails from './ApplicationDetails';
 import { getApplicationDetails } from '../api/adminApi';
 
 const DashBoard: React.FC = () => {
-  const { user, loading: authLoading, initialized } = useAuth();
+  const { user, loading: authLoading, initialized, onlineCount, onlineUsers } = useAuth();
   const { show, hide } = useLoading();
   const { notify } = useNotification();
   const navigate = useNavigate();
@@ -49,6 +49,9 @@ const DashBoard: React.FC = () => {
   return (
     <div className="dashboard-container">
       <h1 style={{ textAlign: 'center' }}>Dashboard</h1>
+      <div className="online-indicator">
+        🟢 {onlineCount} user online
+      </div>
       <ApplicationDetails appDetails={appDetails} />
     </div>
   );

@@ -13,7 +13,7 @@ import {
   refreshAccessToken,
   AuthResponse,
 } from '../api/authApi';
-import { connectAuthSocket, disconnectAuthSocket, onTokenExpiring } from '../socket/authSocket';
+import { connectAuthSocket, disconnectAuthSocket, onTokenExpiring, onOnlineUsersUpdate } from '../socket/authSocket';
 import { setAuthLogoutCallback, setLogoutInProgress } from '../api/axios';
 
 export type UserRole = 'user' | 'admin';
@@ -34,6 +34,8 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<AuthResponse>;
   logout: () => void;
   refresh: () => Promise<boolean>;
+  onlineUsers: string[];
+  onlineCount: number;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -45,6 +47,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [initialized, setInitialized] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showRefreshModal, setShowRefreshModal] = useState(false);
+  const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
+  const [onlineCount, setOnlineCount] = useState(0);
 
   const isMounted = useRef(true);
   const isLoggingOut = useRef(false);
@@ -55,6 +59,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     } else {
       sessionStorage.removeItem('user');
     }
+  }, []);
+
+  useEffect(() => {
+    const handleUnload = () => {
+      disconnectAuthSocket();
+    };
+
+    window.addEventListener('beforeunload', handleUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleUnload);
+    };
   }, []);
 
   const loadUser = useCallback(
@@ -156,30 +172,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, [initialized]);
 
-const login = async (
-  email: string,
-  password: string,
-): Promise<AuthResponse> => {
-  const result = await apiLogin(email, password);
+  const login = async (
+    email: string,
+    password: string,
+  ): Promise<AuthResponse> => {
+    const result = await apiLogin(email, password);
 
-  if (result.success && result.user) {
-    isLoggingOut.current = false;
-    setLogoutInProgress(false);
-    setUserWithStorage({
-      id: result.user.id,
-      email: result.user.email,
-      role: result.user.role,
-      name: result.user.name,
-    });
+    if (result.success && result.user) {
+      isLoggingOut.current = false;
+      setLogoutInProgress(false);
+      setUserWithStorage({
+        id: result.user.id,
+        email: result.user.email,
+        role: result.user.role,
+        name: result.user.name,
+      });
 
-    connectAuthSocket();
-    onTokenExpiring(() => {
-      setShowRefreshModal(true);
-    });
-  }
+      connectAuthSocket();
+      onOnlineUsersUpdate((data) => {
+        setOnlineUsers(data.users);
+        setOnlineCount(data.count);
+      });
+      onTokenExpiring(() => {
+        setShowRefreshModal(true);
+      });
+    }
 
-  return result;
-};
+    return result;
+  };
 
 
   const logout = () => {
@@ -215,7 +235,9 @@ const login = async (
         logout,
         refresh,
         showRefreshModal,
-        setShowRefreshModal
+        setShowRefreshModal,
+        onlineUsers,
+        onlineCount,
       }}
     >
       {children}
