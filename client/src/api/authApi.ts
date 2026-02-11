@@ -13,8 +13,13 @@ export interface User {
 
 export interface AuthResponse {
   success: boolean;
-  message?: string;
-  user?: User;
+  user?: {
+    id: string;
+    email: string;
+    role: 'user' | 'admin';
+    name?: string;
+  };
+  message?: string
 }
 
 interface BackendUser {
@@ -135,7 +140,8 @@ export const refreshAccessToken = async (): Promise<boolean> => {
     const res = await api.post<{ access_token: string }>(
       `${AUTH_BASE_URL}/refresh`,
     );
-    sessionStorage.setItem('access_token', res.data.access_token);
+    const token = res.data.access_token;
+    sessionStorage.setItem('access_token', token);
     return true;
   } catch {
     return false;

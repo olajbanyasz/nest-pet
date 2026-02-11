@@ -45,6 +45,7 @@ function Todos() {
       hide();
     }
   }, [todoFilter]);
+  
   useEffect(() => {
     if (!initialized) return;
     if (!user) {

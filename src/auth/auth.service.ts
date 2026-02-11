@@ -1,15 +1,16 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
 import {
   Injectable,
   UnauthorizedException,
   ConflictException,
   Logger,
-  BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { JwtService } from '@nestjs/jwt';
+import { TokenExpiryService } from './token-expiry.service';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 
@@ -32,6 +33,7 @@ export class AuthService {
     private readonly refreshTokenModel: Model<RefreshTokenDocument>,
 
     private readonly jwtService: JwtService,
+    private readonly tokenExpiryService: TokenExpiryService,
   ) {}
 
   async register(
@@ -83,10 +85,22 @@ export class AuthService {
     user.lastLoginAt = new Date();
     await user.save();
 
-    // one device! await this.refreshTokenModel.deleteMany({ userId: user._id });
-
     const accessToken = await this.generateAccessToken(user);
     const refreshToken = await this.generateRefreshToken(user._id);
+
+    const decoded = this.jwtService.decode(accessToken);
+
+    if (decoded?.exp) {
+      const expiresInMs = decoded.exp * 1000 - Date.now();
+      this.tokenExpiryService.scheduleTokenExpiryWarning(
+        user._id.toString(),
+        expiresInMs,
+      );
+    } else {
+      this.logger.warn(
+        `Could not decode exp from access token for user ${user._id}`,
+      );
+    }
 
     this.logger.log(
       `User logged in: ${email} (id: ${user._id}, role: ${user.role})`,
@@ -139,6 +153,19 @@ export class AuthService {
 
     const newAccessToken = await this.generateAccessToken(user);
     const newRefreshToken = await this.generateRefreshToken(user._id);
+
+    const decoded = this.jwtService.decode(newAccessToken);
+    if (decoded?.exp) {
+      const expiresInMs = decoded.exp * 1000 - Date.now();
+      this.tokenExpiryService.scheduleTokenExpiryWarning(
+        user._id.toString(),
+        expiresInMs,
+      );
+    } else {
+      this.logger.warn(
+        `Could not decode exp from access token for user ${user._id}`,
+      );
+    }
 
     return {
       access_token: newAccessToken,

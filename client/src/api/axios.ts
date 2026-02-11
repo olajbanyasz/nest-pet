@@ -12,6 +12,7 @@ const api = axios.create({
 
 let isRefreshing = false;
 let authLogoutCallback: (() => void) | null = null;
+let isLogoutInProgress = false;
 
 let failedQueue: Array<{
   resolve: (token: string) => void;
@@ -20,6 +21,10 @@ let failedQueue: Array<{
 
 export const setAuthLogoutCallback = (callback: () => void): void => {
   authLogoutCallback = callback;
+};
+
+export const setLogoutInProgress = (value: boolean): void => {
+  isLogoutInProgress = value;
 };
 const processQueue = (error: Error | null, token: string | null): void => {
   failedQueue.forEach(({ resolve, reject }) => {
@@ -45,6 +50,9 @@ api.interceptors.response.use(
     const originalRequest = error.config as RetryAxiosRequestConfig | undefined;
     if (!originalRequest) {
       return Promise.reject(new Error('Axios error without config'));
+    }
+    if (isLogoutInProgress) {
+      return Promise.reject(new Error('Logout in progress'));
     }
     if (originalRequest.headers?.['X-Skip-Interceptor']) {
       const errorMessage = error.message || 'Request failed';
