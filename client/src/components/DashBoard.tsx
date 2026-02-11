@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import OnlineUsersModal from './OnlineUsersModal';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLoading } from '../contexts/LoadingProvider';
@@ -49,9 +50,7 @@ const DashBoard: React.FC = () => {
   return (
     <div className="dashboard-container">
       <h1 style={{ textAlign: 'center' }}>Dashboard</h1>
-      <div className="online-indicator">
-        🟢 {onlineCount} user online
-      </div>
+      <OnlineUsersModal onlineCount={onlineCount} onlineUsers={onlineUsers} />
       <ApplicationDetails appDetails={appDetails} />
     </div>
   );
