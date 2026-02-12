@@ -8,6 +8,13 @@ export interface Todo {
   completed: boolean;
 }
 
+export type DayStats = Record<string, number>;
+
+export interface StatsData {
+  createdTodos: DayStats;
+  completedTodos: DayStats;
+}
+
 export const fetchTodos = async (todoFilter: string): Promise<Todo[]> => {
   const query =
     todoFilter === 'all' ? '' : `?completed=${todoFilter === 'completed'}`;
@@ -35,4 +42,11 @@ export const updateTodoTitle = async (
 
 export const deleteTodo = async (id: string): Promise<void> => {
   await api.delete(`${API_BASE_URL}/${id}`);
+};
+
+export const getLast14DaysStats = async (): Promise<StatsData> => {
+  const { data } = await api.get<StatsData>(
+    `${API_BASE_URL}/stats/last-14-days`,
+  );
+  return data;
 };

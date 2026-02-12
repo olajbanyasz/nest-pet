@@ -9,6 +9,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { TodosService } from './todos.service';
 import { CreateTodoDto } from './dto/create-todo.dto';
@@ -55,5 +56,11 @@ export class TodosController {
   @UseGuards(JwtAuthGuard)
   async delete(@User() user: { userId: string }, @Param('id') id: string) {
     return this.todosService.delete(id, user.userId);
+  }
+
+  @Get('stats/last-14-days')
+  @UseGuards(JwtAuthGuard)
+  getLast14DaysStats() {
+    return this.todosService.getLast14DaysStats();
   }
 }

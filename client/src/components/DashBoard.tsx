@@ -7,6 +7,7 @@ import { useNotification } from '../contexts/NotificationContext';
 import { useNavigate } from 'react-router-dom';
 import ApplicationDetails from './ApplicationDetails';
 import { getApplicationDetails } from '../api/adminApi';
+import TodoStatsChart from './TodoStatsChart';
 
 const DashBoard: React.FC = () => {
   const { user, loading: authLoading, initialized, onlineCount, onlineUsers } = useAuth();
@@ -52,6 +53,7 @@ const DashBoard: React.FC = () => {
       <h1 style={{ textAlign: 'center' }}>Dashboard</h1>
       <OnlineUsersModal onlineCount={onlineCount} onlineUsers={onlineUsers} />
       <ApplicationDetails appDetails={appDetails} />
+      <TodoStatsChart />
     </div>
   );
 };

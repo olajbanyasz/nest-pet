@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   Injectable,
   NotFoundException,
@@ -8,6 +10,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types, isValidObjectId, FilterQuery } from 'mongoose';
 import { Todo, TodoDocument } from './schemas/todo.schema';
 import { CreateTodoDto } from './dto/create-todo.dto';
+import { UpdateTodoDto } from './dto/update-todo.dto';
 
 @Injectable()
 export class TodosService {
@@ -73,28 +76,43 @@ export class TodosService {
   async update(
     id: string,
     userId: string,
-    todoUpdate: Partial<CreateTodoDto>,
+    todoUpdate: Partial<UpdateTodoDto>,
   ): Promise<Todo> {
     if (!isValidObjectId(id) || !isValidObjectId(userId)) {
       throw new BadRequestException('Invalid id format');
     }
 
+    const existing = await this.todoModel.findOne({
+      _id: new Types.ObjectId(id),
+      userId: new Types.ObjectId(userId),
+    });
+
+    if (!existing) {
+      throw new NotFoundException(`Todo with id "${id}" not found`);
+    }
+
+    if (typeof todoUpdate.completed === 'boolean') {
+      if (todoUpdate.completed && !existing.completed) {
+        todoUpdate.completedAt = new Date();
+      }
+
+      if (!todoUpdate.completed && existing.completed) {
+        todoUpdate.completedAt = null;
+      }
+    }
+
     const updated = await this.todoModel
       .findOneAndUpdate(
         {
-          _id: new Types.ObjectId(id),
-          userId: new Types.ObjectId(userId),
+          _id: existing._id,
+          userId: existing.userId,
         },
         todoUpdate,
         { new: true },
       )
       .exec();
 
-    if (!updated) {
-      throw new NotFoundException(`Todo with id "${id}" not found`);
-    }
-
-    return updated;
+    return updated!;
   }
 
   async delete(id: string, userId: string): Promise<Todo> {
@@ -160,5 +178,98 @@ export class TodosService {
 
   async countDeletedTodos(): Promise<number> {
     return this.todoModel.countDocuments({ deleted: true }).exec();
+  }
+
+  async getLast14DaysStats() {
+    const today = new Date();
+    const endDate = new Date(
+      Date.UTC(
+        today.getUTCFullYear(),
+        today.getUTCMonth(),
+        today.getUTCDate(),
+        23,
+        59,
+        59,
+        999,
+      ),
+    );
+
+    const startDate = new Date(endDate);
+    startDate.setUTCDate(startDate.getUTCDate() - 13);
+    startDate.setUTCHours(0, 0, 0, 0);
+
+    const createdResult = await this.todoModel.aggregate([
+      {
+        $match: {
+          createdAt: {
+            $gte: startDate,
+            $lte: today,
+          },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            $dateToString: {
+              format: '%Y-%m-%d',
+              date: '$createdAt',
+              timezone: 'UTC',
+            },
+          },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+
+    const completedResult = await this.todoModel.aggregate([
+      {
+        $match: {
+          completed: true,
+          completedAt: {
+            $gte: startDate,
+            $lte: today,
+          },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            $dateToString: {
+              format: '%Y-%m-%d',
+              date: '$completedAt',
+              timezone: 'UTC',
+            },
+          },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+
+    const createdDays: Record<string, number> = {};
+    const completedDays: Record<string, number> = {};
+
+    for (let i = 0; i < 14; i++) {
+      const date = new Date(startDate);
+      date.setDate(startDate.getDate() + i);
+      const key = date.toISOString().split('T')[0];
+
+      createdDays[key] = 0;
+      completedDays[key] = 0;
+    }
+
+    createdResult.forEach((item) => {
+      createdDays[item._id] = item.count;
+    });
+
+    completedResult.forEach((item) => {
+      completedDays[item._id] = item.count;
+    });
+
+    return {
+      createdTodos: createdDays,
+      completedTodos: completedDays,
+    };
   }
 }
