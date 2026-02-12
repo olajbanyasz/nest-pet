@@ -49,6 +49,7 @@ describe('TodosService', () => {
     findOneAndUpdate: jest.fn(),
     updateMany: jest.fn(),
     countDocuments: jest.fn(),
+    aggregate: jest.fn(),
   };
 
   const mockModelConstructor = jest.fn().mockImplementation((data) => ({
@@ -171,10 +172,13 @@ describe('TodosService', () => {
 
   describe('update', () => {
     it('updates and returns todo', async () => {
+      mockModel.findOne.mockResolvedValue(todos[0]);
+
       mockModel.findOneAndUpdate.mockReturnValue({
         exec: jest.fn().mockResolvedValue({
           ...todos[0],
           completed: true,
+          completedAt: new Date(),
         }),
       });
 
@@ -184,13 +188,13 @@ describe('TodosService', () => {
         { completed: true },
       );
 
+      expect(mockModel.findOne).toHaveBeenCalled();
+      expect(mockModel.findOneAndUpdate).toHaveBeenCalled();
       expect(result.completed).toBe(true);
     });
 
     it('throws NotFoundException when missing', async () => {
-      mockModel.findOneAndUpdate.mockReturnValue({
-        exec: jest.fn().mockResolvedValue(null),
-      });
+      mockModel.findOne.mockResolvedValue(null);
 
       await expect(
         service.update(TODO_ID_1.toHexString(), USER_ID.toHexString(), {

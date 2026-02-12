@@ -23,5 +23,5 @@ export class CreateTodoDto {
 
   @IsOptional()
   @IsDate()
-  completedAt: Date | null;
+  completedAt?: Date | null;
 }
