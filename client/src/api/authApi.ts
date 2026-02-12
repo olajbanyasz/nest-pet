@@ -19,7 +19,7 @@ export interface AuthResponse {
     role: 'user' | 'admin';
     name?: string;
   };
-  message?: string
+  message?: string;
 }
 
 interface BackendUser {

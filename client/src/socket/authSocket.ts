@@ -29,3 +29,9 @@ export const onTokenExpiring = (cb: () => void) => {
   socket.off('TOKEN_EXPIRING');
   socket.on('TOKEN_EXPIRING', cb);
 };
+
+export const onOnlineUsersUpdate = (
+  callback: (data: { users: string[]; count: number }) => void,
+) => {
+  socket?.on('ONLINE_USERS_UPDATE', callback);
+};

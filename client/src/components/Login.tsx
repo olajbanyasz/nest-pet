@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { Password } from 'primereact/password';
+import { InputText } from 'primereact/inputtext';
+import { Button } from 'primereact/button';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { register as apiRegister } from '../api/authApi';
 import { useAuth } from '../contexts/AuthContext';
@@ -61,8 +64,9 @@ const Login: React.FC = () => {
         <form onSubmit={handleSubmit}>
           {!isLogin && (
             <div style={{ width: '100%' }}>
-              <label>Name:</label>
-              <input
+              <label htmlFor="name">Name:</label>
+              <InputText
+                id="name"
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -72,8 +76,9 @@ const Login: React.FC = () => {
             </div>
           )}
           <div style={{ width: '100%' }}>
-            <label>Email:</label>
-            <input
+            <label htmlFor="email">Email:</label>
+            <InputText
+              id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -82,13 +87,16 @@ const Login: React.FC = () => {
             />
           </div>
           <div style={{ width: '100%' }}>
-            <label>Password:</label>
-            <input
-              type="password"
+            <label htmlFor="password">Password:</label>
+            <Password
+              id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              toggleMask
+              feedback={false}
               required
               style={{ width: '100%' }}
+              inputStyle={{ width: '100%' }}
             />
           </div>
           <div
@@ -99,14 +107,14 @@ const Login: React.FC = () => {
               marginTop: '10px',
             }}
           >
-            <button type="submit">{isLogin ? 'Login' : 'Register'}</button>
-            <button
+            <Button type="submit">{isLogin ? 'Login' : 'Register'}</Button>
+            <Button
               type="button"
               onClick={() => setIsLogin(!isLogin)}
               style={{ marginLeft: '10px' }}
             >
               Switch to {isLogin ? 'Register' : 'Login'}
-            </button>
+            </Button>
           </div>
         </form>
         {message && <p style={{ color: 'red' }}>{message}</p>}
