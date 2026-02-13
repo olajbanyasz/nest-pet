@@ -11,6 +11,7 @@ export interface Todo {
 export type DayStats = Record<string, number>;
 
 export interface StatsData {
+  deletedTodos: DayStats;
   createdTodos: DayStats;
   completedTodos: DayStats;
 }

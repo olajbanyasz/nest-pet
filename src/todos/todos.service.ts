@@ -247,8 +247,34 @@ export class TodosService {
       { $sort: { _id: 1 } },
     ]);
 
+    const deletedResult = await this.todoModel.aggregate([
+      {
+        $match: {
+          deleted: true,
+          updatedAt: {
+            $gte: startDate,
+            $lte: today,
+          },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            $dateToString: {
+              format: '%Y-%m-%d',
+              date: '$updatedAt',
+              timezone: 'UTC',
+            },
+          },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+
     const createdDays: Record<string, number> = {};
     const completedDays: Record<string, number> = {};
+    const deletedDays: Record<string, number> = {};
 
     for (let i = 0; i < 14; i++) {
       const date = new Date(startDate);
@@ -257,6 +283,7 @@ export class TodosService {
 
       createdDays[key] = 0;
       completedDays[key] = 0;
+      deletedDays[key] = 0;
     }
 
     createdResult.forEach((item) => {
@@ -267,9 +294,14 @@ export class TodosService {
       completedDays[item._id] = item.count;
     });
 
+    deletedResult.forEach((item) => {
+      deletedDays[item._id] = item.count;
+    });
+
     return {
       createdTodos: createdDays,
       completedTodos: completedDays,
+      deletedTodos: deletedDays,
     };
   }
 }

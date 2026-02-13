@@ -32,6 +32,7 @@ const DashBoard: React.FC = () => {
       const labels = Object.keys(data?.createdTodos ?? {});
       const createdTodosStat = Object.values(data?.createdTodos ?? {});
       const completedTodosStat = Object.values(data?.completedTodos ?? {});
+      const deletedTodosStat = Object.values(data?.deletedTodos ?? {});
 
       setChartData({
         labels,
@@ -45,6 +46,12 @@ const DashBoard: React.FC = () => {
           {
             label: 'Completed Todos',
             data: completedTodosStat,
+            fill: false,
+            tension: 0.4,
+          },
+          {
+            label: 'Deleted Todos',
+            data: deletedTodosStat,
             fill: false,
             tension: 0.4,
           },
