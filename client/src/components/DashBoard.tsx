@@ -7,7 +7,9 @@ import { useNotification } from '../contexts/NotificationContext';
 import { useNavigate } from 'react-router-dom';
 import ApplicationDetails from './ApplicationDetails';
 import { getApplicationDetails } from '../api/adminApi';
-import TodoStatsChart from './TodoStatsChart';
+import RecentTodoStatsChart from './RecentTodoStatsChart';
+import TodosPieChart from './TodosPieChart';
+import { TabView, TabPanel } from 'primereact/tabview';
 
 const DashBoard: React.FC = () => {
   const { user, loading: authLoading, initialized, onlineCount, onlineUsers } = useAuth();
@@ -40,7 +42,7 @@ const DashBoard: React.FC = () => {
     if (user?.role === 'admin') {
       loadAppDetailsWithNotification();
     }
-  }, []);
+  }, [initialized, user, navigate, loadAppDetailsWithNotification]);
 
   if (authLoading) return null;
 
@@ -52,8 +54,19 @@ const DashBoard: React.FC = () => {
     <div className="dashboard-container">
       <h1 style={{ textAlign: 'center' }}>Dashboard</h1>
       <OnlineUsersModal onlineCount={onlineCount} onlineUsers={onlineUsers} />
-      <ApplicationDetails appDetails={appDetails} />
-      <TodoStatsChart />
+      <div>
+        <TabView>
+          <TabPanel header="Application Stat">
+            <ApplicationDetails appDetails={appDetails} />
+          </TabPanel>
+          <TabPanel header="Todos Stat">
+            <TodosPieChart appDetails={appDetails} />
+          </TabPanel>
+          <TabPanel header="Recent Todos Stat">
+            <RecentTodoStatsChart />
+          </TabPanel>
+        </TabView>
+      </div>
     </div>
   );
 };

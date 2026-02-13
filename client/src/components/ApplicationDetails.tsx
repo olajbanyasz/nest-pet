@@ -1,5 +1,4 @@
 import React from 'react';
-import { Chart } from 'primereact/chart';
 
 interface ApplicationDetailsProps {
   appDetails: {
@@ -24,15 +23,6 @@ const ApplicationDetails: React.FC<ApplicationDetailsProps> = ({
     gap: '12px',
     color: '#888',
   };
-
-  const data = {
-    labels: ['Active Todos', 'Completed Todos', 'Deleted Todos'],
-    datasets: [
-      {
-        data: [appDetails.totalActiveTodos, appDetails.totalCompletedTodos, appDetails.totalDeletedTodos],
-      }
-    ]
-  }
 
   return (
     <div>
@@ -64,7 +54,6 @@ const ApplicationDetails: React.FC<ApplicationDetailsProps> = ({
               <div>{appDetails.totalDeletedTodos}</div>
             </div>
           </div>
-          <Chart type="pie" data={data} />
         </>
       )}
     </div>
