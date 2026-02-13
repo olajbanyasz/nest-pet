@@ -2,6 +2,12 @@ import { Test } from '@nestjs/testing';
 import { TodosController } from './todos.controller';
 import { TodosService } from './todos.service';
 import { CreateTodoDto } from './dto/create-todo.dto';
+import { Types } from 'mongoose';
+import { GUARDS_METADATA } from '@nestjs/common/constants';
+import { ROLES_KEY } from '../auth/roles.decorator';
+import { UserRole } from '../users/schemas/user.schema';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
 
 describe('TodosController', () => {
   let controller: TodosController;
@@ -12,16 +18,40 @@ describe('TodosController', () => {
     title: string;
     completed: boolean;
     deleted: boolean;
-    userId: string;
+    userId: Types.ObjectId;
   }
 
+  const mockUser = { userId: new Types.ObjectId().toHexString() };
+
   const sampleTodos: MockTodo[] = [
-    { _id: '1', title: 'A', completed: false, deleted: false, userId: 'u1' },
-    { _id: '2', title: 'B', completed: true, deleted: false, userId: 'u1' },
-    { _id: '3', title: 'C', completed: false, deleted: true, userId: 'u1' },
+    {
+      _id: '1',
+      title: 'A',
+      completed: false,
+      deleted: false,
+      userId: new Types.ObjectId(mockUser.userId),
+    },
+    {
+      _id: '2',
+      title: 'B',
+      completed: true,
+      deleted: false,
+      userId: new Types.ObjectId(mockUser.userId),
+    },
+    {
+      _id: '3',
+      title: 'C',
+      completed: false,
+      deleted: true,
+      userId: new Types.ObjectId(mockUser.userId),
+    },
   ];
 
-  const mockUser = { userId: 'u1' };
+  const statsResponse = {
+    createdTodos: { '2026-01-01': 1, '2026-01-02': 2 },
+    completedTodos: { '2026-01-01': 0, '2026-01-02': 1 },
+    deletedTodos: { '2026-01-01': 0, '2026-01-02': 0 },
+  };
 
   beforeEach(async () => {
     mockService = {
@@ -30,7 +60,7 @@ describe('TodosController', () => {
         .mockImplementation(
           (userId: string, completed?: boolean): Promise<MockTodo[]> => {
             let list = sampleTodos.filter(
-              (t) => !t.deleted && t.userId === userId,
+              (t) => !t.deleted && t.userId.equals(userId),
             );
             if (completed === true) list = list.filter((t) => t.completed);
             if (completed === false) list = list.filter((t) => !t.completed);
@@ -42,8 +72,9 @@ describe('TodosController', () => {
         .mockImplementation(
           (id: string, userId: string): Promise<MockTodo | null> => {
             const found =
-              sampleTodos.find((t) => t._id === id && t.userId === userId) ||
-              null;
+              sampleTodos.find(
+                (t) => t._id === id && t.userId.equals(userId),
+              ) || null;
             return Promise.resolve(found);
           },
         ),
@@ -54,7 +85,7 @@ describe('TodosController', () => {
             const created: MockTodo = {
               _id: 'new',
               ...dto,
-              userId,
+              userId: new Types.ObjectId(userId),
               deleted: false,
             };
             return Promise.resolve(created);
@@ -69,7 +100,7 @@ describe('TodosController', () => {
             dto: Partial<CreateTodoDto>,
           ): Promise<MockTodo | null> => {
             const idx = sampleTodos.findIndex(
-              (t) => t._id === id && t.userId === userId,
+              (t) => t._id === id && t.userId.equals(userId),
             );
             if (idx === -1) return Promise.resolve(null);
             const updated: MockTodo = { ...sampleTodos[idx], ...dto };
@@ -81,13 +112,14 @@ describe('TodosController', () => {
         .mockImplementation(
           (id: string, userId: string): Promise<MockTodo | null> => {
             const idx = sampleTodos.findIndex(
-              (t) => t._id === id && t.userId === userId,
+              (t) => t._id === id && t.userId.equals(userId),
             );
             if (idx === -1) return Promise.resolve(null);
             const deleted: MockTodo = { ...sampleTodos[idx], deleted: true };
             return Promise.resolve(deleted);
           },
         ),
+      getLast14DaysStats: jest.fn().mockResolvedValue(statsResponse),
     };
 
     const module = await Test.createTestingModule({
@@ -170,6 +202,45 @@ describe('TodosController', () => {
       expect(mockService.delete).toHaveBeenCalledWith('1', mockUser.userId);
       expect(res._id).toBe('1');
       expect(res.deleted).toBe(true);
+    });
+  });
+
+  describe('getLast14DaysStats', () => {
+    it('returns stats from service', async () => {
+      const res = await controller.getLast14DaysStats();
+
+      expect(mockService.getLast14DaysStats).toHaveBeenCalledTimes(1);
+      expect(res).toEqual(statsResponse);
+    });
+  });
+
+  describe('getLast14DaysStats metadata', () => {
+    const methodName = 'getLast14DaysStats' as const;
+    const handler = Object.getOwnPropertyDescriptor(
+      TodosController.prototype,
+      methodName,
+    )?.value as unknown;
+
+    it('requires admin role', () => {
+      expect(typeof handler).toBe('function');
+
+      const roles = Reflect.getMetadata(
+        ROLES_KEY,
+        handler as object,
+      ) as UserRole[];
+
+      expect(roles).toEqual([UserRole.ADMIN]);
+    });
+
+    it('uses JwtAuthGuard and RolesGuard', () => {
+      expect(typeof handler).toBe('function');
+
+      const guards = Reflect.getMetadata(
+        GUARDS_METADATA,
+        handler as object,
+      ) as unknown[];
+
+      expect(guards).toEqual([JwtAuthGuard, RolesGuard]);
     });
   });
 });

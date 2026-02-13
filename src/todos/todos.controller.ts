@@ -13,6 +13,9 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { TodosService } from './todos.service';
 import { CreateTodoDto } from './dto/create-todo.dto';
 import { User } from '../auth/user.decorator';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
+import { UserRole } from '../users/schemas/user.schema';
 
 @Controller('todos')
 export class TodosController {
@@ -55,5 +58,12 @@ export class TodosController {
   @UseGuards(JwtAuthGuard)
   async delete(@User() user: { userId: string }, @Param('id') id: string) {
     return this.todosService.delete(id, user.userId);
+  }
+
+  @Get('stats/last-14-days')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  getLast14DaysStats() {
+    return this.todosService.getLast14DaysStats();
   }
 }

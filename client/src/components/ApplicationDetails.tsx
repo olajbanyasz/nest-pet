@@ -27,32 +27,34 @@ const ApplicationDetails: React.FC<ApplicationDetailsProps> = ({
   return (
     <div>
       {appDetails && (
-        <div>
-          <div style={rowStyle}>
-            <div>Total Users:</div>
-            <div>{appDetails.totalUsers}</div>
+        <>
+          <div>
+            <div style={rowStyle}>
+              <div>Total Users:</div>
+              <div>{appDetails.totalUsers}</div>
+            </div>
+            <div style={rowStyle}>
+              <div>Total Admins:</div>
+              <div>{appDetails.totalAdmins}</div>
+            </div>
+            <div style={rowStyle}>
+              <div>Total Todos:</div>
+              <div>{appDetails.totalTodos}</div>
+            </div>
+            <div style={rowStyle}>
+              <div>Total Completed Todos:</div>
+              <div>{appDetails.totalCompletedTodos}</div>
+            </div>
+            <div style={rowStyle}>
+              <div>Total Active Todos:</div>
+              <div>{appDetails.totalActiveTodos}</div>
+            </div>
+            <div style={rowStyle}>
+              <div>Total Deleted Todos:</div>
+              <div>{appDetails.totalDeletedTodos}</div>
+            </div>
           </div>
-          <div style={rowStyle}>
-            <div>Total Admins:</div>
-            <div>{appDetails.totalAdmins}</div>
-          </div>
-          <div style={rowStyle}>
-            <div>Total Todos:</div>
-            <div>{appDetails.totalTodos}</div>
-          </div>
-          <div style={rowStyle}>
-            <div>Total Completed Todos:</div>
-            <div>{appDetails.totalCompletedTodos}</div>
-          </div>
-          <div style={rowStyle}>
-            <div>Total Active Todos:</div>
-            <div>{appDetails.totalActiveTodos}</div>
-          </div>
-          <div style={rowStyle}>
-            <div>Total Deleted Todos:</div>
-            <div>{appDetails.totalDeletedTodos}</div>
-          </div>
-        </div>
+        </>
       )}
     </div>
   );

@@ -7,6 +7,11 @@ import { useNotification } from '../contexts/NotificationContext';
 import { useNavigate } from 'react-router-dom';
 import ApplicationDetails from './ApplicationDetails';
 import { getApplicationDetails } from '../api/adminApi';
+import RecentTodoStatsChart from './RecentTodoStatsChart';
+import TodosPieChart from './TodosPieChart';
+import { TabView, TabPanel } from 'primereact/tabview';
+import { ChartData } from 'chart.js';
+import { getLast14DaysStats } from '../api/todosApi';
 
 const DashBoard: React.FC = () => {
   const { user, loading: authLoading, initialized, onlineCount, onlineUsers } = useAuth();
@@ -15,6 +20,51 @@ const DashBoard: React.FC = () => {
   const navigate = useNavigate();
 
   const [appDetails, setAppDetails] = useState<any>({});
+  const [chartData, setChartData] = useState<ChartData<'line'> | null>(null);
+
+  const loadRecentTodosStats = useCallback(async () => {
+    let mounted = true;
+    try {
+      const data = await getLast14DaysStats();
+
+      if (!mounted) return;
+
+      const labels = Object.keys(data?.createdTodos ?? {});
+      const createdTodosStat = Object.values(data?.createdTodos ?? {});
+      const completedTodosStat = Object.values(data?.completedTodos ?? {});
+      const deletedTodosStat = Object.values(data?.deletedTodos ?? {});
+
+      setChartData({
+        labels,
+        datasets: [
+          {
+            label: 'Created Todos',
+            data: createdTodosStat,
+            fill: false,
+            tension: 0.4,
+          },
+          {
+            label: 'Completed Todos',
+            data: completedTodosStat,
+            fill: false,
+            tension: 0.4,
+          },
+          {
+            label: 'Deleted Todos',
+            data: deletedTodosStat,
+            fill: false,
+            tension: 0.4,
+          },
+        ],
+      });
+    } catch (err) {
+      console.error(err);
+    }
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const loadAppDetailsWithNotification = useCallback(async () => {
     show();
@@ -38,8 +88,9 @@ const DashBoard: React.FC = () => {
     }
     if (user?.role === 'admin') {
       loadAppDetailsWithNotification();
+      loadRecentTodosStats();
     }
-  }, []);
+  }, [initialized, user, navigate, loadAppDetailsWithNotification, loadRecentTodosStats]);
 
   if (authLoading) return null;
 
@@ -51,7 +102,19 @@ const DashBoard: React.FC = () => {
     <div className="dashboard-container">
       <h1 style={{ textAlign: 'center' }}>Dashboard</h1>
       <OnlineUsersModal onlineCount={onlineCount} onlineUsers={onlineUsers} />
-      <ApplicationDetails appDetails={appDetails} />
+      <div>
+        <TabView>
+          <TabPanel header="Application Stat">
+            <ApplicationDetails appDetails={appDetails} />
+          </TabPanel>
+          <TabPanel header="Todos Stat">
+            <TodosPieChart appDetails={appDetails} />
+          </TabPanel>
+          <TabPanel header="Recent Todos Stat">
+            <RecentTodoStatsChart chartData={chartData} />
+          </TabPanel>
+        </TabView>
+      </div>
     </div>
   );
 };

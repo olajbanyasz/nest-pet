@@ -8,7 +8,7 @@ import {
   toggleTodo as apiToggleTodo,
   deleteTodo as apiDeleteTodo,
   updateTodoTitle,
-  Todo,
+  Todo
 } from '../api/todosApi';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';

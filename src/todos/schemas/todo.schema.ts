@@ -21,6 +21,9 @@ export class Todo {
     index: true,
   })
   userId: Types.ObjectId;
+
+  @Prop({ default: null })
+  completedAt?: Date;
 }
 
 export const TodoSchema = SchemaFactory.createForClass(Todo);

@@ -8,6 +8,16 @@
   padding: 20px;
   border: 1px solid #ccc;
   border-radius: 8px;
+
+  .p-tabview .p-tabview-nav {
+    border: none;
+  }
+
+  .p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
+    background: #ffffff;
+    border-color: #0ea5e9;
+    color: #0ea5e9;
+  }
 }
 
 form div {
