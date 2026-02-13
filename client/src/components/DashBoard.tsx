@@ -10,6 +10,8 @@ import { getApplicationDetails } from '../api/adminApi';
 import RecentTodoStatsChart from './RecentTodoStatsChart';
 import TodosPieChart from './TodosPieChart';
 import { TabView, TabPanel } from 'primereact/tabview';
+import { ChartData } from 'chart.js';
+import { getLast14DaysStats } from '../api/todosApi';
 
 const DashBoard: React.FC = () => {
   const { user, loading: authLoading, initialized, onlineCount, onlineUsers } = useAuth();
@@ -18,6 +20,44 @@ const DashBoard: React.FC = () => {
   const navigate = useNavigate();
 
   const [appDetails, setAppDetails] = useState<any>({});
+  const [chartData, setChartData] = useState<ChartData<'line'> | null>(null);
+
+  const loadRecentTodosStats = useCallback(async () => {
+    let mounted = true;
+    try {
+      const data = await getLast14DaysStats();
+
+      if (!mounted) return;
+
+      const labels = Object.keys(data?.createdTodos ?? {});
+      const createdTodosStat = Object.values(data?.createdTodos ?? {});
+      const completedTodosStat = Object.values(data?.completedTodos ?? {});
+
+      setChartData({
+        labels,
+        datasets: [
+          {
+            label: 'Created Todos',
+            data: createdTodosStat,
+            fill: false,
+            tension: 0.4,
+          },
+          {
+            label: 'Completed Todos',
+            data: completedTodosStat,
+            fill: false,
+            tension: 0.4,
+          },
+        ],
+      });
+    } catch (err) {
+      console.error(err);
+    }
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const loadAppDetailsWithNotification = useCallback(async () => {
     show();
@@ -41,8 +81,9 @@ const DashBoard: React.FC = () => {
     }
     if (user?.role === 'admin') {
       loadAppDetailsWithNotification();
+      loadRecentTodosStats();
     }
-  }, [initialized, user, navigate, loadAppDetailsWithNotification]);
+  }, [initialized, user, navigate, loadAppDetailsWithNotification, loadRecentTodosStats]);
 
   if (authLoading) return null;
 
@@ -63,7 +104,7 @@ const DashBoard: React.FC = () => {
             <TodosPieChart appDetails={appDetails} />
           </TabPanel>
           <TabPanel header="Recent Todos Stat">
-            <RecentTodoStatsChart />
+            <RecentTodoStatsChart chartData={chartData} />
           </TabPanel>
         </TabView>
       </div>
