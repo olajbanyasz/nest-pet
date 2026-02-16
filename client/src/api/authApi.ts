@@ -1,4 +1,4 @@
-import api from './axios';
+import api, { setAccessToken } from './axios';
 
 const AUTH_BASE_URL = '/auth';
 
@@ -61,7 +61,7 @@ export const login = async (
     });
 
     if (res.data.access_token) {
-      sessionStorage.setItem('access_token', res.data.access_token);
+      setAccessToken(res.data.access_token);
     }
 
     return {
@@ -95,7 +95,7 @@ export const register = async (
       return { success: false, message: 'Registration failed' };
     }
 
-    sessionStorage.setItem('access_token', res.data.access_token);
+    setAccessToken(res.data.access_token);
 
     return {
       success: true,
@@ -121,7 +121,7 @@ export const logout = async (): Promise<void> => {
   } catch (err: unknown) {
     console.error('[Auth API] Logout error:', String(err));
   } finally {
-    sessionStorage.removeItem('access_token');
+    setAccessToken(null);
   }
 };
 
@@ -130,7 +130,6 @@ export const checkAuth = async (): Promise<User | null> => {
     const res = await api.get<BackendUser>(`${AUTH_BASE_URL}/me`);
     return mapBackendUser(res.data);
   } catch (err) {
-    console.error('[Auth API] Check auth error:', String(err));
     throw err;
   }
 };
@@ -141,7 +140,7 @@ export const refreshAccessToken = async (): Promise<boolean> => {
       `${AUTH_BASE_URL}/refresh`,
     );
     const token = res.data.access_token;
-    sessionStorage.setItem('access_token', token);
+    setAccessToken(token);
     return true;
   } catch {
     return false;
@@ -155,5 +154,5 @@ export const getCsrfToken = async (): Promise<string | null> => {
   } catch (err) {
     console.error('[Auth API] Get CSRF token error:', String(err));
     return null;
-  } 
+  }
 };

@@ -131,6 +131,10 @@ export class AuthService {
     access_token: string;
     refresh_token: string;
   }> {
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh token not found');
+    }
+
     const [tokenId, tokenSecret] = refreshToken.split(':');
 
     if (!tokenId || !tokenSecret) {

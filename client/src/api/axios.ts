@@ -10,125 +10,117 @@ const api = axios.create({
   withCredentials: true,
 });
 
+let accessToken: string | null = null;
 let isRefreshing = false;
-let authLogoutCallback: (() => void) | null = null;
-let isLogoutInProgress = false;
-
 let failedQueue: Array<{
   resolve: (token: string) => void;
   reject: (error: Error) => void;
 }> = [];
 
+let authLogoutCallback: (() => void) | null = null;
+
 export const setAuthLogoutCallback = (callback: () => void): void => {
   authLogoutCallback = callback;
 };
 
-export const setLogoutInProgress = (value: boolean): void => {
-  isLogoutInProgress = value;
+export const setAccessToken = (token: string | null) => {
+  accessToken = token;
 };
 
-const processQueue = (error: Error | null, token: string | null): void => {
-  failedQueue.forEach(({ resolve, reject }) => {
-    if (error) reject(error);
-    else if (token) resolve(token);
+export const getAccessToken = () => accessToken;
+
+const processQueue = (error: Error | null, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token!);
+    }
   });
+
+  failedQueue = [];
   failedQueue = [];
 };
 
-function getCookie(name: string): string | null {
-  const match = document.cookie.match(
-    new RegExp('(^| )' + name + '=([^;]+)')
-  );
-  return match ? decodeURIComponent(match[2]) : null;
-}
+let csrfToken: string | null = null;
 
-api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  const token = sessionStorage.getItem('access_token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
+export const setCsrfToken = (token: string | null) => {
+  csrfToken = token;
+};
 
-  const method = config.method?.toUpperCase();
-  if (method && method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
-    const csrf = getCookie('csrf_token');
-    if (csrf) {
-      config.headers['X-CSRF-Token'] = csrf;
+api.interceptors.request.use(
+  (config) => {
+    if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
     }
-  }
 
-  return config;
-});
+    const method = config.method?.toUpperCase();
+    if (method && method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+      if (csrfToken) {
+        config.headers['X-CSRF-Token'] = csrfToken;
+      }
+    }
+
+    return config;
+  },
+  (error) => Promise.reject(error),
+);
 
 api.interceptors.response.use(
   (response) => response,
-  async (error: AxiosError): Promise<any> => {
-    const originalRequest = error.config as RetryAxiosRequestConfig | undefined;
+  async (error: AxiosError) => {
+    const originalRequest = error.config as RetryAxiosRequestConfig;
+
     if (!originalRequest) {
-      return Promise.reject(new Error('Axios error without config'));
-    }
-    if (isLogoutInProgress) {
-      return Promise.reject(new Error('Logout in progress'));
-    }
-    if (originalRequest.headers?.['X-Skip-Interceptor']) {
-      const errorMessage = error.message || 'Request failed';
-      return Promise.reject(new Error(errorMessage));
-    }
-    if (error.response?.status !== 401 || originalRequest._retry) {
-      return Promise.reject(new Error(error.message || 'Request failed'));
+      return Promise.reject(error);
     }
 
-    originalRequest._retry = true;
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      if (originalRequest.headers['X-Skip-Interceptor']) {
+        return Promise.reject(error);
+      }
 
-    if (isRefreshing) {
-      return new Promise((resolve, reject) => {
-        failedQueue.push({ resolve, reject });
-      })
-        .then((token) => {
-          originalRequest.headers.Authorization = `Bearer ${String(token)}`;
-          return api(originalRequest);
+      if (isRefreshing) {
+        return new Promise(function (resolve, reject) {
+          failedQueue.push({ resolve, reject });
         })
-        .catch((err) => {
-          const errorObj =
-            err instanceof Error ? err : new Error('Queue error');
-          return Promise.reject(errorObj);
-        });
+          .then((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return api(originalRequest);
+          })
+          .catch((err) => {
+            return Promise.reject(err);
+          });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        const success = await refreshAccessToken();
+        if (success) {
+          const newToken = accessToken;
+          processQueue(null, newToken);
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          return api(originalRequest);
+        } else {
+          throw new Error('Refresh failed');
+        }
+      } catch (refreshError) {
+        processQueue(
+          refreshError instanceof Error ? refreshError : new Error('Refresh failed'),
+          null,
+        );
+        if (authLogoutCallback) {
+          authLogoutCallback();
+        }
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
+      }
     }
 
-    isRefreshing = true;
-
-    try {
-      const currentToken = sessionStorage.getItem('access_token');
-      if (!currentToken) {
-        authLogoutCallback ? authLogoutCallback() : void logout();
-        throw new Error('No access token');
-      }
-
-      const refreshed = await refreshAccessToken();
-      if (!refreshed) {
-        authLogoutCallback ? authLogoutCallback() : void logout();
-        throw new Error('Token refresh failed');
-      }
-
-      const newToken = sessionStorage.getItem('access_token');
-      if (!newToken) {
-        authLogoutCallback ? authLogoutCallback() : void logout();
-        throw new Error('No new token after refresh');
-      }
-
-      processQueue(null, newToken);
-      originalRequest.headers.Authorization = `Bearer ${newToken}`;
-      return api(originalRequest);
-    } catch (err) {
-      const errorObj =
-        err instanceof Error ? err : new Error('Unknown refresh error');
-      processQueue(errorObj, null);
-
-      authLogoutCallback ? authLogoutCallback() : void logout();
-
-      return Promise.reject(errorObj);
-    } finally {
-      isRefreshing = false;
-    }
+    return Promise.reject(error);
   },
 );
 
