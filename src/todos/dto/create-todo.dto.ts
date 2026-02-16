@@ -4,6 +4,7 @@ import {
   IsString,
   IsNotEmpty,
   MinLength,
+  IsDate,
 } from 'class-validator';
 
 export class CreateTodoDto {
@@ -19,4 +20,8 @@ export class CreateTodoDto {
   @IsOptional()
   @IsBoolean()
   deleted?: boolean;
+
+  @IsOptional()
+  @IsDate()
+  completedAt?: Date | null;
 }

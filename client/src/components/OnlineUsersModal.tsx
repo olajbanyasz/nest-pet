@@ -12,7 +12,7 @@ const OnlineUsersModal: React.FC<OnlineUsersModalProps> = ({ onlineCount, online
     const [visible, setVisible] = useState(false);
     return (
         <div className="flex justify-content-center">
-            <Button label="Show Online Users" badge={String(onlineCount)} onClick={() => setVisible(true)}/>
+            <Button label="Show Online Users" badge={String(onlineCount)} onClick={() => setVisible(true)} className="p-button-success"/>
             <Dialog header="Online Users" visible={visible} style={{ width: '50vw' }} onHide={() => {if (!visible) return; setVisible(false); }}>
                 <ListBox options={onlineUsers}/>
             </Dialog>

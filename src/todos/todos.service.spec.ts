@@ -49,6 +49,7 @@ describe('TodosService', () => {
     findOneAndUpdate: jest.fn(),
     updateMany: jest.fn(),
     countDocuments: jest.fn(),
+    aggregate: jest.fn(),
   };
 
   const mockModelConstructor = jest.fn().mockImplementation((data) => ({
@@ -171,10 +172,13 @@ describe('TodosService', () => {
 
   describe('update', () => {
     it('updates and returns todo', async () => {
+      mockModel.findOne.mockResolvedValue(todos[0]);
+
       mockModel.findOneAndUpdate.mockReturnValue({
         exec: jest.fn().mockResolvedValue({
           ...todos[0],
           completed: true,
+          completedAt: new Date(),
         }),
       });
 
@@ -184,13 +188,13 @@ describe('TodosService', () => {
         { completed: true },
       );
 
+      expect(mockModel.findOne).toHaveBeenCalled();
+      expect(mockModel.findOneAndUpdate).toHaveBeenCalled();
       expect(result.completed).toBe(true);
     });
 
     it('throws NotFoundException when missing', async () => {
-      mockModel.findOneAndUpdate.mockReturnValue({
-        exec: jest.fn().mockResolvedValue(null),
-      });
+      mockModel.findOne.mockResolvedValue(null);
 
       await expect(
         service.update(TODO_ID_1.toHexString(), USER_ID.toHexString(), {
@@ -243,6 +247,43 @@ describe('TodosService', () => {
       const result = await service.countTodosByUser(USER_ID);
 
       expect(result).toBe(2);
+    });
+  });
+
+  describe('getLast14DaysStats', () => {
+    beforeEach(() => {
+      jest.useFakeTimers().setSystemTime(new Date('2026-02-13T12:00:00.000Z'));
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it('returns 14-day buckets and applies aggregation counts', async () => {
+      mockModel.aggregate
+        .mockResolvedValueOnce([
+          { _id: '2026-02-01', count: 3 },
+          { _id: '2026-02-13', count: 1 },
+        ])
+        .mockResolvedValueOnce([{ _id: '2026-02-05', count: 2 }])
+        .mockResolvedValueOnce([{ _id: '2026-02-07', count: 4 }]);
+
+      const result = await service.getLast14DaysStats();
+
+      expect(mockModel.aggregate).toHaveBeenCalledTimes(3);
+      expect(Object.keys(result.createdTodos)).toHaveLength(14);
+      expect(Object.keys(result.completedTodos)).toHaveLength(14);
+      expect(Object.keys(result.deletedTodos)).toHaveLength(14);
+
+      expect(result.createdTodos['2026-02-01']).toBe(3);
+      expect(result.createdTodos['2026-02-13']).toBe(1);
+      expect(result.createdTodos['2026-02-02']).toBe(0);
+
+      expect(result.completedTodos['2026-02-05']).toBe(2);
+      expect(result.completedTodos['2026-02-04']).toBe(0);
+
+      expect(result.deletedTodos['2026-02-07']).toBe(4);
+      expect(result.deletedTodos['2026-02-06']).toBe(0);
     });
   });
 });
