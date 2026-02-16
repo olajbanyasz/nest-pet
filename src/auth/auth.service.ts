@@ -34,7 +34,7 @@ export class AuthService {
 
     private readonly jwtService: JwtService,
     private readonly tokenExpiryService: TokenExpiryService,
-  ) {}
+  ) { }
 
   async register(
     registerDto: RegisterDto,
@@ -131,16 +131,23 @@ export class AuthService {
     access_token: string;
     refresh_token: string;
   }> {
-    const storedTokens = await this.refreshTokenModel.find({
+    const [tokenId, tokenSecret] = refreshToken.split(':');
+
+    if (!tokenId || !tokenSecret) {
+      throw new UnauthorizedException('Invalid refresh token format');
+    }
+
+    const matchedToken = await this.refreshTokenModel.findOne({
+      tokenId,
       expiresAt: { $gt: new Date() },
     });
 
-    const matchedToken = await this.findMatchingRefreshToken(
-      refreshToken,
-      storedTokens,
-    );
-
     if (!matchedToken) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    const isMatch = await bcrypt.compare(tokenSecret, matchedToken.tokenHash);
+    if (!isMatch) {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
@@ -186,26 +193,17 @@ export class AuthService {
   }
 
   private async generateRefreshToken(userId: Types.ObjectId): Promise<string> {
-    const token = crypto.randomUUID();
-    const tokenHash = await bcrypt.hash(token, 10);
+    const tokenId = crypto.randomUUID();
+    const tokenSecret = crypto.randomBytes(32).toString('hex');
+    const tokenHash = await bcrypt.hash(tokenSecret, 10);
 
     await this.refreshTokenModel.create({
       userId,
+      tokenId,
       tokenHash,
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     });
 
-    return token;
-  }
-
-  private async findMatchingRefreshToken(
-    rawToken: string,
-    tokens: RefreshTokenDocument[],
-  ): Promise<RefreshTokenDocument | null> {
-    for (const token of tokens) {
-      const isMatch = await bcrypt.compare(rawToken, token.tokenHash);
-      if (isMatch) return token;
-    }
-    return null;
+    return `${tokenId}:${tokenSecret}`;
   }
 }

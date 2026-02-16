@@ -26,21 +26,36 @@ export const setAuthLogoutCallback = (callback: () => void): void => {
 export const setLogoutInProgress = (value: boolean): void => {
   isLogoutInProgress = value;
 };
+
 const processQueue = (error: Error | null, token: string | null): void => {
   failedQueue.forEach(({ resolve, reject }) => {
-    if (error) {
-      reject(error);
-    } else if (token) {
-      resolve(token);
-    }
+    if (error) reject(error);
+    else if (token) resolve(token);
   });
   failedQueue = [];
 };
+
+function getCookie(name: string): string | null {
+  const match = document.cookie.match(
+    new RegExp('(^| )' + name + '=([^;]+)')
+  );
+  return match ? decodeURIComponent(match[2]) : null;
+}
+
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const token = sessionStorage.getItem('access_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  const method = config.method?.toUpperCase();
+  if (method && method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+    const csrf = getCookie('csrf_token');
+    if (csrf) {
+      config.headers['X-CSRF-Token'] = csrf;
+    }
+  }
+
   return config;
 });
 
@@ -61,7 +76,9 @@ api.interceptors.response.use(
     if (error.response?.status !== 401 || originalRequest._retry) {
       return Promise.reject(new Error(error.message || 'Request failed'));
     }
+
     originalRequest._retry = true;
+
     if (isRefreshing) {
       return new Promise((resolve, reject) => {
         failedQueue.push({ resolve, reject });
@@ -76,35 +93,28 @@ api.interceptors.response.use(
           return Promise.reject(errorObj);
         });
     }
+
     isRefreshing = true;
+
     try {
       const currentToken = sessionStorage.getItem('access_token');
       if (!currentToken) {
-        if (authLogoutCallback) {
-          authLogoutCallback();
-        } else {
-          void logout();
-        }
+        authLogoutCallback ? authLogoutCallback() : void logout();
         throw new Error('No access token');
       }
+
       const refreshed = await refreshAccessToken();
       if (!refreshed) {
-        if (authLogoutCallback) {
-          authLogoutCallback();
-        } else {
-          void logout();
-        }
+        authLogoutCallback ? authLogoutCallback() : void logout();
         throw new Error('Token refresh failed');
       }
+
       const newToken = sessionStorage.getItem('access_token');
       if (!newToken) {
-        if (authLogoutCallback) {
-          authLogoutCallback();
-        } else {
-          void logout();
-        }
+        authLogoutCallback ? authLogoutCallback() : void logout();
         throw new Error('No new token after refresh');
       }
+
       processQueue(null, newToken);
       originalRequest.headers.Authorization = `Bearer ${newToken}`;
       return api(originalRequest);
@@ -112,11 +122,8 @@ api.interceptors.response.use(
       const errorObj =
         err instanceof Error ? err : new Error('Unknown refresh error');
       processQueue(errorObj, null);
-      if (authLogoutCallback) {
-        authLogoutCallback();
-      } else {
-        void logout();
-      }
+
+      authLogoutCallback ? authLogoutCallback() : void logout();
 
       return Promise.reject(errorObj);
     } finally {

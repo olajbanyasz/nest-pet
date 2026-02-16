@@ -147,3 +147,13 @@ export const refreshAccessToken = async (): Promise<boolean> => {
     return false;
   }
 };
+
+export const getCsrfToken = async (): Promise<string | null> => {
+  try {
+    const res = await api.get<{ csrfToken: string }>(`${AUTH_BASE_URL}/csrf-token`, { headers: { 'X-Skip-Interceptor': 'true' } });
+    return res.data.csrfToken;
+  } catch (err) {
+    console.error('[Auth API] Get CSRF token error:', String(err));
+    return null;
+  } 
+};

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-floating-promises */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
@@ -11,6 +12,7 @@ import * as express from 'express';
 import { AppModule } from './app.module';
 import { logger } from './logger.config';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
+import csurf from 'csurf';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -24,6 +26,30 @@ async function bootstrap() {
   });
 
   app.use(cookieParser());
+
+  const csrfMiddleware = csurf({
+    cookie: {
+      httpOnly: true,
+      sameSite: 'lax',
+    },
+  });
+
+  app.use((req, res, next) => {
+    const bypassPaths = [
+      '/api/auth/login',
+      '/api/auth/register',
+      '/api/auth/refresh',
+    ];
+
+    const isBypassed = bypassPaths.some((path) => req.path.startsWith(path));
+
+    if (isBypassed) {
+      return next();
+    }
+
+    return csrfMiddleware(req, res, next);
+  });
+
   app.useGlobalPipes(new ValidationPipe());
   app.useGlobalFilters(new AllExceptionsFilter());
   app.setGlobalPrefix('api');

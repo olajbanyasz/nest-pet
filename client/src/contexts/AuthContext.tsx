@@ -11,6 +11,7 @@ import {
   login as apiLogin,
   logout as apiLogout,
   refreshAccessToken,
+  getCsrfToken,
   AuthResponse,
 } from '../api/authApi';
 import {
@@ -68,6 +69,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
+  useEffect(() => {
+    getCsrfToken();
+  }, []);
+
   const performLogout = useCallback(
     (options?: { skipApi?: boolean }) => {
       if (isLoggingOut.current) return;
@@ -76,7 +81,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       const token = sessionStorage.getItem('access_token');
       if (!options?.skipApi && token) {
-        apiLogout().catch(() => {});
+        apiLogout().catch(() => { });
       }
 
       sessionStorage.removeItem('access_token');
@@ -106,7 +111,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     if (storedUser) {
       try {
         setUser(JSON.parse(storedUser));
-      } catch {}
+      } catch { }
     }
 
     setInitialized(true);
