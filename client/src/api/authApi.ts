@@ -126,12 +126,8 @@ export const logout = async (): Promise<void> => {
 };
 
 export const checkAuth = async (): Promise<User | null> => {
-  try {
-    const res = await api.get<BackendUser>(`${AUTH_BASE_URL}/me`);
-    return mapBackendUser(res.data);
-  } catch (err) {
-    throw err;
-  }
+  const res = await api.get<BackendUser>(`${AUTH_BASE_URL}/me`);
+  return mapBackendUser(res.data);
 };
 
 export const refreshAccessToken = async (): Promise<boolean> => {
@@ -149,7 +145,10 @@ export const refreshAccessToken = async (): Promise<boolean> => {
 
 export const getCsrfToken = async (): Promise<string | null> => {
   try {
-    const res = await api.get<{ csrfToken: string }>(`${AUTH_BASE_URL}/csrf-token`, { headers: { 'X-Skip-Interceptor': 'true' } });
+    const res = await api.get<{ csrfToken: string }>(
+      `${AUTH_BASE_URL}/csrf-token`,
+      { headers: { 'X-Skip-Interceptor': 'true' } },
+    );
     return res.data.csrfToken;
   } catch (err) {
     console.error('[Auth API] Get CSRF token error:', String(err));

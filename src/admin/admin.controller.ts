@@ -8,6 +8,7 @@ import {
   Req,
   ForbiddenException,
   Query,
+  UseInterceptors,
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { AdminService } from './admin.service';
@@ -15,17 +16,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../users/schemas/user.schema';
-import { UseInterceptors } from '@nestjs/common';
 import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
-
-interface AuthRequest extends Request {
-  user: {
-    _id: string;
-    userId: string;
-    email: string;
-    role: UserRole;
-  };
-}
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
@@ -46,24 +37,24 @@ export class AdminController {
   }
 
   @Delete('users/:id')
-  async deleteUser(@Param('id') id: string, @Req() req: AuthRequest) {
-    if (req.user._id === id) {
+  async deleteUser(@Param('id') id: string, @Req() req: Request) {
+    if (req.user?.userId === id) {
       throw new ForbiddenException('Cannot delete self');
     }
     return this.adminService.deleteUser(id);
   }
 
   @Patch('users/:id/promote')
-  async promoteUser(@Param('id') id: string, @Req() req: AuthRequest) {
-    if (req.user._id === id) {
+  async promoteUser(@Param('id') id: string, @Req() req: Request) {
+    if (req.user?.userId === id) {
       throw new ForbiddenException('Cannot promote self');
     }
     return this.adminService.promoteToAdmin(id);
   }
 
   @Patch('users/:id/demote')
-  async demoteUser(@Param('id') id: string, @Req() req: AuthRequest) {
-    if (req.user._id === id) {
+  async demoteUser(@Param('id') id: string, @Req() req: Request) {
+    if (req.user?.userId === id) {
       throw new ForbiddenException('Cannot demote self');
     }
     return this.adminService.demoteToUser(id);

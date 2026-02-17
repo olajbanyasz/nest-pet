@@ -1,5 +1,5 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { refreshAccessToken, logout } from './authApi';
+import { refreshAccessToken } from './authApi';
 
 interface RetryAxiosRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
@@ -55,7 +55,12 @@ api.interceptors.request.use(
     }
 
     const method = config.method?.toUpperCase();
-    if (method && method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+    if (
+      method &&
+      method !== 'GET' &&
+      method !== 'HEAD' &&
+      method !== 'OPTIONS'
+    ) {
       if (csrfToken) {
         config.headers['X-CSRF-Token'] = csrfToken;
       }
@@ -63,7 +68,8 @@ api.interceptors.request.use(
 
     return config;
   },
-  (error) => Promise.reject(error),
+  (error) =>
+    Promise.reject(error instanceof Error ? error : new Error(String(error))),
 );
 
 api.interceptors.response.use(
@@ -85,11 +91,13 @@ api.interceptors.response.use(
           failedQueue.push({ resolve, reject });
         })
           .then((token) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
+            originalRequest.headers.Authorization = `Bearer ${token as string}`;
             return api(originalRequest);
           })
           .catch((err) => {
-            return Promise.reject(err);
+            return Promise.reject(
+              err instanceof Error ? err : new Error(String(err)),
+            );
           });
       }
 
@@ -108,19 +116,27 @@ api.interceptors.response.use(
         }
       } catch (refreshError) {
         processQueue(
-          refreshError instanceof Error ? refreshError : new Error('Refresh failed'),
+          refreshError instanceof Error
+            ? refreshError
+            : new Error('Refresh failed'),
           null,
         );
         if (authLogoutCallback) {
           authLogoutCallback();
         }
-        return Promise.reject(refreshError);
+        return Promise.reject(
+          refreshError instanceof Error
+            ? refreshError
+            : new Error(String(refreshError)),
+        );
       } finally {
         isRefreshing = false;
       }
     }
 
-    return Promise.reject(error);
+    return Promise.reject(
+      error instanceof Error ? error : new Error(String(error)),
+    );
   },
 );
 

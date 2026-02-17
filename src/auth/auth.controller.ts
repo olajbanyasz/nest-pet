@@ -1,8 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
 import {
   Controller,
   Post,
@@ -16,19 +11,20 @@ import type { Response, Request } from 'express';
 import { AuthService } from './auth.service';
 import { RegisterDto, LoginDto } from './dto/auth.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { AuthenticatedUser } from './jwt.strategy';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
-      user?: any;
+      user?: AuthenticatedUser;
     }
   }
 }
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) { }
+  constructor(private readonly authService: AuthService) {}
 
   @Post('register')
   async register(
@@ -103,7 +99,7 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const refreshToken = req.cookies?.refresh_token;
+    const refreshToken = req.cookies?.refresh_token as string | undefined;
 
     const { access_token, refresh_token } =
       await this.authService.refreshTokens(refreshToken);
@@ -128,7 +124,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Post('logout')
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const userId = req.user?.sub;
+    const userId = req.user?.userId;
 
     await this.authService.logout(userId);
 
@@ -145,7 +141,7 @@ export class AuthController {
   }
 
   @Get('csrf-token')
-  getCsrfToken(@Req() req: any) {
-    return { csrfToken: req.csrfToken() };
+  getCsrfToken(@Req() req: Request) {
+    return { csrfToken: req.csrfToken ? req.csrfToken() : '' };
   }
 }

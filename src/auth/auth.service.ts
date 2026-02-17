@@ -34,11 +34,13 @@ export class AuthService {
 
     private readonly jwtService: JwtService,
     private readonly tokenExpiryService: TokenExpiryService,
-  ) { }
+  ) {}
 
-  async register(
-    registerDto: RegisterDto,
-  ): Promise<{ access_token: string; refresh_token: string; user: UserDocument }> {
+  async register(registerDto: RegisterDto): Promise<{
+    access_token: string;
+    refresh_token: string;
+    user: UserDocument;
+  }> {
     const { email, password, name } = registerDto;
 
     const existingUser = await this.userModel.findOne({ email });
@@ -128,7 +130,7 @@ export class AuthService {
     return { message: 'Logout successful' };
   }
 
-  async refreshTokens(refreshToken: string): Promise<{
+  async refreshTokens(refreshToken: string | undefined): Promise<{
     access_token: string;
     refresh_token: string;
   }> {
