@@ -166,8 +166,8 @@ export class AuthService {
     const newAccessToken = await this.generateAccessToken(user);
     const newRefreshToken = await this.generateRefreshToken(user._id);
 
-    const decoded = this.jwtService.decode(newAccessToken);
-    if (decoded?.exp) {
+    const decoded: JwtPayload | null = this.jwtService.decode(newAccessToken);
+    if (decoded && decoded.exp) {
       const expiresInMs = decoded.exp * 1000 - Date.now();
       this.tokenExpiryService.scheduleTokenExpiryWarning(
         user._id.toString(),

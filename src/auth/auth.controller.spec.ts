@@ -6,7 +6,6 @@ import { UserRole } from '../users/schemas/user.schema';
 
 describe('AuthController', () => {
   let controller: AuthController;
-  let service: AuthService;
 
   const mockUser = {
     _id: 'user-id',
@@ -34,12 +33,17 @@ describe('AuthController', () => {
   };
 
   const createMockResponse = () => {
-    const res: any = {};
-    res.cookie = jest.fn().mockReturnValue(res);
-    res.clearCookie = jest.fn().mockReturnValue(res);
-    res.status = jest.fn().mockReturnValue(res);
-    res.json = jest.fn().mockReturnValue(res);
-    return res as Response;
+    const res = {
+      cookie: jest.fn(),
+      clearCookie: jest.fn(),
+      status: jest.fn(),
+      json: jest.fn(),
+    };
+    res.cookie.mockReturnValue(res);
+    res.clearCookie.mockReturnValue(res);
+    res.status.mockReturnValue(res);
+    res.json.mockReturnValue(res);
+    return res as unknown as Response;
   };
 
   beforeEach(async () => {
@@ -54,7 +58,6 @@ describe('AuthController', () => {
     }).compile();
 
     controller = module.get<AuthController>(AuthController);
-    service = module.get<AuthService>(AuthService);
   });
 
   afterEach(() => {
@@ -76,7 +79,7 @@ describe('AuthController', () => {
       const result = await controller.register(dto, res);
 
       expect(result).toBeDefined();
-      expect(res.cookie).toHaveBeenCalledTimes(2);
+      expect(res['cookie']).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -87,7 +90,7 @@ describe('AuthController', () => {
       const result = await controller.login(dto, res);
 
       expect(result).toBeDefined();
-      expect(res.cookie).toHaveBeenCalledTimes(2);
+      expect(res['cookie']).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -101,7 +104,7 @@ describe('AuthController', () => {
       const result = await controller.refresh(req, res);
 
       expect(result).toBeDefined();
-      expect(res.cookie).toHaveBeenCalledTimes(2);
+      expect(res['cookie']).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -115,7 +118,7 @@ describe('AuthController', () => {
       const result = await controller.logout(req, res);
 
       expect(result).toEqual({ message: 'Logout successful' });
-      expect(res.clearCookie).toHaveBeenCalledTimes(2);
+      expect(res['clearCookie']).toHaveBeenCalledTimes(2);
       expect(mockAuthService.logout).toHaveBeenCalledWith('user-id');
     });
   });

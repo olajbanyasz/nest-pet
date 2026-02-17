@@ -11,9 +11,13 @@ import { TokenExpiryService } from './token-expiry.service';
 
 describe('AuthService', () => {
   let service: AuthService;
-  let userModel: any;
-  let refreshTokenModel: any;
-  let jwtService: JwtService;
+  let userModel: typeof MockUserModel;
+  let refreshTokenModel: {
+    findOne: jest.Mock;
+    create: jest.Mock;
+    deleteOne: jest.Mock;
+    deleteMany: jest.Mock;
+  };
   let tokenExpiryService: TokenExpiryService;
 
   const mockUser = {
@@ -86,7 +90,6 @@ describe('AuthService', () => {
     service = module.get<AuthService>(AuthService);
     userModel = MockUserModel;
     refreshTokenModel = module.get(getModelToken(RefreshToken.name));
-    jwtService = module.get<JwtService>(JwtService);
     tokenExpiryService = module.get<TokenExpiryService>(TokenExpiryService);
   });
 
@@ -148,7 +151,9 @@ describe('AuthService', () => {
 
       expect(result).toBeDefined();
       expect(result.access_token).toBe('access-token');
-      expect(tokenExpiryService.scheduleTokenExpiryWarning).toHaveBeenCalled();
+      expect(
+        tokenExpiryService['scheduleTokenExpiryWarning'],
+      ).toHaveBeenCalled();
     });
 
     it('should throw UnauthorizedException for invalid credentials', async () => {
@@ -170,7 +175,7 @@ describe('AuthService', () => {
       const result = await service.logout(userId);
 
       expect(result).toEqual({ message: 'Logout successful' });
-      expect(refreshTokenModel.deleteMany).toHaveBeenCalled();
+      expect(refreshTokenModel['deleteMany']).toHaveBeenCalled();
     });
   });
 
@@ -187,7 +192,7 @@ describe('AuthService', () => {
 
       expect(result).toBeDefined();
       expect(result.access_token).toBe('access-token');
-      expect(refreshTokenModel.deleteOne).toHaveBeenCalled();
+      expect(refreshTokenModel['deleteOne']).toHaveBeenCalled();
     });
   });
 });
