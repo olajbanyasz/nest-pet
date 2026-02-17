@@ -38,7 +38,7 @@ export class AuthService {
 
   async register(
     registerDto: RegisterDto,
-  ): Promise<{ access_token: string; refresh_token: string }> {
+  ): Promise<{ access_token: string; refresh_token: string; user: UserDocument }> {
     const { email, password, name } = registerDto;
 
     const existingUser = await this.userModel.findOne({ email });
@@ -66,6 +66,7 @@ export class AuthService {
     return {
       access_token: accessToken,
       refresh_token: refreshToken,
+      user,
     };
   }
 

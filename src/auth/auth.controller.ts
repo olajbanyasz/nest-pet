@@ -28,14 +28,14 @@ declare global {
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
   @Post('register')
   async register(
     @Body() registerDto: RegisterDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const { access_token, refresh_token } =
+    const { access_token, refresh_token, user } =
       await this.authService.register(registerDto);
 
     res.cookie('access_token', access_token, {
@@ -52,7 +52,16 @@ export class AuthController {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    return { message: 'Registration and login successful' };
+    return {
+      message: 'Registration and login successful',
+      access_token,
+      user: {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+        name: user.name,
+      },
+    };
   }
 
   @Post('login')
@@ -79,6 +88,7 @@ export class AuthController {
 
     return {
       message: 'Login successful',
+      access_token,
       user: {
         id: user._id,
         email: user.email,
