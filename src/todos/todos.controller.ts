@@ -16,6 +16,7 @@ import { User } from '../auth/user.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../users/schemas/user.schema';
+import type { AuthenticatedUser } from '../auth/jwt.strategy';
 
 @Controller('todos')
 export class TodosController {
@@ -24,7 +25,7 @@ export class TodosController {
   @Get()
   @UseGuards(JwtAuthGuard)
   async findAll(
-    @User() user: { userId: string },
+    @User() user: AuthenticatedUser,
     @Query('completed') completed?: string,
   ) {
     const completedBool =
@@ -34,20 +35,20 @@ export class TodosController {
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
-  async findOne(@User() user: { userId: string }, @Param('id') id: string) {
+  async findOne(@User() user: AuthenticatedUser, @Param('id') id: string) {
     return this.todosService.findOne(id, user.userId);
   }
 
   @Post()
   @UseGuards(JwtAuthGuard)
-  async create(@User() user: { userId: string }, @Body() todo: CreateTodoDto) {
+  async create(@User() user: AuthenticatedUser, @Body() todo: CreateTodoDto) {
     return this.todosService.create(todo, user.userId);
   }
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
   async update(
-    @User() user: { userId: string },
+    @User() user: AuthenticatedUser,
     @Param('id') id: string,
     @Body() todoUpdate: Partial<CreateTodoDto>,
   ) {
@@ -56,7 +57,7 @@ export class TodosController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
-  async delete(@User() user: { userId: string }, @Param('id') id: string) {
+  async delete(@User() user: AuthenticatedUser, @Param('id') id: string) {
     return this.todosService.delete(id, user.userId);
   }
 

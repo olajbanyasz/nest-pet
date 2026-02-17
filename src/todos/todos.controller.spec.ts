@@ -8,6 +8,7 @@ import { ROLES_KEY } from '../auth/roles.decorator';
 import { UserRole } from '../users/schemas/user.schema';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
+import { AuthenticatedUser } from '../auth/jwt.strategy';
 
 describe('TodosController', () => {
   let controller: TodosController;
@@ -21,7 +22,12 @@ describe('TodosController', () => {
     userId: Types.ObjectId;
   }
 
-  const mockUser = { userId: new Types.ObjectId().toHexString() };
+  const mockUser: AuthenticatedUser = {
+    userId: new Types.ObjectId().toHexString(),
+    email: 'test@user.com',
+    role: UserRole.USER,
+    name: 'Test User',
+  };
 
   const sampleTodos: MockTodo[] = [
     {

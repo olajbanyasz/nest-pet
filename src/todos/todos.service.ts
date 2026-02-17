@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   Injectable,
   NotFoundException,
@@ -11,6 +9,11 @@ import { Model, Types, isValidObjectId, FilterQuery } from 'mongoose';
 import { Todo, TodoDocument } from './schemas/todo.schema';
 import { CreateTodoDto } from './dto/create-todo.dto';
 import { UpdateTodoDto } from './dto/update-todo.dto';
+
+interface DailyStat {
+  _id: string;
+  count: number;
+}
 
 @Injectable()
 export class TodosService {
@@ -180,7 +183,11 @@ export class TodosService {
     return this.todoModel.countDocuments({ deleted: true }).exec();
   }
 
-  async getLast14DaysStats() {
+  async getLast14DaysStats(): Promise<{
+    createdTodos: Record<string, number>;
+    completedTodos: Record<string, number>;
+    deletedTodos: Record<string, number>;
+  }> {
     const today = new Date();
     const endDate = new Date(
       Date.UTC(
@@ -198,7 +205,7 @@ export class TodosService {
     startDate.setUTCDate(startDate.getUTCDate() - 13);
     startDate.setUTCHours(0, 0, 0, 0);
 
-    const createdResult = await this.todoModel.aggregate([
+    const createdResult = await this.todoModel.aggregate<DailyStat>([
       {
         $match: {
           createdAt: {
@@ -222,7 +229,7 @@ export class TodosService {
       { $sort: { _id: 1 } },
     ]);
 
-    const completedResult = await this.todoModel.aggregate([
+    const completedResult = await this.todoModel.aggregate<DailyStat>([
       {
         $match: {
           completed: true,
@@ -247,7 +254,7 @@ export class TodosService {
       { $sort: { _id: 1 } },
     ]);
 
-    const deletedResult = await this.todoModel.aggregate([
+    const deletedResult = await this.todoModel.aggregate<DailyStat>([
       {
         $match: {
           deleted: true,
@@ -281,9 +288,11 @@ export class TodosService {
       date.setDate(startDate.getDate() + i);
       const key = date.toISOString().split('T')[0];
 
-      createdDays[key] = 0;
-      completedDays[key] = 0;
-      deletedDays[key] = 0;
+      if (key) {
+        createdDays[key] = 0;
+        completedDays[key] = 0;
+        deletedDays[key] = 0;
+      }
     }
 
     createdResult.forEach((item) => {

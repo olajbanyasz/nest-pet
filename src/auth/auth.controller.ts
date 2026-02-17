@@ -13,12 +13,9 @@ import { RegisterDto, LoginDto } from './dto/auth.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { AuthenticatedUser } from './jwt.strategy';
 
-declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
-  namespace Express {
-    interface Request {
-      user?: AuthenticatedUser;
-    }
+declare module 'express' {
+  interface Request {
+    user?: AuthenticatedUser;
   }
 }
 

@@ -1,14 +1,10 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { Request } from 'express';
-
-export interface AuthUser {
-  userId: string;
-  email?: string;
-}
+import { AuthenticatedUser } from './jwt.strategy';
 
 export const User = createParamDecorator(
-  (_: unknown, ctx: ExecutionContext): AuthUser => {
+  (_: unknown, ctx: ExecutionContext): AuthenticatedUser => {
     const request = ctx.switchToHttp().getRequest<Request>();
-    return request.user as AuthUser;
+    return request.user!;
   },
 );

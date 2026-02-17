@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-
 import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/mongoose';
 import { TodosService } from './todos.service';
@@ -41,7 +39,7 @@ describe('TodosService', () => {
     },
   ];
 
-  const saveMock = jest.fn();
+  const saveMock = jest.fn<Promise<Todo>, [any]>();
 
   const mockModel = {
     find: jest.fn(),
@@ -52,10 +50,13 @@ describe('TodosService', () => {
     aggregate: jest.fn(),
   };
 
-  const mockModelConstructor = jest.fn().mockImplementation((data) => ({
-    ...data,
-    save: saveMock,
-  }));
+  const mockModelConstructor = jest.fn().mockImplementation(
+    (data: any) =>
+      ({
+        ...data,
+        save: saveMock,
+      }) as unknown as Todo,
+  );
 
   const todoModelMock = Object.assign(mockModelConstructor, mockModel);
 
@@ -78,7 +79,9 @@ describe('TodosService', () => {
   describe('findAll', () => {
     it('returns non-deleted todos', async () => {
       mockModel.find.mockReturnValue({
-        exec: jest.fn().mockResolvedValue(todos.filter((t) => !t.deleted)),
+        exec: jest
+          .fn()
+          .mockResolvedValue(todos.filter((t) => !t.deleted) as Todo[]),
       });
 
       const result = await service.findAll(USER_ID.toHexString());
@@ -92,7 +95,9 @@ describe('TodosService', () => {
 
     it('filters completed=true', async () => {
       mockModel.find.mockReturnValue({
-        exec: jest.fn().mockResolvedValue(todos.filter((t) => t.completed)),
+        exec: jest
+          .fn()
+          .mockResolvedValue(todos.filter((t) => t.completed) as Todo[]),
       });
 
       const result = await service.findAll(USER_ID.toHexString(), true);
@@ -114,7 +119,9 @@ describe('TodosService', () => {
 
   describe('findOne', () => {
     it('returns todo when found', async () => {
-      mockModel.findOne.mockResolvedValue(todos[0]);
+      mockModel.findOne.mockReturnValue({
+        exec: jest.fn().mockResolvedValue(todos[0] as Todo),
+      });
 
       const result = await service.findOne(
         TODO_ID_1.toHexString(),
@@ -129,7 +136,9 @@ describe('TodosService', () => {
     });
 
     it('throws NotFoundException when missing', async () => {
-      mockModel.findOne.mockResolvedValue(null);
+      mockModel.findOne.mockReturnValue({
+        exec: jest.fn().mockResolvedValue(null),
+      });
 
       await expect(
         service.findOne(TODO_ID_1.toHexString(), USER_ID.toHexString()),
@@ -154,7 +163,7 @@ describe('TodosService', () => {
         userId: USER_ID,
       };
 
-      saveMock.mockResolvedValue(savedTodo);
+      saveMock.mockResolvedValue(savedTodo as Todo);
 
       const result = await service.create(dto, USER_ID.toHexString());
 
@@ -172,7 +181,9 @@ describe('TodosService', () => {
 
   describe('update', () => {
     it('updates and returns todo', async () => {
-      mockModel.findOne.mockResolvedValue(todos[0]);
+      mockModel.findOne.mockReturnValue({
+        exec: jest.fn().mockResolvedValue(todos[0] as Todo),
+      });
 
       mockModel.findOneAndUpdate.mockReturnValue({
         exec: jest.fn().mockResolvedValue({
@@ -194,7 +205,9 @@ describe('TodosService', () => {
     });
 
     it('throws NotFoundException when missing', async () => {
-      mockModel.findOne.mockResolvedValue(null);
+      mockModel.findOne.mockReturnValue({
+        exec: jest.fn().mockResolvedValue(null),
+      });
 
       await expect(
         service.update(TODO_ID_1.toHexString(), USER_ID.toHexString(), {
@@ -224,7 +237,9 @@ describe('TodosService', () => {
 
   describe('deleteTodosByUser', () => {
     it('soft deletes all todos of user', async () => {
-      mockModel.updateMany.mockResolvedValue({ modifiedCount: 2 });
+      mockModel.updateMany.mockReturnValue({
+        exec: jest.fn().mockResolvedValue({ modifiedCount: 2 }),
+      });
 
       const result = await service.deleteTodosByUser(USER_ID.toHexString());
 
@@ -260,13 +275,16 @@ describe('TodosService', () => {
     });
 
     it('returns 14-day buckets and applies aggregation counts', async () => {
-      mockModel.aggregate
-        .mockResolvedValueOnce([
-          { _id: '2026-02-01', count: 3 },
-          { _id: '2026-02-13', count: 1 },
-        ])
-        .mockResolvedValueOnce([{ _id: '2026-02-05', count: 2 }])
-        .mockResolvedValueOnce([{ _id: '2026-02-07', count: 4 }]);
+      mockModel.aggregate.mockReturnValue({
+        exec: jest
+          .fn()
+          .mockResolvedValueOnce([
+            { _id: '2026-02-01', count: 3 },
+            { _id: '2026-02-13', count: 1 },
+          ] as any)
+          .mockResolvedValueOnce([{ _id: '2026-02-05', count: 2 }] as any)
+          .mockResolvedValueOnce([{ _id: '2026-02-07', count: 4 }] as any),
+      });
 
       const result = await service.getLast14DaysStats();
 
