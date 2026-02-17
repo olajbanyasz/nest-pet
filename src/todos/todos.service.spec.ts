@@ -119,9 +119,7 @@ describe('TodosService', () => {
 
   describe('findOne', () => {
     it('returns todo when found', async () => {
-      mockModel.findOne.mockReturnValue({
-        exec: jest.fn().mockResolvedValue(todos[0] as Todo),
-      });
+      mockModel.findOne.mockResolvedValue(todos[0] as Todo);
 
       const result = await service.findOne(
         TODO_ID_1.toHexString(),
@@ -136,9 +134,7 @@ describe('TodosService', () => {
     });
 
     it('throws NotFoundException when missing', async () => {
-      mockModel.findOne.mockReturnValue({
-        exec: jest.fn().mockResolvedValue(null),
-      });
+      mockModel.findOne.mockResolvedValue(null);
 
       await expect(
         service.findOne(TODO_ID_1.toHexString(), USER_ID.toHexString()),
@@ -181,9 +177,7 @@ describe('TodosService', () => {
 
   describe('update', () => {
     it('updates and returns todo', async () => {
-      mockModel.findOne.mockReturnValue({
-        exec: jest.fn().mockResolvedValue(todos[0] as Todo),
-      });
+      mockModel.findOne.mockResolvedValue(todos[0] as Todo);
 
       mockModel.findOneAndUpdate.mockReturnValue({
         exec: jest.fn().mockResolvedValue({
@@ -205,9 +199,7 @@ describe('TodosService', () => {
     });
 
     it('throws NotFoundException when missing', async () => {
-      mockModel.findOne.mockReturnValue({
-        exec: jest.fn().mockResolvedValue(null),
-      });
+      mockModel.findOne.mockResolvedValue(null);
 
       await expect(
         service.update(TODO_ID_1.toHexString(), USER_ID.toHexString(), {
@@ -237,9 +229,7 @@ describe('TodosService', () => {
 
   describe('deleteTodosByUser', () => {
     it('soft deletes all todos of user', async () => {
-      mockModel.updateMany.mockReturnValue({
-        exec: jest.fn().mockResolvedValue({ modifiedCount: 2 }),
-      });
+      mockModel.updateMany.mockResolvedValue({ modifiedCount: 2 } as any);
 
       const result = await service.deleteTodosByUser(USER_ID.toHexString());
 
@@ -275,16 +265,13 @@ describe('TodosService', () => {
     });
 
     it('returns 14-day buckets and applies aggregation counts', async () => {
-      mockModel.aggregate.mockReturnValue({
-        exec: jest
-          .fn()
-          .mockResolvedValueOnce([
-            { _id: '2026-02-01', count: 3 },
-            { _id: '2026-02-13', count: 1 },
-          ] as any)
-          .mockResolvedValueOnce([{ _id: '2026-02-05', count: 2 }] as any)
-          .mockResolvedValueOnce([{ _id: '2026-02-07', count: 4 }] as any),
-      });
+      mockModel.aggregate
+        .mockResolvedValueOnce([
+          { _id: '2026-02-01', count: 3 },
+          { _id: '2026-02-13', count: 1 },
+        ] as any)
+        .mockResolvedValueOnce([{ _id: '2026-02-05', count: 2 }] as any)
+        .mockResolvedValueOnce([{ _id: '2026-02-07', count: 4 }] as any);
 
       const result = await service.getLast14DaysStats();
 
