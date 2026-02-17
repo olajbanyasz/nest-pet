@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/restrict-template-expressions */
 import {
   Injectable,
   UnauthorizedException,
@@ -20,6 +17,7 @@ import {
   RefreshToken,
   RefreshTokenDocument,
 } from './schemas/refresh-token.schema';
+import { JwtPayload } from './jwt.strategy';
 
 @Injectable()
 export class AuthService {
@@ -63,7 +61,7 @@ export class AuthService {
     const accessToken = await this.generateAccessToken(user);
     const refreshToken = await this.generateRefreshToken(user._id);
 
-    this.logger.log(`User registered: ${email} (id: ${user._id})`);
+    this.logger.log(`User registered: ${email} (id: ${user._id.toString()})`);
 
     return {
       access_token: accessToken,
@@ -91,9 +89,9 @@ export class AuthService {
     const accessToken = await this.generateAccessToken(user);
     const refreshToken = await this.generateRefreshToken(user._id);
 
-    const decoded = this.jwtService.decode(accessToken);
+    const decoded: JwtPayload | null = this.jwtService.decode(accessToken);
 
-    if (decoded?.exp) {
+    if (decoded && decoded.exp) {
       const expiresInMs = decoded.exp * 1000 - Date.now();
       this.tokenExpiryService.scheduleTokenExpiryWarning(
         user._id.toString(),
@@ -101,12 +99,12 @@ export class AuthService {
       );
     } else {
       this.logger.warn(
-        `Could not decode exp from access token for user ${user._id}`,
+        `Could not decode exp from access token for user ${user._id.toString()}`,
       );
     }
 
     this.logger.log(
-      `User logged in: ${email} (id: ${user._id}, role: ${user.role})`,
+      `User logged in: ${email} (id: ${user._id.toString()}, role: ${user.role})`,
     );
 
     return {
@@ -177,7 +175,7 @@ export class AuthService {
       );
     } else {
       this.logger.warn(
-        `Could not decode exp from access token for user ${user._id}`,
+        `Could not decode exp from access token for user ${user._id.toString()}`,
       );
     }
 
