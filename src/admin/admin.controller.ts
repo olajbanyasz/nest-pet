@@ -1,3 +1,4 @@
+import { ApiTags } from '@nestjs/swagger';
 import {
   Controller,
   Get,
@@ -18,6 +19,7 @@ import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../users/schemas/user.schema';
 import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 
+@ApiTags('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
 @UseInterceptors(CacheInterceptor)

@@ -1,3 +1,4 @@
+import { ApiTags } from '@nestjs/swagger';
 import {
   Body,
   Controller,
@@ -18,6 +19,7 @@ import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../users/schemas/user.schema';
 import type { AuthenticatedUser } from '../auth/jwt.strategy';
 
+@ApiTags('todos')
 @Controller('todos')
 export class TodosController {
   constructor(private readonly todosService: TodosService) {}

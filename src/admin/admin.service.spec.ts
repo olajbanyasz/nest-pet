@@ -14,13 +14,13 @@ describe('AdminService', () => {
   let service: AdminService;
 
   const USER1 = {
-    _id: '1',
+    _id: '507f1f77bcf86cd799439011',
     email: 'u1@test.com',
     role: UserRole.USER,
     save: jest.fn(),
   };
   const USER2 = {
-    _id: '2',
+    _id: '507f1f77bcf86cd799439012',
     email: 'u2@test.com',
     role: UserRole.ADMIN,
     save: jest.fn(),
@@ -63,10 +63,10 @@ describe('AdminService', () => {
       mockModel.findById.mockResolvedValue(USER1);
       mockModel.findByIdAndDelete.mockReturnValue(createQueryMock(USER1));
 
-      const result = await service.deleteUser('1');
-      expect(result).toEqual({ message: 'User 1 deleted' });
-      expect(mockTodosService.deleteTodosByUser).toHaveBeenCalledWith('1');
-      expect(mockModel.findByIdAndDelete).toHaveBeenCalledWith('1');
+      const result = await service.deleteUser('507f1f77bcf86cd799439011');
+      expect(result).toEqual({ message: 'User 507f1f77bcf86cd799439011 deleted' });
+      expect(mockTodosService.deleteTodosByUser).toHaveBeenCalledWith('507f1f77bcf86cd799439011');
+      expect(mockModel.findByIdAndDelete).toHaveBeenCalledWith('507f1f77bcf86cd799439011');
     });
 
     it('should throw NotFoundException if user not found', async () => {
@@ -92,7 +92,7 @@ describe('AdminService', () => {
         createQueryMock({ ...user, role: UserRole.ADMIN }),
       );
 
-      const result = await service.promoteToAdmin('1');
+      const result = await service.promoteToAdmin('507f1f77bcf86cd799439011');
       expect(result.role).toBe(UserRole.ADMIN);
       expect(user.save).toHaveBeenCalled();
     });
@@ -113,7 +113,7 @@ describe('AdminService', () => {
         createQueryMock({ ...user, role: UserRole.USER }),
       );
 
-      const result = await service.demoteToUser('2');
+      const result = await service.demoteToUser('507f1f77bcf86cd799439012');
       expect(result.role).toBe(UserRole.USER);
       expect(user.save).toHaveBeenCalled();
     });
@@ -123,6 +123,57 @@ describe('AdminService', () => {
       await expect(service.demoteToUser('nonexistent')).rejects.toBeInstanceOf(
         NotFoundException,
       );
+    });
+  });
+
+  describe('getUserById', () => {
+    it('should return user when found', async () => {
+      mockModel.findById.mockReturnValue(createQueryMock(USER1));
+      const result = await service.getUserById('507f1f77bcf86cd799439011');
+      expect(result).toEqual(USER1);
+    });
+
+    it('should throw NotFoundException if not found', async () => {
+      mockModel.findById.mockReturnValue(createQueryMock(null));
+      await expect(service.getUserById('507f1f77bcf86cd799439011')).rejects.toBeInstanceOf(NotFoundException);
+    });
+  });
+
+  describe('getUsers', () => {
+    it('should return cached users if available', async () => {
+      mockCache.get.mockResolvedValue(['cached']);
+      const result = await service.getUsers();
+      expect(result).toEqual(['cached']);
+      expect(mockModel.find).not.toHaveBeenCalled();
+    });
+
+    it('should fetch from DB and cache if NOT available in cache', async () => {
+      mockCache.get.mockResolvedValue(undefined);
+      const userObj = { ...USER1, toObject: jest.fn().mockReturnValue(USER1) };
+      mockModel.find.mockReturnValue(createQueryMock([userObj]));
+      // Mock countTodosByUser specifically
+      (mockTodosService as any).countTodosByUser = jest.fn().mockResolvedValue(0);
+
+      const result = await service.getUsers();
+
+      expect(result).toBeDefined();
+      expect(result[0].todoCount).toBe(0);
+      expect(mockCache.set).toHaveBeenCalled();
+    });
+  });
+
+  describe('getApplicationDetails', () => {
+    it('should return aggregate stats', async () => {
+      mockModel['countDocuments'] = jest.fn().mockResolvedValue(5);
+      (mockTodosService as any).countAllTodos = jest.fn().mockResolvedValue(10);
+      (mockTodosService as any).countCompletedTodos = jest.fn().mockResolvedValue(4);
+      (mockTodosService as any).countActiveTodos = jest.fn().mockResolvedValue(6);
+      (mockTodosService as any).countDeletedTodos = jest.fn().mockResolvedValue(2);
+
+      const result = await service.getApplicationDetails();
+
+      expect(result.totalUsers).toBe(5);
+      expect(result.totalTodos).toBe(10);
     });
   });
 });

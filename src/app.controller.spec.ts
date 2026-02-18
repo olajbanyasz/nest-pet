@@ -5,9 +5,10 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
 describe('AppController', () => {
   let appController: AppController;
+  let module: TestingModule;
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    module = await Test.createTestingModule({
       controllers: [AppController],
       providers: [
         AppService,
@@ -28,6 +29,16 @@ describe('AppController', () => {
   describe('root', () => {
     it('should return "Hello World!"', () => {
       expect(appController.getHello()).toBe('Hello World!');
+    });
+  });
+
+  describe('test-redis', () => {
+    it('should return "Redis test completed"', async () => {
+      const appService = module.get<AppService>(AppService);
+      jest.spyOn(appService, 'testRedis').mockResolvedValue(undefined);
+
+      expect(await appController.testRedis()).toBe('Redis test completed');
+      expect(appService.testRedis).toHaveBeenCalled();
     });
   });
 });
