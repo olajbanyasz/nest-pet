@@ -1,24 +1,26 @@
-import React from 'react';
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from 'react-router-dom';
-import Login from './components/Login';
-import Todos from './components/Todos';
-import DashBoard from './components/DashBoard';
-import StreamPage from './components/StreamPage';
-import AdminPage from './components/AdminPage';
-import AppLayout from './components/AppLayout';
-import ProtectedRoute from './components/ProtectedRoute';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { NotificationProvider } from './contexts/NotificationContext';
-import Notification from './components/Notification';
 import './App.css';
 import 'primereact/resources/themes/lara-light-indigo/theme.css';
 import 'primereact/resources/primereact.min.css';
 import 'primeicons/primeicons.css';
+
+import React from 'react';
+import {
+  BrowserRouter as Router,
+  Navigate,
+  Route,
+  Routes,
+} from 'react-router-dom';
+
+import AdminPage from './components/AdminPage';
+import AppLayout from './components/AppLayout';
+import DashBoard from './components/DashBoard';
+import Login from './components/Login';
+import Notification from './components/Notification';
+import ProtectedRoute from './components/ProtectedRoute';
+import StreamPage from './components/StreamPage';
+import Todos from './components/Todos';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 
 const RootRedirect: React.FC = () => {
   const { user, initialized } = useAuth();

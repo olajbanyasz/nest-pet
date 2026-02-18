@@ -1,5 +1,5 @@
-import React from 'react';
 import { Dropdown } from 'primereact/dropdown';
+import React from 'react';
 
 interface TodoFilterProps {
   todoFilter: string;

@@ -1,7 +1,8 @@
-import React from 'react';
-import { User } from '../api/adminApi';
 import { Button } from 'primereact/button';
 import { Checkbox } from 'primereact/checkbox';
+import React from 'react';
+
+import { User } from '../api/adminApi';
 
 interface UserItemProps {
   user: User;

@@ -1,18 +1,19 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+
+import {
+  deleteUser,
+  demoteAdminToUser,
+  getUsers,
+  promoteUserToAdmin,
+  User,
+} from '../api/adminApi';
 import { useAuth } from '../contexts/AuthContext';
 import { useLoading } from '../contexts/LoadingProvider';
 import { useNotification } from '../contexts/NotificationContext';
-import { useNavigate } from 'react-router-dom';
-import {
-  getUsers,
-  promoteUserToAdmin,
-  demoteAdminToUser,
-  deleteUser,
-  User,
-} from '../api/adminApi';
-import UserList from './UserList';
 import UserFilter from './UserFilter';
+import UserList from './UserList';
 
 const AdminPage: React.FC = () => {
   const { user, loading: authLoading, initialized } = useAuth();

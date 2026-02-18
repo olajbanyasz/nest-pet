@@ -1,26 +1,27 @@
 import React, {
   createContext,
+  useCallback,
   useContext,
   useEffect,
-  useState,
   useRef,
-  useCallback,
+  useState,
 } from 'react';
+
 import {
+  AuthResponse,
   checkAuth as apiCheckAuth,
+  getCsrfToken,
   login as apiLogin,
   logout as apiLogout,
   refreshAccessToken,
-  getCsrfToken,
-  AuthResponse,
 } from '../api/authApi';
+import { setAuthLogoutCallback, setCsrfToken } from '../api/axios';
 import {
   connectAuthSocket,
   disconnectAuthSocket,
-  onTokenExpiring,
   onOnlineUsersUpdate,
+  onTokenExpiring,
 } from '../socket/authSocket';
-import api, { setAccessToken, setCsrfToken, setAuthLogoutCallback } from '../api/axios';
 
 export type UserRole = 'user' | 'admin';
 
@@ -66,35 +67,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         setCsrfToken(token);
       }
     };
-    fetchCsrf();
+    void fetchCsrf();
   }, []);
 
-  const performLogout = useCallback(
-    (options?: { skipApi?: boolean }) => {
-      // isLoggingOut ref might not be needed anymore if we simplified axios
-      // but keeping a local guard is fine
+  const performLogout = useCallback((options?: { skipApi?: boolean }) => {
+    // isLoggingOut ref might not be needed anymore if we simplified axios
+    // but keeping a local guard is fine
 
-      const token = api.defaults.headers.common['Authorization']; // Check if we have token? 
-      // Actually we use setAccessToken, so we can't check api.defaults easily if we use interceptors.
-      // irrelevant, just call logout.
+    // const token = api.defaults.headers.common['Authorization']; // Check if we have token?
+    // Actually we use setAccessToken, so we can't check api.defaults easily if we use interceptors.
+    // irrelevant, just call logout.
 
-      if (!options?.skipApi) {
-        apiLogout().catch(() => { });
-      }
+    if (!options?.skipApi) {
+      apiLogout().catch(() => {});
+    }
 
-      disconnectAuthSocket();
-      socketInitialized.current = false;
+    disconnectAuthSocket();
+    socketInitialized.current = false;
 
-      setOnlineUsers([]);
-      setOnlineCount(0);
-      setShowRefreshModal(false);
+    setOnlineUsers([]);
+    setOnlineCount(0);
+    setShowRefreshModal(false);
 
-      if (isMounted.current) {
-        setUser(null);
-      }
-    },
-    [],
-  );
+    if (isMounted.current) {
+      setUser(null);
+    }
+  }, []);
 
   const logout = () => performLogout();
 
@@ -112,7 +110,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             setUser(userData);
           }
         }
-      } catch (err) {
+      } catch {
         // Silent fail, user is just not logged in
       } finally {
         if (isMounted.current) {
@@ -122,7 +120,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     };
 
-    initAuth();
+    void initAuth();
 
     return () => {
       isMounted.current = false;
@@ -159,8 +157,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     const result = await apiLogin(email, password);
 
     if (result.success && result.user) {
-
-
       setUser({
         id: result.user.id,
         email: result.user.email,
