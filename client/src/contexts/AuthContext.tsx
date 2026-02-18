@@ -11,6 +11,7 @@ import {
   login as apiLogin,
   logout as apiLogout,
   refreshAccessToken,
+  getCsrfToken,
   AuthResponse,
 } from '../api/authApi';
 import {
@@ -19,7 +20,7 @@ import {
   onTokenExpiring,
   onOnlineUsersUpdate,
 } from '../socket/authSocket';
-import { setAuthLogoutCallback, setLogoutInProgress } from '../api/axios';
+import api, { setAccessToken, setCsrfToken, setAuthLogoutCallback } from '../api/axios';
 
 export type UserRole = 'user' | 'admin';
 
@@ -56,31 +57,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [onlineCount, setOnlineCount] = useState(0);
 
   const isMounted = useRef(true);
-  const isLoggingOut = useRef(false);
   const socketInitialized = useRef(false);
 
-  const setUserWithStorage = useCallback((user: User | null) => {
-    setUser(user);
-    if (user) {
-      sessionStorage.setItem('user', JSON.stringify(user));
-    } else {
-      sessionStorage.removeItem('user');
-    }
+  useEffect(() => {
+    const fetchCsrf = async () => {
+      const token = await getCsrfToken();
+      if (token) {
+        setCsrfToken(token);
+      }
+    };
+    fetchCsrf();
   }, []);
 
   const performLogout = useCallback(
     (options?: { skipApi?: boolean }) => {
-      if (isLoggingOut.current) return;
-      isLoggingOut.current = true;
-      setLogoutInProgress(true);
+      // isLoggingOut ref might not be needed anymore if we simplified axios
+      // but keeping a local guard is fine
 
-      const token = sessionStorage.getItem('access_token');
-      if (!options?.skipApi && token) {
-        apiLogout().catch(() => {});
+      const token = api.defaults.headers.common['Authorization']; // Check if we have token? 
+      // Actually we use setAccessToken, so we can't check api.defaults easily if we use interceptors.
+      // irrelevant, just call logout.
+
+      if (!options?.skipApi) {
+        apiLogout().catch(() => { });
       }
-
-      sessionStorage.removeItem('access_token');
-      sessionStorage.removeItem('user');
 
       disconnectAuthSocket();
       socketInitialized.current = false;
@@ -98,24 +98,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const logout = () => performLogout();
 
+  // Initialize auth state
   useEffect(() => {
     isMounted.current = true;
     setAuthLogoutCallback(() => performLogout({ skipApi: true }));
 
-    const storedUser = sessionStorage.getItem('user');
-    if (storedUser) {
+    const initAuth = async () => {
       try {
-        setUser(JSON.parse(storedUser));
-      } catch {}
-    }
+        const hasToken = await refreshAccessToken();
+        if (hasToken) {
+          const userData = await apiCheckAuth();
+          if (userData && isMounted.current) {
+            setUser(userData);
+          }
+        }
+      } catch (err) {
+        // Silent fail, user is just not logged in
+      } finally {
+        if (isMounted.current) {
+          setInitialized(true);
+          setLoading(false);
+        }
+      }
+    };
 
-    setInitialized(true);
-    setLoading(false);
+    initAuth();
 
     return () => {
       isMounted.current = false;
     };
-  }, [performLogout]);
+  }, []);
 
   useEffect(() => {
     if (!initialized || !user) return;
@@ -147,10 +159,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     const result = await apiLogin(email, password);
 
     if (result.success && result.user) {
-      isLoggingOut.current = false;
-      setLogoutInProgress(false);
 
-      setUserWithStorage({
+
+      setUser({
         id: result.user.id,
         email: result.user.email,
         role: result.user.role,

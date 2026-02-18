@@ -13,6 +13,9 @@ export class RefreshToken {
   })
   userId: Types.ObjectId;
 
+  @Prop({ required: true, unique: true })
+  tokenId: string;
+
   @Prop({ required: true })
   tokenHash: string;
 

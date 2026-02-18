@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/restrict-template-expressions */
 import {
   Injectable,
   UnauthorizedException,
@@ -20,6 +17,7 @@ import {
   RefreshToken,
   RefreshTokenDocument,
 } from './schemas/refresh-token.schema';
+import { JwtPayload } from './jwt.strategy';
 
 @Injectable()
 export class AuthService {
@@ -36,9 +34,11 @@ export class AuthService {
     private readonly tokenExpiryService: TokenExpiryService,
   ) {}
 
-  async register(
-    registerDto: RegisterDto,
-  ): Promise<{ access_token: string; refresh_token: string }> {
+  async register(registerDto: RegisterDto): Promise<{
+    access_token: string;
+    refresh_token: string;
+    user: UserDocument;
+  }> {
     const { email, password, name } = registerDto;
 
     const existingUser = await this.userModel.findOne({ email });
@@ -61,11 +61,12 @@ export class AuthService {
     const accessToken = await this.generateAccessToken(user);
     const refreshToken = await this.generateRefreshToken(user._id);
 
-    this.logger.log(`User registered: ${email} (id: ${user._id})`);
+    this.logger.log(`User registered: ${email} (id: ${user._id.toString()})`);
 
     return {
       access_token: accessToken,
       refresh_token: refreshToken,
+      user,
     };
   }
 
@@ -88,9 +89,9 @@ export class AuthService {
     const accessToken = await this.generateAccessToken(user);
     const refreshToken = await this.generateRefreshToken(user._id);
 
-    const decoded = this.jwtService.decode(accessToken);
+    const decoded: JwtPayload | null = this.jwtService.decode(accessToken);
 
-    if (decoded?.exp) {
+    if (decoded && decoded.exp) {
       const expiresInMs = decoded.exp * 1000 - Date.now();
       this.tokenExpiryService.scheduleTokenExpiryWarning(
         user._id.toString(),
@@ -98,12 +99,12 @@ export class AuthService {
       );
     } else {
       this.logger.warn(
-        `Could not decode exp from access token for user ${user._id}`,
+        `Could not decode exp from access token for user ${user._id.toString()}`,
       );
     }
 
     this.logger.log(
-      `User logged in: ${email} (id: ${user._id}, role: ${user.role})`,
+      `User logged in: ${email} (id: ${user._id.toString()}, role: ${user.role})`,
     );
 
     return {
@@ -127,20 +128,31 @@ export class AuthService {
     return { message: 'Logout successful' };
   }
 
-  async refreshTokens(refreshToken: string): Promise<{
+  async refreshTokens(refreshToken: string | undefined): Promise<{
     access_token: string;
     refresh_token: string;
   }> {
-    const storedTokens = await this.refreshTokenModel.find({
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh token not found');
+    }
+
+    const [tokenId, tokenSecret] = refreshToken.split(':');
+
+    if (!tokenId || !tokenSecret) {
+      throw new UnauthorizedException('Invalid refresh token format');
+    }
+
+    const matchedToken = await this.refreshTokenModel.findOne({
+      tokenId,
       expiresAt: { $gt: new Date() },
     });
 
-    const matchedToken = await this.findMatchingRefreshToken(
-      refreshToken,
-      storedTokens,
-    );
-
     if (!matchedToken) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    const isMatch = await bcrypt.compare(tokenSecret, matchedToken.tokenHash);
+    if (!isMatch) {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
@@ -154,8 +166,8 @@ export class AuthService {
     const newAccessToken = await this.generateAccessToken(user);
     const newRefreshToken = await this.generateRefreshToken(user._id);
 
-    const decoded = this.jwtService.decode(newAccessToken);
-    if (decoded?.exp) {
+    const decoded: JwtPayload | null = this.jwtService.decode(newAccessToken);
+    if (decoded && decoded.exp) {
       const expiresInMs = decoded.exp * 1000 - Date.now();
       this.tokenExpiryService.scheduleTokenExpiryWarning(
         user._id.toString(),
@@ -163,7 +175,7 @@ export class AuthService {
       );
     } else {
       this.logger.warn(
-        `Could not decode exp from access token for user ${user._id}`,
+        `Could not decode exp from access token for user ${user._id.toString()}`,
       );
     }
 
@@ -186,26 +198,17 @@ export class AuthService {
   }
 
   private async generateRefreshToken(userId: Types.ObjectId): Promise<string> {
-    const token = crypto.randomUUID();
-    const tokenHash = await bcrypt.hash(token, 10);
+    const tokenId = crypto.randomUUID();
+    const tokenSecret = crypto.randomBytes(32).toString('hex');
+    const tokenHash = await bcrypt.hash(tokenSecret, 10);
 
     await this.refreshTokenModel.create({
       userId,
+      tokenId,
       tokenHash,
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     });
 
-    return token;
-  }
-
-  private async findMatchingRefreshToken(
-    rawToken: string,
-    tokens: RefreshTokenDocument[],
-  ): Promise<RefreshTokenDocument | null> {
-    for (const token of tokens) {
-      const isMatch = await bcrypt.compare(rawToken, token.tokenHash);
-      if (isMatch) return token;
-    }
-    return null;
+    return `${tokenId}:${tokenSecret}`;
   }
 }

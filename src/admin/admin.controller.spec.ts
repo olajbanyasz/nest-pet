@@ -1,6 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/unbound-method */
 import { Test, TestingModule } from '@nestjs/testing';
+import { Request } from 'express';
 import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
 import { UserRole } from '../users/schemas/user.schema';
@@ -9,7 +8,7 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
 type AuthRequestMock = {
   user: {
-    _id: string;
+    userId: string;
     role: UserRole;
   };
 };
@@ -72,7 +71,7 @@ describe('AdminController', () => {
       (service.getUsers as jest.Mock).mockResolvedValue(users);
       const result = await controller.getUsers();
       expect(result).toEqual(users);
-      expect(service.getUsers).toHaveBeenCalled();
+      expect(service['getUsers']).toHaveBeenCalled();
     });
   });
 
@@ -81,7 +80,7 @@ describe('AdminController', () => {
       (service.getUserById as jest.Mock).mockResolvedValue(USER1);
       const result = await controller.getUser('1');
       expect(result).toEqual(USER1);
-      expect(service.getUserById).toHaveBeenCalledWith('1');
+      expect(service['getUserById']).toHaveBeenCalledWith('1');
     });
 
     it('should throw NotFoundException if user not found', async () => {
@@ -97,22 +96,25 @@ describe('AdminController', () => {
   describe('deleteUser', () => {
     it('should delete a user if not self', async () => {
       const reqMock: AuthRequestMock = {
-        user: { _id: '2', role: UserRole.ADMIN },
+        user: { userId: '2', role: UserRole.ADMIN },
       };
       const msg = { message: 'User 1 deleted' };
       (service.deleteUser as jest.Mock).mockResolvedValue(msg);
 
-      const result = await controller.deleteUser('1', reqMock as any);
+      const result = await controller.deleteUser(
+        '1',
+        reqMock as unknown as Request,
+      );
       expect(result).toEqual(msg);
-      expect(service.deleteUser).toHaveBeenCalledWith('1');
+      expect(service['deleteUser']).toHaveBeenCalledWith('1');
     });
 
     it('should throw ForbiddenException if trying to delete self', async () => {
       const reqMock: AuthRequestMock = {
-        user: { _id: '1', role: UserRole.ADMIN },
+        user: { userId: '1', role: UserRole.ADMIN },
       };
       await expect(
-        controller.deleteUser('1', reqMock as any),
+        controller.deleteUser('1', reqMock as unknown as Request),
       ).rejects.toBeInstanceOf(ForbiddenException);
     });
   });
@@ -120,22 +122,25 @@ describe('AdminController', () => {
   describe('promoteUser', () => {
     it('should promote a user to admin if not self', async () => {
       const reqMock: AuthRequestMock = {
-        user: { _id: '2', role: UserRole.ADMIN },
+        user: { userId: '2', role: UserRole.ADMIN },
       };
       const promoted = { ...USER1, role: UserRole.ADMIN };
       (service.promoteToAdmin as jest.Mock).mockResolvedValue(promoted);
 
-      const result = await controller.promoteUser('1', reqMock as any);
+      const result = await controller.promoteUser(
+        '1',
+        reqMock as unknown as Request,
+      );
       expect(result).toEqual(promoted);
-      expect(service.promoteToAdmin).toHaveBeenCalledWith('1');
+      expect(service['promoteToAdmin']).toHaveBeenCalledWith('1');
     });
 
     it('should throw ForbiddenException if trying to promote self', async () => {
       const reqMock: AuthRequestMock = {
-        user: { _id: '1', role: UserRole.ADMIN },
+        user: { userId: '1', role: UserRole.ADMIN },
       };
       await expect(
-        controller.promoteUser('1', reqMock as any),
+        controller.promoteUser('1', reqMock as unknown as Request),
       ).rejects.toBeInstanceOf(ForbiddenException);
     });
   });
@@ -143,22 +148,25 @@ describe('AdminController', () => {
   describe('demoteUser', () => {
     it('should demote a user to normal if not self', async () => {
       const reqMock: AuthRequestMock = {
-        user: { _id: '1', role: UserRole.ADMIN },
+        user: { userId: '1', role: UserRole.ADMIN },
       };
       const demoted = { ...USER2, role: UserRole.USER };
       (service.demoteToUser as jest.Mock).mockResolvedValue(demoted);
 
-      const result = await controller.demoteUser('2', reqMock as any);
+      const result = await controller.demoteUser(
+        '2',
+        reqMock as unknown as Request,
+      );
       expect(result).toEqual(demoted);
-      expect(service.demoteToUser).toHaveBeenCalledWith('2');
+      expect(service['demoteToUser']).toHaveBeenCalledWith('2');
     });
 
     it('should throw ForbiddenException if trying to demote self', async () => {
       const reqMock: AuthRequestMock = {
-        user: { _id: '2', role: UserRole.ADMIN },
+        user: { userId: '2', role: UserRole.ADMIN },
       };
       await expect(
-        controller.demoteUser('2', reqMock as any),
+        controller.demoteUser('2', reqMock as unknown as Request),
       ).rejects.toBeInstanceOf(ForbiddenException);
     });
   });
