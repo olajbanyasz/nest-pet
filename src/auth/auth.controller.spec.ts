@@ -1,8 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { Request, Response } from 'express';
+
+import { UserRole } from '../users/schemas/user.schema';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { Response, Request } from 'express';
-import { UserRole } from '../users/schemas/user.schema';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -131,6 +132,7 @@ describe('AuthController', () => {
 
       const result = controller.getCsrfToken(req);
       expect(result).toEqual({ csrfToken: 'mock-csrf-token' });
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(req.csrfToken).toHaveBeenCalled();
     });
 

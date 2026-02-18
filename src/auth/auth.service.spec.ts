@@ -1,11 +1,12 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { getModelToken } from '@nestjs/mongoose';
+import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { UnauthorizedException, ConflictException } from '@nestjs/common';
-import { Types } from 'mongoose';
+import { getModelToken } from '@nestjs/mongoose';
+import { Test, TestingModule } from '@nestjs/testing';
 import * as bcrypt from 'bcryptjs';
-import { AuthService } from './auth.service';
+import { Types } from 'mongoose';
+
 import { User, UserRole } from '../users/schemas/user.schema';
+import { AuthService } from './auth.service';
 import { RefreshToken } from './schemas/refresh-token.schema';
 import { TokenExpiryService } from './token-expiry.service';
 

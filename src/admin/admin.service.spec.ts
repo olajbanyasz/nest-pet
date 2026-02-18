@@ -1,12 +1,13 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { AdminService } from './admin.service';
-import { getModelToken } from '@nestjs/mongoose';
-import { User, UserRole } from '../users/schemas/user.schema';
-import { NotFoundException, ForbiddenException } from '@nestjs/common';
-import { TodosService } from '../todos/todos.service';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { getModelToken } from '@nestjs/mongoose';
+import { Test, TestingModule } from '@nestjs/testing';
 
-const mockTodosService = {
+import { TodosService } from '../todos/todos.service';
+import { User, UserRole } from '../users/schemas/user.schema';
+import { AdminService } from './admin.service';
+
+const mockTodosService: Record<string, jest.Mock> = {
   deleteTodosByUser: jest.fn().mockResolvedValue({ deletedCount: 0 }),
 };
 
@@ -64,9 +65,17 @@ describe('AdminService', () => {
       mockModel.findByIdAndDelete.mockReturnValue(createQueryMock(USER1));
 
       const result = await service.deleteUser('507f1f77bcf86cd799439011');
-      expect(result).toEqual({ message: 'User 507f1f77bcf86cd799439011 deleted' });
-      expect(mockTodosService.deleteTodosByUser).toHaveBeenCalledWith('507f1f77bcf86cd799439011');
-      expect(mockModel.findByIdAndDelete).toHaveBeenCalledWith('507f1f77bcf86cd799439011');
+      expect(result).toEqual({
+        message: 'User 507f1f77bcf86cd799439011 deleted',
+      });
+
+      expect(mockTodosService.deleteTodosByUser).toHaveBeenCalledWith(
+        '507f1f77bcf86cd799439011',
+      );
+
+      expect(mockModel.findByIdAndDelete).toHaveBeenCalledWith(
+        '507f1f77bcf86cd799439011',
+      );
     });
 
     it('should throw NotFoundException if user not found', async () => {
@@ -135,7 +144,9 @@ describe('AdminService', () => {
 
     it('should throw NotFoundException if not found', async () => {
       mockModel.findById.mockReturnValue(createQueryMock(null));
-      await expect(service.getUserById('507f1f77bcf86cd799439011')).rejects.toBeInstanceOf(NotFoundException);
+      await expect(
+        service.getUserById('507f1f77bcf86cd799439011'),
+      ).rejects.toBeInstanceOf(NotFoundException);
     });
   });
 
@@ -144,6 +155,7 @@ describe('AdminService', () => {
       mockCache.get.mockResolvedValue(['cached']);
       const result = await service.getUsers();
       expect(result).toEqual(['cached']);
+
       expect(mockModel.find).not.toHaveBeenCalled();
     });
 
@@ -152,7 +164,7 @@ describe('AdminService', () => {
       const userObj = { ...USER1, toObject: jest.fn().mockReturnValue(USER1) };
       mockModel.find.mockReturnValue(createQueryMock([userObj]));
       // Mock countTodosByUser specifically
-      (mockTodosService as any).countTodosByUser = jest.fn().mockResolvedValue(0);
+      mockTodosService.countTodosByUser = jest.fn().mockResolvedValue(0);
 
       const result = await service.getUsers();
 
@@ -165,10 +177,10 @@ describe('AdminService', () => {
   describe('getApplicationDetails', () => {
     it('should return aggregate stats', async () => {
       mockModel['countDocuments'] = jest.fn().mockResolvedValue(5);
-      (mockTodosService as any).countAllTodos = jest.fn().mockResolvedValue(10);
-      (mockTodosService as any).countCompletedTodos = jest.fn().mockResolvedValue(4);
-      (mockTodosService as any).countActiveTodos = jest.fn().mockResolvedValue(6);
-      (mockTodosService as any).countDeletedTodos = jest.fn().mockResolvedValue(2);
+      mockTodosService.countAllTodos = jest.fn().mockResolvedValue(10);
+      mockTodosService.countCompletedTodos = jest.fn().mockResolvedValue(4);
+      mockTodosService.countActiveTodos = jest.fn().mockResolvedValue(6);
+      mockTodosService.countDeletedTodos = jest.fn().mockResolvedValue(2);
 
       const result = await service.getApplicationDetails();
 

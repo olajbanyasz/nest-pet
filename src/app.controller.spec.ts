@@ -1,7 +1,8 @@
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Test, TestingModule } from '@nestjs/testing';
+
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
 describe('AppController', () => {
   let appController: AppController;
@@ -38,6 +39,7 @@ describe('AppController', () => {
       jest.spyOn(appService, 'testRedis').mockResolvedValue(undefined);
 
       expect(await appController.testRedis()).toBe('Redis test completed');
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(appService.testRedis).toHaveBeenCalled();
     });
   });

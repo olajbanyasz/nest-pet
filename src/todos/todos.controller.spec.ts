@@ -1,14 +1,15 @@
+import { GUARDS_METADATA } from '@nestjs/common/constants';
 import { Test } from '@nestjs/testing';
+import { Types } from 'mongoose';
+
+import { AuthenticatedUser } from '../auth/jwt.strategy';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { ROLES_KEY } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
+import { UserRole } from '../users/schemas/user.schema';
+import { CreateTodoDto } from './dto/create-todo.dto';
 import { TodosController } from './todos.controller';
 import { TodosService } from './todos.service';
-import { CreateTodoDto } from './dto/create-todo.dto';
-import { Types } from 'mongoose';
-import { GUARDS_METADATA } from '@nestjs/common/constants';
-import { ROLES_KEY } from '../auth/roles.decorator';
-import { UserRole } from '../users/schemas/user.schema';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
-import { AuthenticatedUser } from '../auth/jwt.strategy';
 
 describe('TodosController', () => {
   let controller: TodosController;

@@ -1,17 +1,18 @@
+import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import cookieParser from 'cookie-parser';
-import { join } from 'path';
-import * as express from 'express';
-import { Request, Response, NextFunction } from 'express';
-import helmet from 'helmet';
 import compression from 'compression';
-import { AppModule } from './app.module';
-import { logger } from './logger.config';
-import { AllExceptionsFilter } from './common/filters/http-exception.filter';
+import cookieParser from 'cookie-parser';
 import csurf from 'csurf';
+import * as express from 'express';
+import { NextFunction, Request, Response } from 'express';
+import helmet from 'helmet';
+import { join } from 'path';
+
+import { AppModule } from './app.module';
+import { AllExceptionsFilter } from './common/filters/http-exception.filter';
+import { logger } from './logger.config';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {

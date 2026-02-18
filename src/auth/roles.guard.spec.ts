@@ -1,8 +1,9 @@
 import { ForbiddenException } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
 import { ExecutionContext } from '@nestjs/common';
-import { RolesGuard } from './roles.guard';
+import { Reflector } from '@nestjs/core';
+
 import { UserRole } from '../users/schemas/user.schema';
+import { RolesGuard } from './roles.guard';
 
 describe('RolesGuard', () => {
   let guard: RolesGuard;

@@ -1,23 +1,24 @@
-import { ApiTags } from '@nestjs/swagger';
 import {
   Body,
   Controller,
-  Get,
-  Patch,
   Delete,
+  Get,
   Param,
+  Patch,
   Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { TodosService } from './todos.service';
-import { CreateTodoDto } from './dto/create-todo.dto';
-import { User } from '../auth/user.decorator';
-import { RolesGuard } from '../auth/roles.guard';
-import { Roles } from '../auth/roles.decorator';
-import { UserRole } from '../users/schemas/user.schema';
+import { ApiTags } from '@nestjs/swagger';
+
 import type { AuthenticatedUser } from '../auth/jwt.strategy';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
+import { User } from '../auth/user.decorator';
+import { UserRole } from '../users/schemas/user.schema';
+import { CreateTodoDto } from './dto/create-todo.dto';
+import { TodosService } from './todos.service';
 
 @ApiTags('todos')
 @Controller('todos')

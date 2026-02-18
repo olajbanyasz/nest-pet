@@ -1,23 +1,24 @@
-import { ApiTags } from '@nestjs/swagger';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import {
   Controller,
-  Get,
   Delete,
+  ForbiddenException,
+  Get,
   Param,
   Patch,
-  UseGuards,
-  Req,
-  ForbiddenException,
   Query,
+  Req,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
-import { AdminService } from './admin.service';
+
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
 import { UserRole } from '../users/schemas/user.schema';
-import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
+import { AdminService } from './admin.service';
 
 @ApiTags('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)

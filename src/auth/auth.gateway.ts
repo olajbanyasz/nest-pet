@@ -3,16 +3,16 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import { Logger } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import {
-  WebSocketGateway,
-  WebSocketServer,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  WebSocketGateway,
+  WebSocketServer,
 } from '@nestjs/websockets';
-import { JwtService } from '@nestjs/jwt';
-import { Logger } from '@nestjs/common';
-import { Server, Socket } from 'socket.io';
 import * as cookie from 'cookie';
+import { Server, Socket } from 'socket.io';
 
 interface JwtPayload {
   sub: string;

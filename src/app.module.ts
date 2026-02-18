@@ -1,15 +1,16 @@
+import KeyvRedis from '@keyv/redis';
+import { CacheModule } from '@nestjs/cache-manager';
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { CacheModule } from '@nestjs/cache-manager';
+import { CacheableMemory } from 'cacheable';
+import { Keyv } from 'keyv';
+
+import { AdminModule } from './admin/admin.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { TodosModule } from './todos/todos.module';
 import { AuthModule } from './auth/auth.module';
-import { AdminModule } from './admin/admin.module';
-import KeyvRedis from '@keyv/redis';
-import { Keyv } from 'keyv';
-import { CacheableMemory } from 'cacheable';
 import { StreamModule } from './stream/stream.module';
+import { TodosModule } from './todos/todos.module';
 
 @Module({
   imports: [

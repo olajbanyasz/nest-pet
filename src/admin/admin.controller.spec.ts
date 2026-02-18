@@ -1,10 +1,11 @@
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Request } from 'express';
+
+import { UserRole } from '../users/schemas/user.schema';
 import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
-import { UserRole } from '../users/schemas/user.schema';
-import { NotFoundException, ForbiddenException } from '@nestjs/common';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
 type AuthRequestMock = {
   user: {
@@ -185,6 +186,7 @@ describe('AdminController', () => {
 
       const result = await controller.getApplicationDetails();
       expect(result).toEqual(details);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(service.getApplicationDetails).toHaveBeenCalled();
     });
   });

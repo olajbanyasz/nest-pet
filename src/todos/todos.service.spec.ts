@@ -1,10 +1,11 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { getModelToken } from '@nestjs/mongoose';
-import { TodosService } from './todos.service';
-import { Todo } from './schemas/todo.schema';
-import { CreateTodoDto } from './dto/create-todo.dto';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { getModelToken } from '@nestjs/mongoose';
+import { Test, TestingModule } from '@nestjs/testing';
 import { Types } from 'mongoose';
+
+import { CreateTodoDto } from './dto/create-todo.dto';
+import { Todo } from './schemas/todo.schema';
+import { TodosService } from './todos.service';
 
 describe('TodosService', () => {
   let service: TodosService;
