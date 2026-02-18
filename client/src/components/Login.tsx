@@ -18,14 +18,15 @@ const Login: React.FC = () => {
   const location = useLocation();
   const { login: authLogin, user, initialized } = useAuth();
 
-  const from = location.state?.from?.pathname || '/todos';
+  const state = location.state as { from?: { pathname: string } } | null;
+  const from = state?.from?.pathname || '/todos';
 
   useEffect(() => {
     if (!initialized) return;
 
     if (user) {
       if (window.location.pathname !== from) {
-        navigate(from, { replace: true });
+        void navigate(from, { replace: true });
       }
     }
   }, [initialized, user, navigate, from]);
@@ -53,16 +54,20 @@ const Login: React.FC = () => {
           }
         }
       }
-    } catch (err) {
+    } catch {
       setMessage('Unexpected error occurred');
     }
+  };
+
+  const onFormSubmit = (e: React.FormEvent) => {
+    void handleSubmit(e);
   };
 
   return (
     <div className="login-container">
       <div style={{ width: '250px', margin: '0 auto' }}>
         <h1>{isLogin ? 'Login' : 'Register'}</h1>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={onFormSubmit}>
           {!isLogin && (
             <div style={{ width: '100%' }}>
               <label htmlFor="name">Name:</label>

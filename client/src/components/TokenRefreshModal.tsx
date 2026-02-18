@@ -45,7 +45,7 @@ const TokenRefreshModal: React.FC = () => {
         <Button
           label="Refresh"
           icon="pi pi-refresh"
-          onClick={onConfirm}
+          onClick={() => void onConfirm()}
           className="p-button-info"
         />
       </div>

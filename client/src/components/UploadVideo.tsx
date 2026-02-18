@@ -77,7 +77,10 @@ const UploadVideo: React.FC<UploadVideoProps> = ({ onUpload }) => {
   };
 
   const headerTemplate = (options: FileUploadHeaderTemplateOptions) => {
-    const { className, chooseButton, uploadButton, cancelButton } = options;
+    const className = options.className;
+    const chooseButton = options.chooseButton as React.ReactNode;
+    const uploadButton = options.uploadButton as React.ReactNode;
+    const cancelButton = options.cancelButton as React.ReactNode;
     const formattedValue = fileUploadRef.current?.formatSize(fileSize) ?? '0 B';
 
     return (
@@ -120,7 +123,7 @@ const UploadVideo: React.FC<UploadVideoProps> = ({ onUpload }) => {
         ref={fileUploadRef}
         name="video"
         customUpload
-        uploadHandler={customUpload}
+        uploadHandler={(e) => void customUpload(e)}
         accept="video/*"
         maxFileSize={1024 * 1024 * 1024}
         chooseOptions={chooseOptions}

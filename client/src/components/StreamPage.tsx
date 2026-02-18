@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { Role } from '../api/authApi';
 import {
   deleteVideo,
   getVideos,
@@ -23,33 +22,40 @@ const StreamPage: React.FC = () => {
 
   const isAdmin = user?.role === 'admin';
 
-  const fetchVideoList = useCallback(async (shouldNotify: boolean = false) => {
-    try {
-      const res = await getVideos();
-      setVideos(res);
-      setSelectedVideo(res[0]);
-      shouldNotify && notify('Videos loaded successfully', 'success', 3000);
-    } catch {
-      shouldNotify && notify('Failed to load videos', 'error', 5000);
-    }
-  }, []);
+  const fetchVideoList = useCallback(
+    async (shouldNotify: boolean = false) => {
+      try {
+        const res = await getVideos();
+        setVideos(res);
+        setSelectedVideo(res[0]);
+        if (shouldNotify) {
+          notify('Videos loaded successfully', 'success', 3000);
+        }
+      } catch {
+        if (shouldNotify) {
+          notify('Failed to load videos', 'error', 5000);
+        }
+      }
+    },
+    [notify],
+  );
 
   const onVideoDelete = async (fileName: string) => {
     try {
-      const res = await deleteVideo(fileName);
+      await deleteVideo(fileName);
       notify('Video deleted successfully', 'success', 3000);
-      fetchVideoList(false);
-    } catch (error) {
+      void fetchVideoList(false);
+    } catch {
       notify('Failed to delete video', 'error', 5000);
     }
   };
 
   const onVideoUpload = async (file: File) => {
     try {
-      const res = await uploadVideo(file);
+      await uploadVideo(file);
       notify('Video uploaded successfully', 'success', 3000);
-      fetchVideoList(false);
-    } catch (error) {
+      void fetchVideoList(false);
+    } catch {
       notify('Failed to upload video', 'error', 5000);
     }
   };
@@ -57,10 +63,10 @@ const StreamPage: React.FC = () => {
   useEffect(() => {
     if (!initialized) return;
     if (!user) {
-      navigate('/login', { replace: true });
+      void navigate('/login', { replace: true });
       return;
     }
-    fetchVideoList(true);
+    void fetchVideoList(true);
   }, [initialized, user, fetchVideoList]);
 
   return (
@@ -93,7 +99,7 @@ const StreamPage: React.FC = () => {
       <VideoList
         videoList={videos}
         selectVideo={setSelectedVideo}
-        deleteVideo={onVideoDelete}
+        deleteVideo={(fileName) => void onVideoDelete(fileName)}
         isAdmin={isAdmin}
       />
     </div>

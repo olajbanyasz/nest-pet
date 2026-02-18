@@ -13,11 +13,11 @@ function LogoutButton({ logout }: { logout: () => void }) {
       console.error('Error logging out:', error);
     }
     logout();
-    navigate('/');
+    void navigate('/');
   };
 
   return (
-    <button onClick={onLogout} style={{ right: '10px' }}>
+    <button onClick={() => void onLogout()} style={{ right: '10px' }}>
       Logout
     </button>
   );

@@ -26,15 +26,26 @@ const DashBoard: React.FC = () => {
   const { notify } = useNotification();
   const navigate = useNavigate();
 
-  const [appDetails, setAppDetails] = useState<any>({});
+  const [appDetails, setAppDetails] = useState<{
+    totalUsers: number;
+    totalAdmins: number;
+    totalTodos: number;
+    totalCompletedTodos: number;
+    totalActiveTodos: number;
+    totalDeletedTodos: number;
+  }>({
+    totalUsers: 0,
+    totalAdmins: 0,
+    totalTodos: 0,
+    totalCompletedTodos: 0,
+    totalActiveTodos: 0,
+    totalDeletedTodos: 0,
+  });
   const [chartData, setChartData] = useState<ChartData<'line'> | null>(null);
 
   const loadRecentTodosStats = useCallback(async () => {
-    let mounted = true;
     try {
       const data = await getLast14DaysStats();
-
-      if (!mounted) return;
 
       const labels = Object.keys(data?.createdTodos ?? {});
       const createdTodosStat = Object.values(data?.createdTodos ?? {});
@@ -64,13 +75,9 @@ const DashBoard: React.FC = () => {
           },
         ],
       });
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error(error);
     }
-
-    return () => {
-      mounted = false;
-    };
   }, []);
 
   const loadAppDetailsWithNotification = useCallback(async () => {
@@ -85,17 +92,17 @@ const DashBoard: React.FC = () => {
     } finally {
       hide();
     }
-  }, []);
+  }, [show, hide, notify]);
 
   useEffect(() => {
     if (!initialized) return;
     if (!user) {
-      navigate('/login', { replace: true });
+      void navigate('/login', { replace: true });
       return;
     }
     if (user?.role === 'admin') {
-      loadAppDetailsWithNotification();
-      loadRecentTodosStats();
+      void loadAppDetailsWithNotification();
+      void loadRecentTodosStats();
     }
   }, [
     initialized,
