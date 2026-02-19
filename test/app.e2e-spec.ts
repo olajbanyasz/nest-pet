@@ -1,23 +1,30 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { getConnectionToken } from '@nestjs/mongoose';
+import { getConnectionToken, getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
 import cookieParser from 'cookie-parser';
 import csurf from 'csurf';
 import { NextFunction, Request, Response } from 'express';
-import { Connection } from 'mongoose';
+import { Connection, Model } from 'mongoose';
 import request from 'supertest';
-
+import { User, UserDocument, UserRole } from '../src/users/schemas/user.schema';
 import { AppModule } from './../src/app.module';
 
 describe('App (e2e)', () => {
   let app: INestApplication;
   let agent: any;
   let csrfToken: string;
+  let userModel: Model<UserDocument>;
 
   const testUser = {
     email: `test-${Date.now()}@example.com`,
     password: 'Password123!',
-    name: 'Test User',
+    name: 'Test Admin User',
+  };
+
+  const secondTestUser = {
+    email: `test-second-${Date.now()}@example.com`,
+    password: 'Password123!',
+    name: 'Test Target User',
   };
 
   beforeAll(async () => {
@@ -26,6 +33,7 @@ describe('App (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    userModel = app.get<Model<UserDocument>>(getModelToken(User.name));
 
     // Replicate main.ts setup
     app.use(cookieParser());
@@ -76,9 +84,15 @@ describe('App (e2e)', () => {
         .post('/api/auth/register')
         .send(testUser)
         .expect(201)
-        .expect((res: any) => {
+        .expect(async (res: any) => {
           expect(res.body.message).toBe('Registration and login successful');
           expect(res.body.user.email).toBe(testUser.email);
+
+          // Make testUser an ADMIN in database so we can test admin endpoints later
+          await userModel.updateOne(
+            { email: testUser.email },
+            { role: UserRole.ADMIN },
+          );
         });
     });
 
@@ -109,7 +123,32 @@ describe('App (e2e)', () => {
         .expect(200)
         .expect((res: any) => {
           expect(res.body.email).toBe(testUser.email);
+          expect(res.body.role).toBe(UserRole.ADMIN);
         });
+    });
+
+    it('/auth/logout (POST)', async () => {
+      await agent.post('/api/auth/logout')
+        .expect(201)
+        .expect((res: any) => {
+          expect(res.body.message).toBe('Logout successful');
+        });
+
+      // Verify that after logout, /me returns 401
+      await agent.get('/api/auth/me').expect(401);
+
+      // Log back in to continue other tests that require auth
+      await agent
+        .post('/api/auth/login')
+        .send({
+          email: testUser.email,
+          password: testUser.password,
+        })
+        .expect(201);
+
+      // Refresh CSRF token for subsequent tests
+      const res = await agent.get('/api/auth/csrf-token').expect(200);
+      csrfToken = res.body.csrfToken;
     });
   });
 
@@ -157,6 +196,59 @@ describe('App (e2e)', () => {
     it('/todos/:id (DELETE)', () => {
       return agent
         .delete(`/api/todos/${todoId}`)
+        .set('x-csrf-token', csrfToken)
+        .expect(200);
+    });
+  });
+
+  describe('AdminModule', () => {
+    let secondUserId: string;
+
+    it('should register a second user for admin testing', async () => {
+      const res = await agent
+        .post('/api/auth/register')
+        .send(secondTestUser)
+        .expect(201);
+
+      secondUserId = res.body.user.id;
+
+      // Re-login as original testUser (Admin) because register logs in as new user
+      await agent
+        .post('/api/auth/login')
+        .send({
+          email: testUser.email,
+          password: testUser.password,
+        })
+        .expect(201);
+
+      // Refresh CSRF token for Admin user
+      const csrfRes = await agent.get('/api/auth/csrf-token').expect(200);
+      csrfToken = csrfRes.body.csrfToken;
+    });
+
+    it('/admin/users/:id/promote (PATCH)', () => {
+      return agent
+        .patch(`/api/admin/users/${secondUserId}/promote`)
+        .set('x-csrf-token', csrfToken)
+        .expect(200)
+        .expect((res: any) => {
+          expect(res.body.role).toBe(UserRole.ADMIN);
+        });
+    });
+
+    it('/admin/users/:id/demote (PATCH)', () => {
+      return agent
+        .patch(`/api/admin/users/${secondUserId}/demote`)
+        .set('x-csrf-token', csrfToken)
+        .expect(200)
+        .expect((res: any) => {
+          expect(res.body.role).toBe(UserRole.USER);
+        });
+    });
+
+    it('/admin/users/:id (DELETE)', () => {
+      return agent
+        .delete(`/api/admin/users/${secondUserId}`)
         .set('x-csrf-token', csrfToken)
         .expect(200);
     });
