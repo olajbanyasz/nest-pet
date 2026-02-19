@@ -1,5 +1,5 @@
-import React from 'react';
 import { Dropdown } from 'primereact/dropdown';
+import React from 'react';
 
 interface TodoFilterProps {
   todoFilter: string;
@@ -32,7 +32,7 @@ function TodoFilter({ todoFilter, setTodoFilter }: TodoFilterProps) {
         id="todo-filter"
         value={todoFilter}
         options={options}
-        onChange={(e) => setTodoFilter(e.value)}
+        onChange={(e) => setTodoFilter(e.value as string)}
       />
     </div>
   );

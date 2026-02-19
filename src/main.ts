@@ -1,18 +1,18 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-floating-promises */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import { ValidationPipe } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import compression from 'compression';
 import cookieParser from 'cookie-parser';
-import { join } from 'path';
-import * as express from 'express';
-import { AppModule } from './app.module';
-import { logger } from './logger.config';
-import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import csurf from 'csurf';
+import * as express from 'express';
+import { NextFunction, Request, Response } from 'express';
+import helmet from 'helmet';
+import { join } from 'path';
+
+import { AppModule } from './app.module';
+import { AllExceptionsFilter } from './common/filters/http-exception.filter';
+import { logger } from './logger.config';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -20,12 +20,20 @@ async function bootstrap() {
     logger,
   });
 
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+      crossOriginEmbedderPolicy: false,
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+    }),
+  );
+  app.use(compression());
+  app.use(cookieParser());
+
   app.enableCors({
     origin: 'http://localhost:8000',
     credentials: true,
   });
-
-  app.use(cookieParser());
 
   const csrfMiddleware = csurf({
     cookie: {
@@ -34,7 +42,7 @@ async function bootstrap() {
     },
   });
 
-  app.use((req, res, next) => {
+  app.use((req: Request, res: Response, next: NextFunction) => {
     const bypassPaths = [
       '/api/auth/login',
       '/api/auth/register',
@@ -51,14 +59,33 @@ async function bootstrap() {
     return csrfMiddleware(req, res, next);
   });
 
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
   app.useGlobalFilters(new AllExceptionsFilter());
   app.setGlobalPrefix('api');
+
+  // Swagger Configuration
+  const config = new DocumentBuilder()
+    .setTitle('Todo Pet Project API')
+    .setDescription('The Todo Pet Project API description')
+    .setVersion('1.0')
+    .addTag('auth')
+    .addTag('todos')
+    .addTag('admin')
+    .addBearerAuth()
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document);
 
   const clientBuildPath = join(__dirname, '..', 'client', 'build');
   app.use(express.static(clientBuildPath));
 
-  app.use((req, res, next) => {
+  app.use((req: Request, res: Response, next: NextFunction) => {
     if (req.path.startsWith('/api')) {
       return next();
     }
@@ -68,4 +95,6 @@ async function bootstrap() {
   await app.listen(process.env.PORT ?? 3000);
 }
 
-bootstrap();
+bootstrap().catch((err: unknown) => {
+  console.error('Error during bootstrap:', err);
+});

@@ -1,17 +1,17 @@
-import {
-  Injectable,
-  NotFoundException,
-  ForbiddenException,
-  Logger,
-  Inject,
-} from '@nestjs/common';
 import { CACHE_MANAGER, CacheTTL } from '@nestjs/cache-manager';
-import type { Cache } from 'cache-manager';
-
+import {
+  ForbiddenException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import type { Cache } from 'cache-manager';
 import mongoose, { FilterQuery, Model } from 'mongoose';
-import { User, UserDocument, UserRole } from '../users/schemas/user.schema';
+
 import { TodosService } from '../todos/todos.service';
+import { User, UserDocument, UserRole } from '../users/schemas/user.schema';
 
 @Injectable()
 @CacheTTL(60 * 1000)

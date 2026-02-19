@@ -3,8 +3,9 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import { Strategy, ExtractJwt, StrategyOptions } from 'passport-jwt';
 import { Request } from 'express';
+import { ExtractJwt, Strategy, StrategyOptions } from 'passport-jwt';
+
 import { UserRole } from '../users/schemas/user.schema';
 
 export interface JwtPayload {

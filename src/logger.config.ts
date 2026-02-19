@@ -1,6 +1,7 @@
+import 'winston-mongodb';
+
 import { WinstonModule } from 'nest-winston';
 import * as winston from 'winston';
-import 'winston-mongodb';
 
 export const logger = WinstonModule.createLogger({
   level: 'debug',

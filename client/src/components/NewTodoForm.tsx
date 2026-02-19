@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
+import { InputText } from 'primereact/inputtext';
+import React, { useState } from 'react';
 
 interface NewTodoFormProps {
   onAdd: (title: string) => void;

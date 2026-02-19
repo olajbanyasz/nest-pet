@@ -1,18 +1,19 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+
+import {
+  deleteUser,
+  demoteAdminToUser,
+  getUsers,
+  promoteUserToAdmin,
+  User,
+} from '../api/adminApi';
 import { useAuth } from '../contexts/AuthContext';
 import { useLoading } from '../contexts/LoadingProvider';
 import { useNotification } from '../contexts/NotificationContext';
-import { useNavigate } from 'react-router-dom';
-import {
-  getUsers,
-  promoteUserToAdmin,
-  demoteAdminToUser,
-  deleteUser,
-  User,
-} from '../api/adminApi';
-import UserList from './UserList';
 import UserFilter from './UserFilter';
+import UserList from './UserList';
 
 const AdminPage: React.FC = () => {
   const { user, loading: authLoading, initialized } = useAuth();
@@ -29,10 +30,13 @@ const AdminPage: React.FC = () => {
     show();
     try {
       const data = await getUsers(isValidFilter ? userFilter : undefined);
-      isValidFilter ? setFilteredUsers(data) : setUsers(data);
+      if (isValidFilter) {
+        setFilteredUsers(data);
+      } else {
+        setUsers(data);
+      }
       notify('Users loaded successfully', 'success', 3000);
-    } catch (err) {
-      console.error(err);
+    } catch {
       notify('Failed to load users', 'error', 5000);
     } finally {
       hide();
@@ -42,24 +46,24 @@ const AdminPage: React.FC = () => {
   useEffect(() => {
     if (!initialized) return;
     if (!user) {
-      navigate('/login', { replace: true });
+      void navigate('/login', { replace: true });
       return;
     }
     if (user?.role === 'admin' && isValidFilter) {
-      loadUsersWithNotification();
+      void loadUsersWithNotification();
     }
-  }, [initialized, user, userFilter]);
+  }, [initialized, user, userFilter, loadUsersWithNotification]);
 
   useEffect(() => {
     if (!initialized) return;
     if (!user) {
-      navigate('/login', { replace: true });
+      void navigate('/login', { replace: true });
       return;
     }
     if (user?.role === 'admin') {
-      loadUsersWithNotification();
+      void loadUsersWithNotification();
     }
-  }, [initialized, user]);
+  }, [initialized, user, loadUsersWithNotification]);
 
   const handlePromote = async (id: string) => {
     show();
@@ -69,8 +73,7 @@ const AdminPage: React.FC = () => {
       setUsers((prev) =>
         prev.map((u) => (u.id === id ? { ...u, role: 'admin' } : u)),
       );
-    } catch (err) {
-      console.error(err);
+    } catch {
       notify('Failed to promote user', 'error', 5000);
     } finally {
       hide();
@@ -85,8 +88,7 @@ const AdminPage: React.FC = () => {
       setUsers((prev) =>
         prev.map((u) => (u.id === id ? { ...u, role: 'user' } : u)),
       );
-    } catch (err) {
-      console.error(err);
+    } catch {
       notify('Failed to demote user', 'error', 5000);
     } finally {
       hide();
@@ -104,8 +106,7 @@ const AdminPage: React.FC = () => {
       await deleteUser(id);
       notify('User deleted successfully', 'success', 3000);
       setUsers((prev) => prev.filter((u) => u.id !== id));
-    } catch (err) {
-      console.error(err);
+    } catch {
       notify('Failed to delete user', 'error', 5000);
     } finally {
       hide();
@@ -125,9 +126,9 @@ const AdminPage: React.FC = () => {
       <UserList
         users={isValidFilter ? filteredUsers : users}
         currentUserId={user.id}
-        onPromote={handlePromote}
-        onDemote={handleDemote}
-        onDelete={handleDelete}
+        onPromote={(id) => void handlePromote(id)}
+        onDemote={(id) => void handleDemote(id)}
+        onDelete={(id) => void handleDelete(id)}
       />
     </div>
   );

@@ -1,8 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { Request, Response } from 'express';
+
+import { UserRole } from '../users/schemas/user.schema';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { Response, Request } from 'express';
-import { UserRole } from '../users/schemas/user.schema';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -123,14 +124,22 @@ describe('AuthController', () => {
     });
   });
 
-  describe('getProfile', () => {
-    it('should return user from request', () => {
+  describe('getCsrfToken', () => {
+    it('should return csrf token from request', () => {
       const req = {
-        user: { userId: 'user-id', email: 'test@e.com' },
+        csrfToken: jest.fn().mockReturnValue('mock-csrf-token'),
       } as unknown as Request;
 
-      const result = controller.getProfile(req);
-      expect(result).toEqual({ userId: 'user-id', email: 'test@e.com' });
+      const result = controller.getCsrfToken(req);
+      expect(result).toEqual({ csrfToken: 'mock-csrf-token' });
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(req.csrfToken).toHaveBeenCalled();
+    });
+
+    it('should return empty string if csrfToken is not available', () => {
+      const req = {} as unknown as Request;
+      const result = controller.getCsrfToken(req);
+      expect(result).toEqual({ csrfToken: '' });
     });
   });
 });

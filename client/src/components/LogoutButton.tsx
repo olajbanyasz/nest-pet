@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+
 import { logout as apiLogout } from '../api/authApi';
 
 function LogoutButton({ logout }: { logout: () => void }) {
@@ -12,11 +13,11 @@ function LogoutButton({ logout }: { logout: () => void }) {
       console.error('Error logging out:', error);
     }
     logout();
-    navigate('/');
+    void navigate('/');
   };
 
   return (
-    <button onClick={onLogout} style={{ right: '10px' }}>
+    <button onClick={() => void onLogout()} style={{ right: '10px' }}>
       Logout
     </button>
   );

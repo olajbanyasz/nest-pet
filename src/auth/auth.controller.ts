@@ -1,17 +1,19 @@
 import {
-  Controller,
-  Post,
   Body,
-  UseGuards,
-  Res,
+  Controller,
   Get,
+  Post,
   Req,
+  Res,
+  UseGuards,
 } from '@nestjs/common';
-import type { Response, Request } from 'express';
+import { ApiTags } from '@nestjs/swagger';
+import type { Request, Response } from 'express';
+
 import { AuthService } from './auth.service';
-import { RegisterDto, LoginDto } from './dto/auth.dto';
-import { JwtAuthGuard } from './jwt-auth.guard';
+import { LoginDto, RegisterDto } from './dto/auth.dto';
 import { AuthenticatedUser } from './jwt.strategy';
+import { JwtAuthGuard } from './jwt-auth.guard';
 
 declare module 'express' {
   interface Request {
@@ -19,6 +21,7 @@ declare module 'express' {
   }
 }
 
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}

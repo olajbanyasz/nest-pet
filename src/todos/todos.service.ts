@@ -1,14 +1,15 @@
 import {
-  Injectable,
-  NotFoundException,
   BadRequestException,
+  Injectable,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types, isValidObjectId, FilterQuery } from 'mongoose';
-import { Todo, TodoDocument } from './schemas/todo.schema';
+import { FilterQuery, isValidObjectId, Model, Types } from 'mongoose';
+
 import { CreateTodoDto } from './dto/create-todo.dto';
 import { UpdateTodoDto } from './dto/update-todo.dto';
+import { Todo, TodoDocument } from './schemas/todo.schema';
 
 interface DailyStat {
   _id: string;

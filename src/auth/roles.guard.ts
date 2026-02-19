@@ -1,12 +1,13 @@
 import {
-  Injectable,
   CanActivate,
   ExecutionContext,
   ForbiddenException,
+  Injectable,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { ROLES_KEY } from './roles.decorator';
+
 import { UserRole } from '../users/schemas/user.schema';
+import { ROLES_KEY } from './roles.decorator';
 
 interface JwtUser {
   userId: string;

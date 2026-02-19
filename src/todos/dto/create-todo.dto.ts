@@ -1,10 +1,10 @@
 import {
   IsBoolean,
+  IsDate,
+  IsNotEmpty,
   IsOptional,
   IsString,
-  IsNotEmpty,
   MinLength,
-  IsDate,
 } from 'class-validator';
 
 export class CreateTodoDto {

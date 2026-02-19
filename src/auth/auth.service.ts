@@ -1,23 +1,23 @@
 import {
-  Injectable,
-  UnauthorizedException,
   ConflictException,
+  Injectable,
   Logger,
+  UnauthorizedException,
 } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
 import { JwtService } from '@nestjs/jwt';
-import { TokenExpiryService } from './token-expiry.service';
+import { InjectModel } from '@nestjs/mongoose';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
+import { Model, Types } from 'mongoose';
 
 import { User, UserDocument, UserRole } from '../users/schemas/user.schema';
-import { RegisterDto, LoginDto } from './dto/auth.dto';
+import { LoginDto, RegisterDto } from './dto/auth.dto';
+import { JwtPayload } from './jwt.strategy';
 import {
   RefreshToken,
   RefreshTokenDocument,
 } from './schemas/refresh-token.schema';
-import { JwtPayload } from './jwt.strategy';
+import { TokenExpiryService } from './token-expiry.service';
 
 @Injectable()
 export class AuthService {

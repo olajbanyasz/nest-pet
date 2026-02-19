@@ -1,10 +1,11 @@
-import React from 'react';
-import LogoutButton from './LogoutButton';
-import { Menubar } from 'primereact/menubar';
 import { Avatar } from 'primereact/avatar';
+import { Menubar } from 'primereact/menubar';
 import { Tooltip } from 'primereact/tooltip';
+import React from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate, useLocation } from 'react-router-dom';
+import LogoutButton from './LogoutButton';
 
 const NavigationBar: React.FC = () => {
   const { user, logout } = useAuth();

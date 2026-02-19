@@ -1,33 +1,51 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import OnlineUsersModal from './OnlineUsersModal';
+import { ChartData } from 'chart.js';
+import { TabPanel, TabView } from 'primereact/tabview';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+
+import { getApplicationDetails } from '../api/adminApi';
+import { getLast14DaysStats } from '../api/todosApi';
 import { useAuth } from '../contexts/AuthContext';
 import { useLoading } from '../contexts/LoadingProvider';
 import { useNotification } from '../contexts/NotificationContext';
-import { useNavigate } from 'react-router-dom';
 import ApplicationDetails from './ApplicationDetails';
-import { getApplicationDetails } from '../api/adminApi';
+import OnlineUsersModal from './OnlineUsersModal';
 import RecentTodoStatsChart from './RecentTodoStatsChart';
 import TodosPieChart from './TodosPieChart';
-import { TabView, TabPanel } from 'primereact/tabview';
-import { ChartData } from 'chart.js';
-import { getLast14DaysStats } from '../api/todosApi';
 
 const DashBoard: React.FC = () => {
-  const { user, loading: authLoading, initialized, onlineCount, onlineUsers } = useAuth();
+  const {
+    user,
+    loading: authLoading,
+    initialized,
+    onlineCount,
+    onlineUsers,
+  } = useAuth();
   const { show, hide } = useLoading();
   const { notify } = useNotification();
   const navigate = useNavigate();
 
-  const [appDetails, setAppDetails] = useState<any>({});
+  const [appDetails, setAppDetails] = useState<{
+    totalUsers: number;
+    totalAdmins: number;
+    totalTodos: number;
+    totalCompletedTodos: number;
+    totalActiveTodos: number;
+    totalDeletedTodos: number;
+  }>({
+    totalUsers: 0,
+    totalAdmins: 0,
+    totalTodos: 0,
+    totalCompletedTodos: 0,
+    totalActiveTodos: 0,
+    totalDeletedTodos: 0,
+  });
   const [chartData, setChartData] = useState<ChartData<'line'> | null>(null);
 
   const loadRecentTodosStats = useCallback(async () => {
-    let mounted = true;
     try {
       const data = await getLast14DaysStats();
-
-      if (!mounted) return;
 
       const labels = Object.keys(data?.createdTodos ?? {});
       const createdTodosStat = Object.values(data?.createdTodos ?? {});
@@ -57,13 +75,9 @@ const DashBoard: React.FC = () => {
           },
         ],
       });
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error(error);
     }
-
-    return () => {
-      mounted = false;
-    };
   }, []);
 
   const loadAppDetailsWithNotification = useCallback(async () => {
@@ -78,19 +92,25 @@ const DashBoard: React.FC = () => {
     } finally {
       hide();
     }
-  }, []);
+  }, [show, hide, notify]);
 
   useEffect(() => {
     if (!initialized) return;
     if (!user) {
-      navigate('/login', { replace: true });
+      void navigate('/login', { replace: true });
       return;
     }
     if (user?.role === 'admin') {
-      loadAppDetailsWithNotification();
-      loadRecentTodosStats();
+      void loadAppDetailsWithNotification();
+      void loadRecentTodosStats();
     }
-  }, [initialized, user, navigate, loadAppDetailsWithNotification, loadRecentTodosStats]);
+  }, [
+    initialized,
+    user,
+    navigate,
+    loadAppDetailsWithNotification,
+    loadRecentTodosStats,
+  ]);
 
   if (authLoading) return null;
 

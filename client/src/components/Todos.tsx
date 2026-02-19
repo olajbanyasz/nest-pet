@@ -1,19 +1,20 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import TodoList from './TodoList';
-import NewTodoForm from './NewTodoForm';
-import { useLoading } from '../contexts/LoadingProvider';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
 import {
-  fetchTodos as apiFetchTodos,
   addTodo as apiAddTodo,
-  toggleTodo as apiToggleTodo,
   deleteTodo as apiDeleteTodo,
+  fetchTodos as apiFetchTodos,
+  Todo,
+  toggleTodo as apiToggleTodo,
   updateTodoTitle,
-  Todo
 } from '../api/todosApi';
 import { useAuth } from '../contexts/AuthContext';
+import { useLoading } from '../contexts/LoadingProvider';
 import { useNotification } from '../contexts/NotificationContext';
-import { useNavigate } from 'react-router-dom';
+import NewTodoForm from './NewTodoForm';
 import TodoFilter from './TodoFilter';
+import TodoList from './TodoList';
 
 function Todos() {
   const [todos, setTodos] = useState<Todo[]>([]);
@@ -27,8 +28,8 @@ function Todos() {
     try {
       const data = await apiFetchTodos(todoFilter);
       setTodos(data.reverse());
-    } catch (err) {
-      console.error('[Todos] fetchTodos error:', err);
+    } catch {
+      // console.error('[Todos] fetchTodos error');
     }
   }, [todoFilter]);
 
@@ -38,24 +39,22 @@ function Todos() {
       const data = await apiFetchTodos(todoFilter);
       setTodos(data.reverse());
       notify('Todos loaded successfully', 'success', 3000);
-    } catch (err) {
+    } catch {
       notify('Failed to load todos', 'error', 5000);
-      console.error('[Todos] fetchTodos error:', err);
+      // console.error('[Todos] fetchTodos error');
     } finally {
       hide();
     }
   }, [todoFilter]);
-  
+
   useEffect(() => {
     if (!initialized) return;
     if (!user) {
-      navigate('/login', { replace: true });
+      void navigate('/login', { replace: true });
       return;
     }
 
-    fetchTodosWithNotification().catch((err) => {
-      console.error('[Todos] fetchTodosWithNotification error', err);
-    });
+    void fetchTodosWithNotification();
   }, [initialized, user, todoFilter, fetchTodosWithNotification]);
 
   const addTodo = async (title: string) => {
@@ -64,7 +63,7 @@ function Todos() {
       await apiAddTodo(title);
       notify('Todo added successfully', 'success', 3000);
       await fetchTodos();
-    } catch (err) {
+    } catch {
       notify('Failed to add todo', 'error', 5000);
     } finally {
       hide();
@@ -80,7 +79,7 @@ function Todos() {
       await apiToggleTodo(id, !todo.completed);
       notify('Todo updated successfully', 'success', 3000);
       await fetchTodos();
-    } catch (err) {
+    } catch {
       notify('Failed to update todo', 'error', 5000);
     } finally {
       hide();
@@ -93,7 +92,7 @@ function Todos() {
       await apiDeleteTodo(id);
       notify('Todo deleted successfully', 'success', 3000);
       await fetchTodos();
-    } catch (err) {
+    } catch {
       notify('Failed to delete todo', 'error', 5000);
     } finally {
       hide();
@@ -106,7 +105,7 @@ function Todos() {
       await updateTodoTitle(id, title);
       notify('Todo title updated successfully', 'success', 3000);
       await fetchTodos();
-    } catch (err) {
+    } catch {
       notify('Failed to update todo title', 'error', 5000);
     } finally {
       hide();
@@ -115,14 +114,14 @@ function Todos() {
 
   return (
     <div className="todo-container">
-      <NewTodoForm onAdd={addTodo} />
+      <NewTodoForm onAdd={(title) => void addTodo(title)} />
       <h1 style={{ textAlign: 'center' }}>Todos</h1>
       <TodoFilter todoFilter={todoFilter} setTodoFilter={setTodoFilter} />
       <TodoList
         todos={todos}
-        onToggle={toggleTodo}
-        onDelete={deleteTodo}
-        onUpdateTitle={updateTitle}
+        onToggle={(id) => void toggleTodo(id)}
+        onDelete={(id) => void deleteTodo(id)}
+        onUpdateTitle={(id, title) => void updateTitle(id, title)}
       />
     </div>
   );

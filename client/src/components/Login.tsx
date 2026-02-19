@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { Password } from 'primereact/password';
-import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { InputText } from 'primereact/inputtext';
+import { Password } from 'primereact/password';
+import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+
 import { register as apiRegister } from '../api/authApi';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -17,14 +18,15 @@ const Login: React.FC = () => {
   const location = useLocation();
   const { login: authLogin, user, initialized } = useAuth();
 
-  const from = (location.state as any)?.from?.pathname || '/todos';
+  const state = location.state as { from?: { pathname: string } } | null;
+  const from = state?.from?.pathname || '/todos';
 
   useEffect(() => {
     if (!initialized) return;
 
     if (user) {
       if (window.location.pathname !== from) {
-        navigate(from, { replace: true });
+        void navigate(from, { replace: true });
       }
     }
   }, [initialized, user, navigate, from]);
@@ -52,16 +54,20 @@ const Login: React.FC = () => {
           }
         }
       }
-    } catch (err) {
+    } catch {
       setMessage('Unexpected error occurred');
     }
+  };
+
+  const onFormSubmit = (e: React.FormEvent) => {
+    void handleSubmit(e);
   };
 
   return (
     <div className="login-container">
       <div style={{ width: '250px', margin: '0 auto' }}>
         <h1>{isLogin ? 'Login' : 'Register'}</h1>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={onFormSubmit}>
           {!isLogin && (
             <div style={{ width: '100%' }}>
               <label htmlFor="name">Name:</label>

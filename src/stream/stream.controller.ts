@@ -1,27 +1,28 @@
 import {
+  BadRequestException,
   Controller,
+  Delete,
   Get,
   Headers,
-  Res,
   HttpStatus,
   Logger,
-  Post,
-  Param,
-  UploadedFile,
-  UseInterceptors,
-  BadRequestException,
   NotFoundException,
-  Delete,
+  Param,
+  Post,
+  Res,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
-import { Roles } from '../auth/roles.decorator';
-import { UserRole } from '../users/schemas/user.schema';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
+
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
+import { UserRole } from '../users/schemas/user.schema';
 
 interface VideoItem {
   filename: string;

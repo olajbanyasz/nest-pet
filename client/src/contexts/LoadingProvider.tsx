@@ -1,10 +1,11 @@
 import React, {
   createContext,
-  useContext,
-  useState,
   useCallback,
+  useContext,
   useEffect,
+  useState,
 } from 'react';
+
 import LoadingSpinner from '../components/LoadingSpinner';
 
 type LoadingCtx = { show: () => void; hide: () => void; loading: boolean };

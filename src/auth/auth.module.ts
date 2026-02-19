@@ -1,19 +1,18 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
-import { PassportModule } from '@nestjs/passport';
 import { MongooseModule } from '@nestjs/mongoose';
-
-import { AuthService } from './auth.service';
-import { AuthController } from './auth.controller';
-import { JwtStrategy } from './jwt.strategy';
-import { AuthGateway } from './auth.gateway';
-import { TokenExpiryService } from './token-expiry.service';
+import { PassportModule } from '@nestjs/passport';
 
 import { User, UserSchema } from '../users/schemas/user.schema';
+import { AuthController } from './auth.controller';
+import { AuthGateway } from './auth.gateway';
+import { AuthService } from './auth.service';
+import { JwtStrategy } from './jwt.strategy';
 import {
   RefreshToken,
   RefreshTokenSchema,
 } from './schemas/refresh-token.schema';
+import { TokenExpiryService } from './token-expiry.service';
 
 @Module({
   imports: [

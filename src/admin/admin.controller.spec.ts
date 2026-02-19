@@ -1,10 +1,11 @@
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Request } from 'express';
+
+import { UserRole } from '../users/schemas/user.schema';
 import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
-import { UserRole } from '../users/schemas/user.schema';
-import { NotFoundException, ForbiddenException } from '@nestjs/common';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
 type AuthRequestMock = {
   user: {
@@ -48,6 +49,7 @@ describe('AdminController', () => {
       deleteUser: jest.fn(),
       promoteToAdmin: jest.fn(),
       demoteToUser: jest.fn(),
+      getApplicationDetails: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -168,6 +170,24 @@ describe('AdminController', () => {
       await expect(
         controller.demoteUser('2', reqMock as unknown as Request),
       ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+  });
+  describe('getApplicationDetails', () => {
+    it('should return app details', async () => {
+      const details = {
+        totalUsers: 1,
+        totalAdmins: 1,
+        totalTodos: 10,
+        totalCompletedTodos: 5,
+        totalActiveTodos: 5,
+        totalDeletedTodos: 2,
+      };
+      (service.getApplicationDetails as jest.Mock).mockResolvedValue(details);
+
+      const result = await controller.getApplicationDetails();
+      expect(result).toEqual(details);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(service.getApplicationDetails).toHaveBeenCalled();
     });
   });
 });
