@@ -1,5 +1,4 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Request } from 'express';
 
 import { UserRole } from '../users/schemas/user.schema';
 import { JwtPayload, JwtStrategy } from './jwt.strategy';

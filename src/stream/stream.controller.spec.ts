@@ -49,8 +49,8 @@ describe('StreamController', () => {
 
       controller.streamVideo('test.mp4', 'bytes=0-100', mockResponse);
 
-      const writeHeadSpy = mockResponse.writeHead.bind(mockResponse);
-      expect(writeHeadSpy).toHaveBeenCalledWith(
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(mockResponse.writeHead).toHaveBeenCalledWith(
         206,
         expect.objectContaining({
           'Content-Range': 'bytes 0-100/1000',

@@ -87,6 +87,12 @@ function Todos() {
   };
 
   const deleteTodo = async (id: string) => {
+    const confirmed = window.confirm(
+      'Are you sure you want to delete this todo?',
+    );
+
+    if (!confirmed) return;
+
     show();
     try {
       await apiDeleteTodo(id);

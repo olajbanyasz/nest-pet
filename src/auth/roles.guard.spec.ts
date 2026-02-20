@@ -26,7 +26,7 @@ describe('RolesGuard', () => {
     reflector = {
       getAllAndOverride: jest.fn(),
     };
-    guard = new RolesGuard(reflector as Reflector);
+    guard = new RolesGuard(reflector as unknown as Reflector);
   });
 
   it('allows when route has no role metadata', () => {

@@ -7,6 +7,7 @@ import { NextFunction, Request, Response } from 'express';
 import { Connection, Model } from 'mongoose';
 import request from 'supertest';
 import { User, UserDocument, UserRole } from '../src/users/schemas/user.schema';
+import { Todo, TodoDocument } from '../src/todos/schemas/todo.schema';
 import { AppModule } from './../src/app.module';
 
 describe('App (e2e)', () => {
@@ -14,6 +15,7 @@ describe('App (e2e)', () => {
   let agent: any;
   let csrfToken: string;
   let userModel: Model<UserDocument>;
+  let todoModel: Model<TodoDocument>;
 
   const testUser = {
     email: `test-${Date.now()}@example.com`,
@@ -34,6 +36,7 @@ describe('App (e2e)', () => {
 
     app = moduleFixture.createNestApplication();
     userModel = app.get<Model<UserDocument>>(getModelToken(User.name));
+    todoModel = app.get<Model<TodoDocument>>(getModelToken(Todo.name));
 
     // Replicate main.ts setup
     app.use(cookieParser());
@@ -73,6 +76,22 @@ describe('App (e2e)', () => {
   });
 
   afterAll(async () => {
+    // Find test users to get their IDs for todo cleanup
+    const testUsers = await userModel.find({
+      email: { $in: [testUser.email, secondTestUser.email] },
+    });
+    const userIds = testUsers.map((u) => u._id);
+
+    // Clean up test todos
+    await todoModel.deleteMany({
+      userId: { $in: userIds },
+    });
+
+    // Clean up test users
+    await userModel.deleteMany({
+      _id: { $in: userIds },
+    });
+
     const connection = app.get<Connection>(getConnectionToken());
     await connection.close();
     await app.close();

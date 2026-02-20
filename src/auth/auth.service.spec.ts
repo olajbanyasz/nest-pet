@@ -151,11 +151,10 @@ describe('AuthService', () => {
 
       const result = await service.login(loginDto);
 
-      const scheduleSpy =
-        tokenExpiryService.scheduleTokenExpiryWarning.bind(tokenExpiryService);
       expect(result).toBeDefined();
       expect(result.access_token).toBe('access-token');
-      expect(scheduleSpy).toHaveBeenCalled();
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(tokenExpiryService.scheduleTokenExpiryWarning).toHaveBeenCalled();
     });
 
     it('should warn if exp is missing in token during login', async () => {
