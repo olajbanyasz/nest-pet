@@ -1,8 +1,4 @@
-import {
-  ConflictException,
-  Logger,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -155,9 +151,11 @@ describe('AuthService', () => {
 
       const result = await service.login(loginDto);
 
+      const scheduleSpy =
+        tokenExpiryService.scheduleTokenExpiryWarning.bind(tokenExpiryService);
       expect(result).toBeDefined();
       expect(result.access_token).toBe('access-token');
-      expect(tokenExpiryService.scheduleTokenExpiryWarning).toHaveBeenCalled();
+      expect(scheduleSpy).toHaveBeenCalled();
     });
 
     it('should warn if exp is missing in token during login', async () => {

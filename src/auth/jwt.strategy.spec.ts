@@ -40,24 +40,10 @@ describe('JwtStrategy', () => {
   });
 
   describe('cookieExtractor', () => {
-    it('should extract token from cookies if present', () => {
-      // Accessing private constructor options for testing the extractor
-      const extractor =
-        (strategy as any).instanceVars?.jwtFromRequest ||
-        (strategy as any).jwtFromRequest;
-      // Note: passport-jwt strategy options are not directly accessible easily,
-      // but we can test the logic by mimicking what the extractor does.
-
-      const mockRequest = {
-        cookies: {
-          access_token: 'valid-token',
-        },
-      } as unknown as Request;
-
-      // The extractor is the first element in the array of extractors
-      const extractors = (strategy as any).jwtFromRequest;
-      // This is a bit tricky to test directly because of how passport-jwt masks them.
-      // However, we can verify that the strategy initializes without error.
+    it('should initialize without error', () => {
+      // The strategy is initialized in beforeEach
+      // We can verify it exists and wait for more specific tests if needed
+      expect(strategy).toBeDefined();
     });
   });
 });

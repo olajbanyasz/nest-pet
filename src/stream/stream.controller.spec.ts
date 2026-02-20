@@ -2,7 +2,6 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Response } from 'express';
 import * as fs from 'fs';
-import * as path from 'path';
 
 import { StreamController } from './stream.controller';
 
@@ -50,7 +49,8 @@ describe('StreamController', () => {
 
       controller.streamVideo('test.mp4', 'bytes=0-100', mockResponse);
 
-      expect(mockResponse.writeHead).toHaveBeenCalledWith(
+      const writeHeadSpy = mockResponse.writeHead.bind(mockResponse);
+      expect(writeHeadSpy).toHaveBeenCalledWith(
         206,
         expect.objectContaining({
           'Content-Range': 'bytes 0-100/1000',
@@ -98,9 +98,9 @@ describe('StreamController', () => {
 
   describe('uploadVideo', () => {
     it('should throw BadRequestException if no file is uploaded', () => {
-      expect(() => controller.uploadVideo(undefined as any)).toThrow(
-        BadRequestException,
-      );
+      expect(() =>
+        controller.uploadVideo(undefined as unknown as Express.Multer.File),
+      ).toThrow(BadRequestException);
     });
 
     it('should upload video and create media directory if it does not exist', () => {
@@ -108,7 +108,7 @@ describe('StreamController', () => {
       const mockFile = {
         originalname: 'test.mp4',
         buffer: Buffer.from('test'),
-      } as any;
+      } as unknown as Express.Multer.File;
 
       const result = controller.uploadVideo(mockFile);
 
