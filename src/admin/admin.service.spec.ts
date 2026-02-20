@@ -108,9 +108,15 @@ describe('AdminService', () => {
 
     it('should throw NotFoundException if user not found', async () => {
       mockModel.findById.mockResolvedValue(null);
-      await expect(
-        service.promoteToAdmin('nonexistent'),
-      ).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.promoteToAdmin('nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should return user if already admin', async () => {
+      mockModel.findById.mockResolvedValue(USER2);
+      const result = await service.promoteToAdmin('507f1f77bcf86cd799439012');
+      expect(result).toEqual(USER2);
     });
   });
 
@@ -129,9 +135,15 @@ describe('AdminService', () => {
 
     it('should throw NotFoundException if user not found', async () => {
       mockModel.findById.mockResolvedValue(null);
-      await expect(service.demoteToUser('nonexistent')).rejects.toBeInstanceOf(
+      await expect(service.demoteToUser('nonexistent')).rejects.toThrow(
         NotFoundException,
       );
+    });
+
+    it('should return user if already regular user', async () => {
+      mockModel.findById.mockResolvedValue(USER1);
+      const result = await service.demoteToUser('507f1f77bcf86cd799439011');
+      expect(result).toEqual(USER1);
     });
   });
 
@@ -171,6 +183,18 @@ describe('AdminService', () => {
       expect(result).toBeDefined();
       expect(result[0].todoCount).toBe(0);
       expect(mockCache.set).toHaveBeenCalled();
+    });
+
+    it('should filter users by email using regex', async () => {
+      mockCache.get.mockResolvedValue(undefined);
+      const userObj = { ...USER1, toObject: jest.fn().mockReturnValue(USER1) };
+      mockModel.find.mockReturnValue(createQueryMock([userObj]));
+
+      await service.getUsers('abc');
+
+      expect(mockModel.find).toHaveBeenCalledWith({
+        email: { $regex: 'abc', $options: 'i' },
+      });
     });
   });
 

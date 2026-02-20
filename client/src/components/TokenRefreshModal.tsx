@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLoading } from '../contexts/LoadingProvider';
 
 const TokenRefreshModal: React.FC = () => {
-  const { showRefreshModal, setShowRefreshModal, refresh } = useAuth();
+  const { showRefreshModal, setShowRefreshModal, refresh, logout } = useAuth();
 
   const { show, hide } = useLoading();
 
@@ -22,6 +22,11 @@ const TokenRefreshModal: React.FC = () => {
     }
   };
 
+  const onCancel = () => {
+    setShowRefreshModal(false);
+    logout();
+  };
+
   return (
     <Dialog
       header="Session expiring"
@@ -29,7 +34,7 @@ const TokenRefreshModal: React.FC = () => {
       style={{ width: '400px' }}
       modal
       closable={false}
-      onHide={() => setShowRefreshModal(false)}
+      onHide={onCancel}
     >
       <p>
         Your session will expire in a few minutes. Would you like to extend it?
@@ -39,7 +44,7 @@ const TokenRefreshModal: React.FC = () => {
         <Button
           label="Cancel"
           icon="pi pi-times"
-          onClick={() => setShowRefreshModal(false)}
+          onClick={onCancel}
           className="p-button-secondary"
         />
         <Button
