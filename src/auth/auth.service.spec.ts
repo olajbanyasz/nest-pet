@@ -10,6 +10,8 @@ import { AuthService } from './auth.service';
 import { RefreshToken } from './schemas/refresh-token.schema';
 import { TokenExpiryService } from './token-expiry.service';
 
+jest.mock('bcryptjs');
+
 describe('AuthService', () => {
   let service: AuthService;
   let userModel: typeof MockUserModel;
@@ -56,6 +58,7 @@ describe('AuthService', () => {
 
   const mockJwtService = {
     signAsync: jest.fn().mockResolvedValue('access-token'),
+    sign: jest.fn().mockReturnValue('access-token'),
     decode: jest
       .fn()
       .mockReturnValue({ exp: Math.floor(Date.now() / 1000) + 3600 }),
@@ -66,6 +69,10 @@ describe('AuthService', () => {
   };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
+    (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+    (bcrypt.hash as jest.Mock).mockResolvedValue('hashedValue');
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
@@ -92,10 +99,6 @@ describe('AuthService', () => {
     userModel = MockUserModel;
     refreshTokenModel = module.get(getModelToken(RefreshToken.name));
     tokenExpiryService = module.get<TokenExpiryService>(TokenExpiryService);
-  });
-
-  afterEach(() => {
-    jest.clearAllMocks();
   });
 
   it('should be defined', () => {
@@ -136,10 +139,8 @@ describe('AuthService', () => {
 
   describe('login', () => {
     it('should login a user with valid credentials', async () => {
-      const hashedPassword = await bcrypt.hash('password123', 10);
       userModel.findOne.mockResolvedValue({
         ...mockUser,
-        password: hashedPassword,
         save: jest.fn().mockResolvedValue(true),
       });
 
@@ -152,9 +153,22 @@ describe('AuthService', () => {
 
       expect(result).toBeDefined();
       expect(result.access_token).toBe('access-token');
-      expect(
-        tokenExpiryService['scheduleTokenExpiryWarning'],
-      ).toHaveBeenCalled();
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(tokenExpiryService.scheduleTokenExpiryWarning).toHaveBeenCalled();
+    });
+
+    it('should warn if exp is missing in token during login', async () => {
+      mockJwtService.decode.mockReturnValueOnce({});
+      userModel.findOne.mockResolvedValue({
+        ...mockUser,
+        save: jest.fn().mockResolvedValue(true),
+      });
+
+      const loggerSpy = jest.spyOn(service['logger'], 'warn');
+      await service.login({ email: 'a@b.com', password: 'p' });
+      expect(loggerSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Could not decode exp'),
+      );
     });
 
     it('should throw UnauthorizedException for invalid credentials', async () => {
@@ -176,24 +190,77 @@ describe('AuthService', () => {
       const result = await service.logout(userId);
 
       expect(result).toEqual({ message: 'Logout successful' });
-      expect(refreshTokenModel['deleteMany']).toHaveBeenCalled();
+      expect(refreshTokenModel.deleteMany).toHaveBeenCalled();
+    });
+
+    it('should log warning if unknown user logs out', async () => {
+      const loggerSpy = jest.spyOn(service['logger'], 'log');
+      await service.logout(undefined);
+      expect(loggerSpy).toHaveBeenCalledWith(
+        expect.stringContaining('unknown user'),
+      );
     });
   });
 
   describe('refreshTokens', () => {
     it('should return new tokens for valid refresh token', async () => {
       const refreshToken = 'token-id:secret';
-      refreshTokenModel.findOne.mockResolvedValue({
-        ...mockRefreshToken,
-        tokenHash: await bcrypt.hash('secret', 10),
-      });
+      refreshTokenModel.findOne.mockResolvedValue(mockRefreshToken);
       userModel.findById.mockResolvedValue(mockUser);
 
       const result = await service.refreshTokens(refreshToken);
 
       expect(result).toBeDefined();
       expect(result.access_token).toBe('access-token');
-      expect(refreshTokenModel['deleteOne']).toHaveBeenCalled();
+      expect(refreshTokenModel.deleteOne).toHaveBeenCalled();
+    });
+
+    it('should warn if exp is missing in token during refresh', async () => {
+      mockJwtService.decode.mockReturnValueOnce({});
+      refreshTokenModel.findOne.mockResolvedValue(mockRefreshToken);
+      userModel.findById.mockResolvedValue(mockUser);
+
+      const loggerSpy = jest.spyOn(service['logger'], 'warn');
+      await service.refreshTokens('id:secret');
+      expect(loggerSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Could not decode exp'),
+      );
+    });
+
+    it('should throw if refresh token is missing', async () => {
+      await expect(service.refreshTokens(undefined)).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
+    it('should throw if refresh token format is invalid', async () => {
+      await expect(service.refreshTokens('invalid')).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
+    it('should throw if refresh token is not found in db', async () => {
+      refreshTokenModel.findOne.mockResolvedValue(null);
+      await expect(service.refreshTokens('id:secret')).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
+    it('should throw if refresh token hash mismatch', async () => {
+      refreshTokenModel.findOne.mockResolvedValue(mockRefreshToken);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+      await expect(service.refreshTokens('id:secret')).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
+    it('should throw if user associated with token is not found', async () => {
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+      refreshTokenModel.findOne.mockResolvedValue(mockRefreshToken);
+      userModel.findById.mockResolvedValue(null);
+      await expect(service.refreshTokens('id:secret')).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 });

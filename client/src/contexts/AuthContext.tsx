@@ -163,6 +163,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         role: result.user.role,
         name: result.user.name,
       });
+
+      const newCsrf = await getCsrfToken();
+      if (newCsrf) {
+        setCsrfToken(newCsrf);
+      }
     }
 
     return result;
