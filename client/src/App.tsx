@@ -11,16 +11,16 @@ import {
   Routes,
 } from 'react-router-dom';
 
-import AdminPage from './components/AdminPage';
 import AppLayout from './components/AppLayout';
-import DashBoard from './components/DashBoard';
-import Login from './components/Login';
 import Notification from './components/Notification';
 import ProtectedRoute from './components/ProtectedRoute';
-import StreamPage from './components/StreamPage';
-import Todos from './components/Todos';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
+import AdminPage from './pages/AdminPage';
+import DashBoard from './pages/DashBoard';
+import Login from './pages/Login';
+import StreamPage from './pages/StreamPage';
+import TodosPage from './pages/TodosPage';
 
 const RootRedirect: React.FC = () => {
   const { user, initialized } = useAuth();
@@ -44,7 +44,7 @@ function App() {
                 path="/todos"
                 element={
                   <ProtectedRoute>
-                    <Todos />
+                    <TodosPage />
                   </ProtectedRoute>
                 }
               />

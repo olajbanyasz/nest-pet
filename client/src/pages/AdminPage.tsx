@@ -9,11 +9,11 @@ import {
   promoteUserToAdmin,
   User,
 } from '../api/adminApi';
+import UserFilter from '../components/UserFilter';
+import UserList from '../components/UserList';
 import { useAuth } from '../contexts/AuthContext';
 import { useLoading } from '../contexts/LoadingProvider';
 import { useNotification } from '../contexts/NotificationContext';
-import UserFilter from './UserFilter';
-import UserList from './UserList';
 
 const AdminPage: React.FC = () => {
   const { user, loading: authLoading, initialized } = useAuth();

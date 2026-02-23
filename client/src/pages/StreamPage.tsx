@@ -8,10 +8,10 @@ import {
   uploadVideo,
   VideoItem,
 } from '../api/streamApi';
+import UploadVideo from '../components/UploadVideo';
+import VideoList from '../components/VideoList';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
-import UploadVideo from './UploadVideo';
-import VideoList from './VideoList';
 
 const StreamPage: React.FC = () => {
   const { user, initialized } = useAuth();

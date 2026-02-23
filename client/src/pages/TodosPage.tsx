@@ -9,14 +9,14 @@ import {
   toggleTodo as apiToggleTodo,
   updateTodoTitle,
 } from '../api/todosApi';
+import NewTodoForm from '../components/NewTodoForm';
+import TodoFilter from '../components/TodoFilter';
+import TodoList from '../components/TodoList';
 import { useAuth } from '../contexts/AuthContext';
 import { useLoading } from '../contexts/LoadingProvider';
 import { useNotification } from '../contexts/NotificationContext';
-import NewTodoForm from './NewTodoForm';
-import TodoFilter from './TodoFilter';
-import TodoList from './TodoList';
 
-function Todos() {
+function TodosPage() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [todoFilter, setTodoFilter] = useState<string>('all');
   const { show, hide } = useLoading();
@@ -133,4 +133,4 @@ function Todos() {
   );
 }
 
-export default Todos;
+export default TodosPage;

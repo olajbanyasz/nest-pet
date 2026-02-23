@@ -6,13 +6,13 @@ import { useNavigate } from 'react-router-dom';
 
 import { getApplicationDetails } from '../api/adminApi';
 import { getLast14DaysStats } from '../api/todosApi';
+import ApplicationDetails from '../components/ApplicationDetails';
+import OnlineUsersModal from '../components/OnlineUsersModal';
+import RecentTodoStatsChart from '../components/RecentTodoStatsChart';
+import TodosPieChart from '../components/TodosPieChart';
 import { useAuth } from '../contexts/AuthContext';
 import { useLoading } from '../contexts/LoadingProvider';
 import { useNotification } from '../contexts/NotificationContext';
-import ApplicationDetails from './ApplicationDetails';
-import OnlineUsersModal from './OnlineUsersModal';
-import RecentTodoStatsChart from './RecentTodoStatsChart';
-import TodosPieChart from './TodosPieChart';
 
 const DashBoard: React.FC = () => {
   const {
