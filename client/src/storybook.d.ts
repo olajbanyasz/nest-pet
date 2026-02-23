@@ -25,6 +25,7 @@ type StoryAnnotations<TComponent> = {
   args?: TComponent extends import('react').ComponentType<infer P>
     ? Partial<P>
     : Args;
+  render?: (args: Args) => JSX.Element;
   argTypes?: Record<string, ArgType>;
   parameters?: Record<string, unknown>;
   name?: string;

@@ -32,7 +32,7 @@ export interface User {
   name?: string;
 }
 
-interface AuthContextValue {
+export interface AuthContextValue {
   user: User | null;
   loading: boolean;
   initialized: boolean;
@@ -45,7 +45,9 @@ interface AuthContextValue {
   onlineCount: number;
 }
 
-const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+export const AuthContext = createContext<AuthContextValue | undefined>(
+  undefined,
+);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -88,6 +90,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setOnlineUsers([]);
     setOnlineCount(0);
     setShowRefreshModal(false);
+    setInitialized(true);
+    setLoading(false);
 
     if (isMounted.current) {
       setUser(null);

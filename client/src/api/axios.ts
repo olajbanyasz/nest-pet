@@ -82,6 +82,10 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    if (originalRequest.url?.includes('/auth/refresh')) {
+      return Promise.reject(error);
+    }
+
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (originalRequest.headers['X-Skip-Interceptor']) {
         return Promise.reject(error);

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+
 import { logout as apiLogout } from '../../api/authApi';
 
 function LogoutButton({ logout }: { logout: () => void }) {

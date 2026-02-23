@@ -1,5 +1,6 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
+
 import { useAuth, UserRole } from '../../contexts/AuthContext';
 import LoadingSpinner from '../LoadingSpinner/LoadingSpinner';
 
@@ -12,13 +13,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requiredRole,
   children,
 }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, initialized } = useAuth();
 
-  if (loading) {
+  if (loading || !initialized) {
     return <LoadingSpinner />;
   }
 
-  if (!user) return <Navigate to="/" replace />;
+  if (!user) return <Navigate to="/login" replace />;
 
   if (requiredRole && user.role !== requiredRole)
     return <Navigate to="/todos" replace />;
