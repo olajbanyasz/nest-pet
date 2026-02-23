@@ -3,9 +3,8 @@ import { Menubar } from 'primereact/menubar';
 import { Tooltip } from 'primereact/tooltip';
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-
-import { useAuth } from '../contexts/AuthContext';
-import LogoutButton from './LogoutButton';
+import { useAuth } from '../../contexts/AuthContext';
+import LogoutButton from '../LogoutButton/LogoutButton';
 
 const NavigationBar: React.FC = () => {
   const { user, logout } = useAuth();

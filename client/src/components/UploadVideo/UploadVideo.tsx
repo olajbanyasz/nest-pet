@@ -6,8 +6,7 @@ import type {
 import { FileUpload } from 'primereact/fileupload';
 import { ProgressBar } from 'primereact/progressbar';
 import React, { useRef, useState } from 'react';
-
-import { useLoading } from '../contexts/LoadingProvider';
+import { useLoading } from '../../contexts/LoadingProvider';
 
 interface UploadVideoProps {
   onUpload: (

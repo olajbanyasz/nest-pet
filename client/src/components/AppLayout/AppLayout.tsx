@@ -1,8 +1,7 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
-
-import NavigationBar from './NavigationBar';
-import TokenRefreshModal from './TokenRefreshModal';
+import NavigationBar from '../NavigationBar/NavigationBar';
+import TokenRefreshModal from '../TokenRefreshModal/TokenRefreshModal';
 
 const AppLayout: React.FC = () => {
   return (

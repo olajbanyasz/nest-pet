@@ -11,9 +11,9 @@ import {
   Routes,
 } from 'react-router-dom';
 
-import AppLayout from './components/AppLayout';
-import Notification from './components/Notification';
-import ProtectedRoute from './components/ProtectedRoute';
+import AppLayout from './components/AppLayout/AppLayout';
+import Notification from './components/Notification/Notification';
+import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import AdminPage from './pages/AdminPage';

@@ -8,8 +8,8 @@ import {
   uploadVideo,
   VideoItem,
 } from '../api/streamApi';
-import UploadVideo from '../components/UploadVideo';
-import VideoList from '../components/VideoList';
+import UploadVideo from '../components/UploadVideo/UploadVideo';
+import VideoList from '../components/VideoList/VideoList';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 

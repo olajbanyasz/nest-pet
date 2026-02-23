@@ -1,7 +1,6 @@
 import React from 'react';
-
-import { VideoItem } from '../api/streamApi';
-import VideoItemComponent from './VideoItem';
+import { VideoItem } from '../../api/streamApi';
+import VideoItemComponent from '../VideoItem/VideoItem';
 
 interface VideoListProps {
   videoList: VideoItem[];

@@ -1,9 +1,8 @@
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
 import React from 'react';
-
-import { useAuth } from '../contexts/AuthContext';
-import { useLoading } from '../contexts/LoadingProvider';
+import { useAuth } from '../../contexts/AuthContext';
+import { useLoading } from '../../contexts/LoadingProvider';
 
 const TokenRefreshModal: React.FC = () => {
   const { showRefreshModal, setShowRefreshModal, refresh, logout } = useAuth();

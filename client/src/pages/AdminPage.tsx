@@ -9,8 +9,8 @@ import {
   promoteUserToAdmin,
   User,
 } from '../api/adminApi';
-import UserFilter from '../components/UserFilter';
-import UserList from '../components/UserList';
+import UserFilter from '../components/UserFilter/UserFilter';
+import UserList from '../components/UserList/UserList';
 import { useAuth } from '../contexts/AuthContext';
 import { useLoading } from '../contexts/LoadingProvider';
 import { useNotification } from '../contexts/NotificationContext';

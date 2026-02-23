@@ -1,8 +1,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-
-import { useAuth, UserRole } from '../contexts/AuthContext';
-import LoadingSpinner from './LoadingSpinner';
+import { useAuth, UserRole } from '../../contexts/AuthContext';
+import LoadingSpinner from '../LoadingSpinner/LoadingSpinner';
 
 interface ProtectedRouteProps {
   requiredRole?: UserRole;

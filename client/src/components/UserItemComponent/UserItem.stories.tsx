@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-webpack5';
 import UserItem from './UserItem';
 
 const meta: Meta<typeof UserItem> = {
-  title: 'Components/UserItem',
+  title: 'Components/UserItemComponent/UserItem',
   component: UserItem,
   tags: ['autodocs'],
   argTypes: {

@@ -1,7 +1,6 @@
 import React from 'react';
-
-import { User } from '../api/adminApi';
-import UserItem from './UserItem';
+import { User } from '../../api/adminApi';
+import UserItem from '../UserItemComponent/UserItem';
 
 interface UserListProps {
   users: User[];

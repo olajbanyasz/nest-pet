@@ -1,6 +1,5 @@
 import React from 'react';
-
-import TodoItem from './TodoItem';
+import TodoItem from '../TodoItem/TodoItem';
 
 interface Todo {
   _id: string;
