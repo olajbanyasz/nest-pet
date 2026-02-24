@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
+
 import RecentTodoStatsChart from './RecentTodoStatsChart';
 
 const meta: Meta<typeof RecentTodoStatsChart> = {

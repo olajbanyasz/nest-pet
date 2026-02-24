@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
 import React, { useEffect, useRef } from 'react';
+
 import {
   Notification as NotificationItem,
   NotificationProvider,

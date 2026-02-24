@@ -31,7 +31,10 @@ const OnlineUsersModal: React.FC<OnlineUsersModalProps> = ({
         }}
       >
         {onlineCount > 0 ? (
-          <ListBox style={{ maxHeight: '300px', overflow: 'auto' }} options={onlineUsers} />
+          <ListBox
+            style={{ maxHeight: '300px', overflow: 'auto' }}
+            options={onlineUsers}
+          />
         ) : (
           <p>No online user.</p>
         )}
