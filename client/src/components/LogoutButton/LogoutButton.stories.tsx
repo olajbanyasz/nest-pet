@@ -8,7 +8,7 @@ const meta: Meta<typeof LogoutButton> = {
   component: LogoutButton,
   tags: ['autodocs'],
   decorators: [
-    Story => (
+    (Story) => (
       <MemoryRouter>
         <Story />
       </MemoryRouter>

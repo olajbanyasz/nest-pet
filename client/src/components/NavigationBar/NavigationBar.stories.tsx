@@ -2,7 +2,11 @@ import type { Meta, StoryObj } from '@storybook/react-webpack5';
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 
-import { AuthContext, AuthContextValue, User } from '../../contexts/AuthContext';
+import {
+  AuthContext,
+  AuthContextValue,
+  User,
+} from '../../contexts/AuthContext';
 import NavigationBar from './NavigationBar';
 
 const meta: Meta<typeof NavigationBar> = {

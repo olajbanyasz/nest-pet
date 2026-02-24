@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
+
 import LoadingSpinner from './LoadingSpinner';
 
 const meta: Meta<typeof LoadingSpinner> = {
