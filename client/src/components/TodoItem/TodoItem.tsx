@@ -46,6 +46,7 @@ function TodoItem({ todo, onToggle, onDelete, onUpdateTitle }: TodoItemProps) {
         checked={todo.completed}
         onChange={() => onToggle(todo._id)}
         style={{ width: '30px', marginRight: '10px' }}
+        disabled={isEditing}
       />
       {isEditing ? (
         <InputText
