@@ -24,6 +24,8 @@ const VideoItemComponent: React.FC<VideoItemComponentProps> = ({
       key={video.filename}
       style={{
         position: 'relative',
+        width: `${THUMB_WIDTH}px`,
+        margin: '0 auto',
         cursor: 'pointer',
         textAlign: 'center',
       }}
