@@ -41,7 +41,7 @@ const AdminPage: React.FC = () => {
     } finally {
       hide();
     }
-  }, [userFilter]);
+  }, [isValidFilter]);
 
   useEffect(() => {
     if (!initialized) return;
@@ -122,7 +122,11 @@ const AdminPage: React.FC = () => {
   return (
     <div className="admin-container">
       <h1 style={{ textAlign: 'center' }}>Admin panel</h1>
-      <UserFilter userFilter={userFilter} setUserFilter={setUserFilter} />
+      <UserFilter
+        userFilter={userFilter}
+        setUserFilter={setUserFilter}
+        isValidFilter={isValidFilter}
+      />
       <UserList
         users={isValidFilter ? filteredUsers : users}
         currentUserId={user.id}

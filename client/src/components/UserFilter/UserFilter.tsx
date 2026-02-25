@@ -4,9 +4,18 @@ import React from 'react';
 interface UserFilterProps {
   userFilter: string;
   setUserFilter: (filter: string) => void;
+  isValidFilter: boolean;
 }
 
-function UserFilter({ userFilter, setUserFilter }: UserFilterProps) {
+function UserFilter({
+  userFilter,
+  setUserFilter,
+  isValidFilter,
+}: UserFilterProps) {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUserFilter(e.target.value.trim());
+  };
+
   return (
     <div
       className="card"
@@ -20,11 +29,15 @@ function UserFilter({ userFilter, setUserFilter }: UserFilterProps) {
     >
       <i
         className="pi pi-filter"
-        style={{ fontSize: '1.5rem', marginRight: '8px', color: '#0ea5e9' }}
+        style={{
+          fontSize: '1.5rem',
+          marginRight: '8px',
+          color: isValidFilter ? '#0ea5e9' : 'gray',
+        }}
       ></i>
       <InputText
         value={userFilter}
-        onChange={(e) => setUserFilter(e.target.value.trim())}
+        onChange={handleChange}
         style={{ flexGrow: 1, marginRight: '10px' }}
         placeholder="Filter users by email"
       />
