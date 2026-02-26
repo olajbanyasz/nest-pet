@@ -9,7 +9,7 @@ test.describe('Auth UI', () => {
     await expect(page.locator('input[type="password"]').first()).toBeVisible();
     await expect(page.getByRole('button', { name: 'Login' })).toBeVisible();
     await page.screenshot({
-      path: 'e2e-screenshots/login-form.png',
+      path: 'e2e-screenshots/mock/login-form.png',
       fullPage: true,
     });
   });
@@ -27,7 +27,7 @@ test.describe('Auth UI', () => {
       page.getByRole('button', { name: 'Switch to Login' }),
     ).toBeVisible();
     await page.screenshot({
-      path: 'e2e-screenshots/register-form.png',
+      path: 'e2e-screenshots/mock/register-form.png',
       fullPage: true,
     });
   });
