@@ -114,13 +114,17 @@ describe('AuthController', () => {
       const res = createMockResponse();
       const req = {
         user: { userId: 'user-id' },
+        cookies: { refresh_token: 'token-id:token-secret' },
       } as unknown as Request;
 
       const result = await controller.logout(req, res);
 
       expect(result).toEqual({ message: 'Logout successful' });
       expect(res['clearCookie']).toHaveBeenCalledTimes(2);
-      expect(mockAuthService.logout).toHaveBeenCalledWith('user-id');
+      expect(mockAuthService.logout).toHaveBeenCalledWith(
+        'user-id',
+        'token-id:token-secret',
+      );
     });
   });
 

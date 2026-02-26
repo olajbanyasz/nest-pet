@@ -193,6 +193,15 @@ describe('AuthService', () => {
       expect(refreshTokenModel.deleteMany).toHaveBeenCalled();
     });
 
+    it('should delete refresh token by tokenId when userId is missing', async () => {
+      const result = await service.logout(undefined, 'token-id:token-secret');
+
+      expect(result).toEqual({ message: 'Logout successful' });
+      expect(refreshTokenModel.deleteOne).toHaveBeenCalledWith({
+        tokenId: 'token-id',
+      });
+    });
+
     it('should log warning if unknown user logs out', async () => {
       const loggerSpy = jest.spyOn(service['logger'], 'log');
       await service.logout(undefined);

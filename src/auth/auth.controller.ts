@@ -121,12 +121,12 @@ export class AuthController {
     return { message: 'Token refreshed', access_token };
   }
 
-  @UseGuards(JwtAuthGuard)
   @Post('logout')
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const userId = req.user?.userId;
+    const refreshToken = req.cookies?.refresh_token as string | undefined;
 
-    await this.authService.logout(userId);
+    await this.authService.logout(userId, refreshToken);
 
     res.clearCookie('access_token');
     res.clearCookie('refresh_token');

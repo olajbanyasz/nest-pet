@@ -23,6 +23,32 @@ import {
   onTokenExpiring,
 } from '../socket/authSocket';
 
+const LOGOUT_MARKER_KEY = 'auth:loggedOut';
+
+const getLogoutMarker = (): boolean => {
+  try {
+    return window.localStorage.getItem(LOGOUT_MARKER_KEY) === '1';
+  } catch {
+    return false;
+  }
+};
+
+const setLogoutMarker = (): void => {
+  try {
+    window.localStorage.setItem(LOGOUT_MARKER_KEY, '1');
+  } catch {
+    // localStorage can be unavailable in restricted environments
+  }
+};
+
+const clearLogoutMarker = (): void => {
+  try {
+    window.localStorage.removeItem(LOGOUT_MARKER_KEY);
+  } catch {
+    // localStorage can be unavailable in restricted environments
+  }
+};
+
 export type UserRole = 'user' | 'admin';
 
 export interface User {
@@ -32,7 +58,7 @@ export interface User {
   name?: string;
 }
 
-interface AuthContextValue {
+export interface AuthContextValue {
   user: User | null;
   loading: boolean;
   initialized: boolean;
@@ -45,7 +71,9 @@ interface AuthContextValue {
   onlineCount: number;
 }
 
-const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+export const AuthContext = createContext<AuthContextValue | undefined>(
+  undefined,
+);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -71,6 +99,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const performLogout = useCallback((options?: { skipApi?: boolean }) => {
+    setLogoutMarker();
+
     // isLoggingOut ref might not be needed anymore if we simplified axios
     // but keeping a local guard is fine
 
@@ -88,6 +118,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setOnlineUsers([]);
     setOnlineCount(0);
     setShowRefreshModal(false);
+    setInitialized(true);
+    setLoading(false);
 
     if (isMounted.current) {
       setUser(null);
@@ -103,6 +135,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const initAuth = async () => {
       try {
+        if (getLogoutMarker()) {
+          return;
+        }
+
         const hasToken = await refreshAccessToken();
         if (hasToken) {
           const userData = await apiCheckAuth();
@@ -157,6 +193,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     const result = await apiLogin(email, password);
 
     if (result.success && result.user) {
+      clearLogoutMarker();
+
       setUser({
         id: result.user.id,
         email: result.user.email,

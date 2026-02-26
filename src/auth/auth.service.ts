@@ -114,17 +114,27 @@ export class AuthService {
     };
   }
 
-  async logout(userId?: string): Promise<{ message: string }> {
+  async logout(
+    userId?: string,
+    refreshToken?: string,
+  ): Promise<{ message: string }> {
     if (userId) {
       await this.refreshTokenModel.deleteMany({
         userId: new Types.ObjectId(userId),
       });
 
       this.logger.log(`User logged out: ${userId}`);
-    } else {
-      this.logger.log('User logged out (unknown user)');
+      return { message: 'Logout successful' };
     }
 
+    const [tokenId] = (refreshToken ?? '').split(':');
+    if (tokenId) {
+      await this.refreshTokenModel.deleteOne({ tokenId });
+      this.logger.log('User logged out by refresh token');
+      return { message: 'Logout successful' };
+    }
+
+    this.logger.log('User logged out (unknown user)');
     return { message: 'Logout successful' };
   }
 

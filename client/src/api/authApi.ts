@@ -134,6 +134,8 @@ export const refreshAccessToken = async (): Promise<boolean> => {
   try {
     const res = await api.post<{ access_token: string }>(
       `${AUTH_BASE_URL}/refresh`,
+      {},
+      { headers: { 'X-Skip-Interceptor': 'true' } },
     );
     const token = res.data.access_token;
     setAccessToken(token);
