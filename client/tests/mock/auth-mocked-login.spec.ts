@@ -45,7 +45,12 @@ test.describe('Auth UI (mock backend)', () => {
     await page.goto('/login');
     await page.getByLabel('Email:').fill('mock@example.com');
     await page.locator('input[type="password"]').first().fill('secret123');
+    await page.screenshot({
+      path: 'e2e-screenshots/mock/before-login.png',
+      fullPage: true,
+    });
     await page.getByRole('button', { name: 'Login' }).click();
+    await page.waitForTimeout(3000);
 
     await expect(page).toHaveURL(/\/todos$/);
     await expect(page.getByRole('heading', { name: 'Todos' })).toBeVisible();
