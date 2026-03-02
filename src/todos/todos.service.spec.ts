@@ -3,6 +3,7 @@ import { getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Types } from 'mongoose';
 
+import { AppEventBusService } from '../events/app-event-bus.service';
 import { CreateTodoDto } from './dto/create-todo.dto';
 import { Todo } from './schemas/todo.schema';
 import { TodosService } from './todos.service';
@@ -60,6 +61,9 @@ describe('TodosService', () => {
   );
 
   const todoModelMock = Object.assign(mockModelConstructor, mockModel);
+  const eventBusMock = {
+    emitAsync: jest.fn(),
+  };
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -70,6 +74,10 @@ describe('TodosService', () => {
         {
           provide: getModelToken(Todo.name),
           useValue: todoModelMock,
+        },
+        {
+          provide: AppEventBusService,
+          useValue: eventBusMock,
         },
       ],
     }).compile();
@@ -197,6 +205,7 @@ describe('TodosService', () => {
       expect(mockModel.findOne).toHaveBeenCalled();
       expect(mockModel.findOneAndUpdate).toHaveBeenCalled();
       expect(result.completed).toBe(true);
+      expect(eventBusMock.emitAsync).toHaveBeenCalledTimes(1);
     });
 
     it('throws NotFoundException when missing', async () => {

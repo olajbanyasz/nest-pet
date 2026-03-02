@@ -7,6 +7,11 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { FilterQuery, isValidObjectId, Model, Types } from 'mongoose';
 
+import { AppEventBusService } from '../events/app-event-bus.service';
+import {
+  APP_EVENT_TODO_COMPLETED,
+  TodoCompletedEvent,
+} from '../events/events.types';
 import { CreateTodoDto } from './dto/create-todo.dto';
 import { UpdateTodoDto } from './dto/update-todo.dto';
 import { Todo, TodoDocument } from './schemas/todo.schema';
@@ -23,6 +28,7 @@ export class TodosService {
   constructor(
     @InjectModel(Todo.name)
     private readonly todoModel: Model<TodoDocument>,
+    private readonly eventBus: AppEventBusService,
   ) {}
 
   async findAll(userId: string, completed?: boolean): Promise<Todo[]> {
@@ -115,6 +121,16 @@ export class TodosService {
         { new: true },
       )
       .exec();
+
+    if (updated && !existing.completed && updated.completed) {
+      const event: TodoCompletedEvent = {
+        todoId: updated._id.toString(),
+        userId: updated.userId.toString(),
+        completedAt: (updated.completedAt ?? new Date()).toISOString(),
+      };
+
+      this.eventBus.emitAsync(APP_EVENT_TODO_COMPLETED, event);
+    }
 
     return updated!;
   }

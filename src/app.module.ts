@@ -6,9 +6,11 @@ import { CacheableMemory } from 'cacheable';
 import { Keyv } from 'keyv';
 
 import { AdminModule } from './admin/admin.module';
+import { AutomationModule } from './automation/automation.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
+import { EventsModule } from './events/events.module';
 import { StreamModule } from './stream/stream.module';
 import { TodosModule } from './todos/todos.module';
 
@@ -26,9 +28,11 @@ import { TodosModule } from './todos/todos.module';
     MongooseModule.forRoot(
       process.env.MONGODB_URI || 'mongodb://localhost:27017/nest-pet',
     ),
+    EventsModule,
     TodosModule,
     AuthModule,
     AdminModule,
+    AutomationModule,
     StreamModule,
   ],
   controllers: [AppController],
