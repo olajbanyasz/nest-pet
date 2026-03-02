@@ -16,6 +16,7 @@ import {
 import NewTodoForm from '../components/NewTodoForm/NewTodoForm';
 import TodoFilter from '../components/TodoFilter/TodoFilter';
 import TodoList from '../components/TodoList/TodoList';
+import TodoCompletionStat from '../components/TodoCompletionStat/TodoCompletionStat';
 import { useAuth } from '../contexts/AuthContext';
 import { useLoading } from '../contexts/LoadingProvider';
 import { useNotification } from '../contexts/NotificationContext';
@@ -145,20 +146,7 @@ function TodosPage() {
     <div className="todo-container">
       <NewTodoForm onAdd={(title) => void addTodo(title)} />
       <h1 style={{ textAlign: 'center' }}>Todos</h1>
-      <div className="card" style={{ marginBottom: '1.25rem' }}>
-        <h3 style={{ marginTop: 0 }}>Automation Stats</h3>
-        <p style={{ margin: '0.4rem 0' }}>
-          Todo completion events: <strong>{completionStats.completedTodoEvents}</strong>
-        </p>
-        <p style={{ margin: '0.4rem 0' }}>
-          Last completion:{' '}
-          <strong>
-            {completionStats.lastCompletedTodoAt
-              ? new Date(completionStats.lastCompletedTodoAt).toLocaleString()
-              : 'No completion event yet'}
-          </strong>
-        </p>
-      </div>
+      <TodoCompletionStat {...completionStats} />
       <TodoFilter todoFilter={todoFilter} setTodoFilter={setTodoFilter} />
       <TodoList
         todos={todos}
