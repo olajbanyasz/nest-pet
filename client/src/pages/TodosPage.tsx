@@ -2,6 +2,10 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import {
+  getMyTodoCompletionStats,
+  TodoCompletionStats,
+} from '../api/automationApi';
+import {
   addTodo as apiAddTodo,
   deleteTodo as apiDeleteTodo,
   fetchTodos as apiFetchTodos,
@@ -18,6 +22,11 @@ import { useNotification } from '../contexts/NotificationContext';
 
 function TodosPage() {
   const [todos, setTodos] = useState<Todo[]>([]);
+  const [completionStats, setCompletionStats] = useState<TodoCompletionStats>({
+    userId: '',
+    completedTodoEvents: 0,
+    lastCompletedTodoAt: null,
+  });
   const [todoFilter, setTodoFilter] = useState<string>('all');
   const { show, hide } = useLoading();
   const { user, initialized } = useAuth();
@@ -33,11 +42,24 @@ function TodosPage() {
     }
   }, [todoFilter]);
 
+  const loadCompletionStats = useCallback(async () => {
+    try {
+      const stats = await getMyTodoCompletionStats();
+      setCompletionStats(stats);
+    } catch {
+      // console.error('[Todos] loadCompletionStats error');
+    }
+  }, []);
+
   const fetchTodosWithNotification = useCallback(async () => {
     show();
     try {
-      const data = await apiFetchTodos(todoFilter);
+      const [data, stats] = await Promise.all([
+        apiFetchTodos(todoFilter),
+        getMyTodoCompletionStats(),
+      ]);
       setTodos(data.reverse());
+      setCompletionStats(stats);
       notify('Todos loaded successfully', 'success', 3000);
     } catch {
       notify('Failed to load todos', 'error', 5000);
@@ -45,7 +67,7 @@ function TodosPage() {
     } finally {
       hide();
     }
-  }, [todoFilter]);
+  }, [todoFilter, show, hide, notify]);
 
   useEffect(() => {
     if (!initialized) return;
@@ -79,6 +101,7 @@ function TodosPage() {
       await apiToggleTodo(id, !todo.completed);
       notify('Todo updated successfully', 'success', 3000);
       await fetchTodos();
+      await loadCompletionStats();
     } catch {
       notify('Failed to update todo', 'error', 5000);
     } finally {
@@ -122,6 +145,20 @@ function TodosPage() {
     <div className="todo-container">
       <NewTodoForm onAdd={(title) => void addTodo(title)} />
       <h1 style={{ textAlign: 'center' }}>Todos</h1>
+      <div className="card" style={{ marginBottom: '1.25rem' }}>
+        <h3 style={{ marginTop: 0 }}>Automation Stats</h3>
+        <p style={{ margin: '0.4rem 0' }}>
+          Todo completion events: <strong>{completionStats.completedTodoEvents}</strong>
+        </p>
+        <p style={{ margin: '0.4rem 0' }}>
+          Last completion:{' '}
+          <strong>
+            {completionStats.lastCompletedTodoAt
+              ? new Date(completionStats.lastCompletedTodoAt).toLocaleString()
+              : 'No completion event yet'}
+          </strong>
+        </p>
+      </div>
       <TodoFilter todoFilter={todoFilter} setTodoFilter={setTodoFilter} />
       <TodoList
         todos={todos}

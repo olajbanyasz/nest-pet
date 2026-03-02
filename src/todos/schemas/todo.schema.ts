@@ -24,6 +24,9 @@ export class Todo {
 
   @Prop({ default: null })
   completedAt?: Date;
+
+  @Prop({ default: false })
+  completionEventCounted: boolean;
 }
 
 export const TodoSchema = SchemaFactory.createForClass(Todo);

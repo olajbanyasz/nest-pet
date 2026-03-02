@@ -21,6 +21,10 @@ interface DailyStat {
   count: number;
 }
 
+type TodoUpdatePayload = Partial<UpdateTodoDto> & {
+  completionEventCounted?: boolean;
+};
+
 @Injectable()
 export class TodosService {
   private readonly logger = new Logger(TodosService.name);
@@ -101,13 +105,18 @@ export class TodosService {
       throw new NotFoundException(`Todo with id "${id}" not found`);
     }
 
-    if (typeof todoUpdate.completed === 'boolean') {
-      if (todoUpdate.completed && !existing.completed) {
-        todoUpdate.completedAt = new Date();
+    const updatePayload: TodoUpdatePayload = { ...todoUpdate };
+
+    if (typeof updatePayload.completed === 'boolean') {
+      if (updatePayload.completed && !existing.completed) {
+        updatePayload.completedAt = new Date();
+        if (!existing.completionEventCounted) {
+          updatePayload.completionEventCounted = true;
+        }
       }
 
-      if (!todoUpdate.completed && existing.completed) {
-        todoUpdate.completedAt = null;
+      if (!updatePayload.completed && existing.completed) {
+        updatePayload.completedAt = null;
       }
     }
 
@@ -117,12 +126,17 @@ export class TodosService {
           _id: existing._id,
           userId: existing.userId,
         },
-        todoUpdate,
+        updatePayload,
         { new: true },
       )
       .exec();
 
-    if (updated && !existing.completed && updated.completed) {
+    if (
+      updated &&
+      !existing.completed &&
+      updated.completed &&
+      !existing.completionEventCounted
+    ) {
       const event: TodoCompletedEvent = {
         todoId: updated._id.toString(),
         userId: updated.userId.toString(),

@@ -208,6 +208,28 @@ describe('TodosService', () => {
       expect(eventBusMock.emitAsync).toHaveBeenCalledTimes(1);
     });
 
+    it('does not emit completion event when todo was already counted before', async () => {
+      mockModel.findOne.mockResolvedValue({
+        ...todos[0],
+        completionEventCounted: true,
+      } as Todo);
+
+      mockModel.findOneAndUpdate.mockReturnValue({
+        exec: jest.fn().mockResolvedValue({
+          ...todos[0],
+          completed: true,
+          completionEventCounted: true,
+          completedAt: new Date(),
+        }),
+      });
+
+      await service.update(TODO_ID_1.toHexString(), USER_ID.toHexString(), {
+        completed: true,
+      });
+
+      expect(eventBusMock.emitAsync).not.toHaveBeenCalled();
+    });
+
     it('throws NotFoundException when missing', async () => {
       mockModel.findOne.mockResolvedValue(null);
 
