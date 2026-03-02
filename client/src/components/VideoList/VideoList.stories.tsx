@@ -71,8 +71,12 @@ export const ViewerMode: Story = {
     <VideoListStoryWrapper
       initialVideos={sampleVideos}
       isAdmin={false}
-      onSelectVideo={args.selectVideo as ((selectedVideo: VideoItem) => void) | undefined}
-      onDeleteVideo={args.deleteVideo as ((fileName: string) => void) | undefined}
+      onSelectVideo={
+        args.selectVideo as ((selectedVideo: VideoItem) => void) | undefined
+      }
+      onDeleteVideo={
+        args.deleteVideo as ((fileName: string) => void) | undefined
+      }
     />
   ),
 };
@@ -82,8 +86,12 @@ export const AdminModeInteractiveDelete: Story = {
     <VideoListStoryWrapper
       initialVideos={sampleVideos}
       isAdmin
-      onSelectVideo={args.selectVideo as ((selectedVideo: VideoItem) => void) | undefined}
-      onDeleteVideo={args.deleteVideo as ((fileName: string) => void) | undefined}
+      onSelectVideo={
+        args.selectVideo as ((selectedVideo: VideoItem) => void) | undefined
+      }
+      onDeleteVideo={
+        args.deleteVideo as ((fileName: string) => void) | undefined
+      }
     />
   ),
 };

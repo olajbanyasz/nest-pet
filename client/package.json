@@ -27,6 +27,14 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
+    "test:e2e": "npm run test:e2e:mock",
+    "test:e2e:mock": "playwright test",
+    "test:e2e:mock:ui": "playwright test --ui",
+    "test:e2e:mock:ui:headed": "playwright test --ui --headed --workers=1",
+    "test:e2e:mock:headed": "playwright test --headed",
+    "test:e2e:mock:debug": "playwright test --debug",
+    "test:e2e:real": "playwright test -c playwright.real.config.ts",
+    "test:e2e:report": "playwright show-report",
     "eject": "react-scripts eject",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
@@ -45,14 +53,15 @@
     ]
   },
   "devDependencies": {
-    "storybook": "^10.2.10",
-    "@storybook/react-webpack5": "^10.2.10",
-    "@storybook/preset-create-react-app": "^10.2.10",
+    "@playwright/test": "^1.58.2",
     "@storybook/addon-a11y": "^10.2.10",
     "@storybook/addon-docs": "^10.2.10",
     "@storybook/addon-onboarding": "^10.2.10",
-    "webpack": "^5.105.2",
+    "@storybook/preset-create-react-app": "^10.2.10",
+    "@storybook/react-webpack5": "^10.2.10",
+    "eslint-plugin-storybook": "^10.2.10",
     "prop-types": "^15.8.1",
-    "eslint-plugin-storybook": "^10.2.10"
+    "storybook": "^10.2.10",
+    "webpack": "^5.105.2"
   }
 }
