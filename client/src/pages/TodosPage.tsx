@@ -27,6 +27,8 @@ function TodosPage() {
     userId: '',
     completedTodoEvents: 0,
     lastCompletedTodoAt: null,
+    currentStreakDays: 0,
+    bestStreakDays: 0,
   });
   const [todoFilter, setTodoFilter] = useState<string>('all');
   const { show, hide } = useLoading();

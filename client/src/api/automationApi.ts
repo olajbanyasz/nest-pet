@@ -6,6 +6,8 @@ export interface TodoCompletionStats {
   userId: string;
   completedTodoEvents: number;
   lastCompletedTodoAt: string | null;
+  currentStreakDays: number;
+  bestStreakDays: number;
 }
 
 export const getMyTodoCompletionStats =
