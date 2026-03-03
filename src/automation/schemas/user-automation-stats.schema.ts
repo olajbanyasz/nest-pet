@@ -19,6 +19,15 @@ export class UserAutomationStats {
 
   @Prop({ type: Date, default: null })
   lastCompletedTodoAt: Date | null;
+
+  @Prop({ default: 0 })
+  currentStreakDays: number;
+
+  @Prop({ default: 0 })
+  bestStreakDays: number;
+
+  @Prop({ type: String, default: null })
+  lastCompletionDay: string | null;
 }
 
 export const UserAutomationStatsSchema =

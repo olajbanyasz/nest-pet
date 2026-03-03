@@ -6,10 +6,10 @@ import { CacheableMemory } from 'cacheable';
 import { Keyv } from 'keyv';
 
 import { AdminModule } from './admin/admin.module';
-import { AutomationModule } from './automation/automation.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
+import { AutomationModule } from './automation/automation.module';
 import { EventsModule } from './events/events.module';
 import { StreamModule } from './stream/stream.module';
 import { TodosModule } from './todos/todos.module';

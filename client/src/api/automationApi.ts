@@ -8,9 +8,10 @@ export interface TodoCompletionStats {
   lastCompletedTodoAt: string | null;
 }
 
-export const getMyTodoCompletionStats = async (): Promise<TodoCompletionStats> => {
-  const { data } = await api.get<TodoCompletionStats>(
-    `${AUTOMATION_BASE_URL}/me/todo-completion-stats`,
-  );
-  return data;
-};
+export const getMyTodoCompletionStats =
+  async (): Promise<TodoCompletionStats> => {
+    const { data } = await api.get<TodoCompletionStats>(
+      `${AUTOMATION_BASE_URL}/me/todo-completion-stats`,
+    );
+    return data;
+  };

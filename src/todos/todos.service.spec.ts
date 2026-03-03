@@ -24,6 +24,7 @@ describe('TodosService', () => {
       completed: false,
       deleted: false,
       userId: USER_ID,
+      completionEventCounted: false,
     },
     {
       _id: TODO_ID_2,
@@ -31,6 +32,7 @@ describe('TodosService', () => {
       completed: true,
       deleted: false,
       userId: USER_ID,
+      completionEventCounted: false,
     },
     {
       _id: TODO_ID_3,
@@ -38,6 +40,7 @@ describe('TodosService', () => {
       completed: false,
       deleted: true,
       userId: USER_ID,
+      completionEventCounted: false,
     },
   ];
 
@@ -166,6 +169,7 @@ describe('TodosService', () => {
         ...dto,
         deleted: false,
         userId: USER_ID,
+        completionEventCounted: false,
       };
 
       saveMock.mockResolvedValue(savedTodo as Todo);

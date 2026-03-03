@@ -14,9 +14,9 @@ import {
   updateTodoTitle,
 } from '../api/todosApi';
 import NewTodoForm from '../components/NewTodoForm/NewTodoForm';
+import TodoCompletionStat from '../components/TodoCompletionStat/TodoCompletionStat';
 import TodoFilter from '../components/TodoFilter/TodoFilter';
 import TodoList from '../components/TodoList/TodoList';
-import TodoCompletionStat from '../components/TodoCompletionStat/TodoCompletionStat';
 import { useAuth } from '../contexts/AuthContext';
 import { useLoading } from '../contexts/LoadingProvider';
 import { useNotification } from '../contexts/NotificationContext';
