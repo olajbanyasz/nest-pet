@@ -4,8 +4,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import cookieParser from 'cookie-parser';
 import csurf from 'csurf';
 import { NextFunction, Request, Response } from 'express';
-import { Connection, Model } from 'mongoose';
+import { Connection, Model, Types } from 'mongoose';
 import request from 'supertest';
+import {
+  UserAutomationStats,
+  UserAutomationStatsDocument,
+} from '../src/automation/schemas/user-automation-stats.schema';
 import { User, UserDocument, UserRole } from '../src/users/schemas/user.schema';
 import { Todo, TodoDocument } from '../src/todos/schemas/todo.schema';
 import { AppModule } from './../src/app.module';
@@ -14,8 +18,10 @@ describe('App (e2e)', () => {
   let app: INestApplication;
   let agent: any;
   let csrfToken: string;
+  let testUserId: string;
   let userModel: Model<UserDocument>;
   let todoModel: Model<TodoDocument>;
+  let userAutomationStatsModel: Model<UserAutomationStatsDocument>;
 
   const testUser = {
     email: `test-${Date.now()}@example.com`,
@@ -37,6 +43,9 @@ describe('App (e2e)', () => {
     app = moduleFixture.createNestApplication();
     userModel = app.get<Model<UserDocument>>(getModelToken(User.name));
     todoModel = app.get<Model<TodoDocument>>(getModelToken(Todo.name));
+    userAutomationStatsModel = app.get<Model<UserAutomationStatsDocument>>(
+      getModelToken(UserAutomationStats.name),
+    );
 
     // Replicate main.ts setup
     app.use(cookieParser());
@@ -87,6 +96,11 @@ describe('App (e2e)', () => {
       userId: { $in: userIds },
     });
 
+    // Clean up automation stats of test users
+    await userAutomationStatsModel.deleteMany({
+      userId: { $in: userIds },
+    });
+
     // Clean up test users
     await userModel.deleteMany({
       _id: { $in: userIds },
@@ -106,6 +120,7 @@ describe('App (e2e)', () => {
         .expect(async (res: any) => {
           expect(res.body.message).toBe('Registration and login successful');
           expect(res.body.user.email).toBe(testUser.email);
+          testUserId = res.body.user.id as string;
 
           // Make testUser an ADMIN in database so we can test admin endpoints later
           await userModel.updateOne(
@@ -217,6 +232,137 @@ describe('App (e2e)', () => {
         .delete(`/api/todos/${todoId}`)
         .set('x-csrf-token', csrfToken)
         .expect(200);
+    });
+  });
+
+  describe('AutomationModule', () => {
+    const getAutomationStats = async () => {
+      const res = await agent
+        .get('/api/automation/me/todo-completion-stats')
+        .expect(200);
+      return res.body as {
+        userId: string;
+        completedTodoEvents: number;
+        lastCompletedTodoAt: string | null;
+        currentStreakDays: number;
+        bestStreakDays: number;
+      };
+    };
+
+    const createAndCompleteTodo = async (title: string): Promise<string> => {
+      const created = await agent
+        .post('/api/todos')
+        .set('x-csrf-token', csrfToken)
+        .send({ title })
+        .expect(201);
+
+      const todoId = created.body._id as string;
+
+      await agent
+        .patch(`/api/todos/${todoId}`)
+        .set('x-csrf-token', csrfToken)
+        .send({ completed: true })
+        .expect(200);
+
+      return todoId;
+    };
+
+    const waitForAutomationStatsEventCount = async (
+      expectedCount: number,
+      attempts = 30,
+    ) => {
+      for (let i = 0; i < attempts; i++) {
+        const stats = await getAutomationStats();
+        if (stats.completedTodoEvents >= expectedCount) {
+          return stats;
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      }
+
+      throw new Error(
+        `Automation stats event count did not reach ${expectedCount}`,
+      );
+    };
+
+    it('/automation/me/todo-completion-stats (GET) returns streak fields', async () => {
+      const stats = await getAutomationStats();
+
+      expect(stats.userId).toBe(testUserId);
+      expect(typeof stats.completedTodoEvents).toBe('number');
+      expect(typeof stats.currentStreakDays).toBe('number');
+      expect(typeof stats.bestStreakDays).toBe('number');
+      expect(
+        stats.lastCompletedTodoAt === null ||
+          typeof stats.lastCompletedTodoAt === 'string',
+      ).toBe(true);
+    });
+
+    it('does not increase streak for same-day multiple completions', async () => {
+      const before = await getAutomationStats();
+
+      await createAndCompleteTodo(`Automation same-day A ${Date.now()}`);
+      const afterFirst = await waitForAutomationStatsEventCount(
+        before.completedTodoEvents + 1,
+      );
+
+      await createAndCompleteTodo(`Automation same-day B ${Date.now()}`);
+      const afterSecond = await waitForAutomationStatsEventCount(
+        before.completedTodoEvents + 2,
+      );
+
+      expect(afterSecond.currentStreakDays).toBe(afterFirst.currentStreakDays);
+      expect(afterSecond.bestStreakDays).toBeGreaterThanOrEqual(
+        afterSecond.currentStreakDays,
+      );
+    });
+
+    it('increases streak when previous completion day is yesterday', async () => {
+      const now = new Date();
+      const today = now.toISOString().split('T')[0]!;
+      const yesterdayDate = new Date(now);
+      yesterdayDate.setUTCDate(yesterdayDate.getUTCDate() - 1);
+      const yesterday = yesterdayDate.toISOString().split('T')[0]!;
+
+      const before = await getAutomationStats();
+
+      const testUserObjectId = new Types.ObjectId(testUserId);
+
+      await userAutomationStatsModel.updateOne(
+        { userId: testUserObjectId },
+        {
+          $set: {
+            currentStreakDays: 1,
+            bestStreakDays: Math.max(before.bestStreakDays, 1),
+            lastCompletionDay: yesterday,
+            lastCompletedTodoAt: new Date(`${yesterday}T10:00:00.000Z`),
+            completedTodoEvents: before.completedTodoEvents,
+          },
+        },
+      );
+
+      const seeded = await userAutomationStatsModel.findOne({
+        userId: testUserObjectId,
+      });
+      expect(seeded?.lastCompletionDay).toBe(yesterday);
+      expect(seeded?.currentStreakDays).toBe(1);
+
+      await createAndCompleteTodo(`Automation consecutive day ${Date.now()}`);
+      const after = await waitForAutomationStatsEventCount(
+        before.completedTodoEvents + 1,
+      );
+
+      expect(after.currentStreakDays).toBe(2);
+      expect(after.bestStreakDays).toBeGreaterThanOrEqual(2);
+      expect(after.userId).toBe(testUserId);
+      expect(after.completedTodoEvents).toBeGreaterThanOrEqual(
+        before.completedTodoEvents + 1,
+      );
+
+      const persisted = await userAutomationStatsModel.findOne({
+        userId: testUserObjectId,
+      });
+      expect(persisted?.lastCompletionDay).toBe(today);
     });
   });
 
