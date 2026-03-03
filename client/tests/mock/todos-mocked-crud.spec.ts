@@ -6,11 +6,27 @@ type Todo = {
   completed: boolean;
 };
 
-test.describe('Todos UI (mock backend)', () => {
+type TodoCompletionStats = {
+  userId: string;
+  completedTodoEvents: number;
+  lastCompletedTodoAt: string | null;
+  currentStreakDays: number;
+  bestStreakDays: number;
+  lastCompletionDay: string | null;
+};
 
+test.describe('Todos UI (mock backend)', () => {
   test('can add, complete, edit and delete a todo', async ({ page }) => {
     const todos: Todo[] = [];
     let nextId = 1;
+    const completionStats: TodoCompletionStats = {
+      userId: 'u-1',
+      completedTodoEvents: 0,
+      lastCompletedTodoAt: null,
+      currentStreakDays: 0,
+      bestStreakDays: 0,
+      lastCompletionDay: null,
+    };
 
     await page.route('**/api/auth/csrf-token', async (route) => {
       await route.fulfill({
@@ -43,6 +59,23 @@ test.describe('Todos UI (mock backend)', () => {
         }),
       });
     });
+
+    await page.route(
+      '**/api/automation/me/todo-completion-stats',
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            userId: completionStats.userId,
+            completedTodoEvents: completionStats.completedTodoEvents,
+            lastCompletedTodoAt: completionStats.lastCompletedTodoAt,
+            currentStreakDays: completionStats.currentStreakDays,
+            bestStreakDays: completionStats.bestStreakDays,
+          }),
+        });
+      },
+    );
 
     await page.route('**/api/todos**', async (route) => {
       const request = route.request();
@@ -104,7 +137,41 @@ test.describe('Todos UI (mock backend)', () => {
         }
 
         if (typeof body.completed === 'boolean') {
+          const wasCompleted = todo.completed;
           todo.completed = body.completed;
+
+          if (!wasCompleted && body.completed) {
+            const completedAt = new Date();
+            const eventDay = completedAt.toISOString().split('T')[0]!;
+            const previousDay = completionStats.lastCompletionDay;
+
+            completionStats.completedTodoEvents += 1;
+            completionStats.lastCompletedTodoAt = completedAt.toISOString();
+
+            if (!previousDay) {
+              completionStats.currentStreakDays = 1;
+            } else if (previousDay === eventDay) {
+              completionStats.currentStreakDays = completionStats.currentStreakDays;
+            } else {
+              const previousDate = new Date(`${previousDay}T00:00:00.000Z`);
+              const nextDate = new Date(previousDate);
+              nextDate.setUTCDate(nextDate.getUTCDate() + 1);
+              const nextDay = nextDate.toISOString().split('T')[0]!;
+
+              if (nextDay === eventDay) {
+                completionStats.currentStreakDays =
+                  Math.max(completionStats.currentStreakDays, 1) + 1;
+              } else {
+                completionStats.currentStreakDays = 1;
+              }
+            }
+
+            completionStats.lastCompletionDay = eventDay;
+            completionStats.bestStreakDays = Math.max(
+              completionStats.bestStreakDays,
+              completionStats.currentStreakDays,
+            );
+          }
         }
 
         if (typeof body.title === 'string' && body.title.trim()) {
@@ -141,6 +208,9 @@ test.describe('Todos UI (mock backend)', () => {
 
     await expect(page).toHaveURL(/\/todos$/);
     await expect(page.getByRole('heading', { name: 'Todos' })).toBeVisible();
+    await expect(page.getByText('Todo completion events: 0')).toBeVisible();
+    await expect(page.getByText('Current streak: 0 day(s)')).toBeVisible();
+    await expect(page.getByText('Best streak: 0 day(s)')).toBeVisible();
     await page.screenshot({
       path: 'e2e-screenshots/mock/todos-login-success.png',
       fullPage: true,
@@ -164,6 +234,9 @@ test.describe('Todos UI (mock backend)', () => {
       'text-decoration-line',
       'line-through',
     );
+    await expect(page.getByText('Todo completion events: 1')).toBeVisible();
+    await expect(page.getByText('Current streak: 1 day(s)')).toBeVisible();
+    await expect(page.getByText('Best streak: 1 day(s)')).toBeVisible();
     await page.waitForTimeout(3000);
     await page.screenshot({
       path: 'e2e-screenshots/mock/todos-after-complete.png',
