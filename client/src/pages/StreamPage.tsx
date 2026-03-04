@@ -8,6 +8,7 @@ import {
   uploadVideo,
   VideoItem,
 } from '../api/streamApi';
+import NetRadioWidget from '../components/NetRadioWidget/NetRadioWidget';
 import UploadVideo from '../components/UploadVideo/UploadVideo';
 import VideoList from '../components/VideoList/VideoList';
 import { useAuth } from '../contexts/AuthContext';
@@ -79,6 +80,7 @@ const StreamPage: React.FC = () => {
       }}
     >
       <h1>Stream panel</h1>
+      <NetRadioWidget />
       {isAdmin && <UploadVideo onUpload={onVideoUpload} />}
       {selectedVideo && (
         <video

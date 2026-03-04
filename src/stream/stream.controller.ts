@@ -38,11 +38,19 @@ interface RadioStation {
   streamUrl: string;
 }
 
+interface RadioMetadataResponse {
+  stationId: string;
+  stationName: string;
+  streamTitle: string | null;
+  updatedAt: string;
+}
+
 @UseGuards(JwtAuthGuard)
 @Controller('stream')
 export class StreamController {
   private readonly logger = new Logger(StreamController.name);
   private readonly mediaDir = path.join(process.cwd(), 'media');
+  private readonly metadataTimeoutMs = 7000;
   private readonly radioStations: RadioStation[] = [
     {
       id: 'radio-1',
@@ -217,6 +225,142 @@ export class StreamController {
 
       throw new ServiceUnavailableException('Radio stream unavailable');
     }
+  }
+
+  @Get('radio/:stationId/metadata')
+  async getRadioMetadata(
+    @Param('stationId') stationId: string,
+  ): Promise<RadioMetadataResponse> {
+    const station = this.radioStations.find((item) => item.id === stationId);
+
+    if (!station) {
+      throw new NotFoundException('Radio station not found');
+    }
+
+    try {
+      const streamTitle = await this.fetchStreamTitle(station.streamUrl);
+      return {
+        stationId: station.id,
+        stationName: station.name,
+        streamTitle,
+        updatedAt: new Date().toISOString(),
+      };
+    } catch (error: unknown) {
+      this.logger.error(
+        `Radio metadata lookup failed for "${station.id}"`,
+        error instanceof Error ? error.stack : undefined,
+      );
+
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      if (error instanceof BadGatewayException) {
+        throw error;
+      }
+
+      throw new ServiceUnavailableException('Radio metadata unavailable');
+    }
+  }
+
+  private async fetchStreamTitle(streamUrl: string): Promise<string | null> {
+    const upstream = await fetch(streamUrl, {
+      headers: {
+        Accept: 'audio/*,*/*;q=0.8',
+        'Icy-MetaData': '1',
+      },
+    });
+
+    if (!upstream.ok || !upstream.body) {
+      throw new BadGatewayException('Unable to connect to radio metadata');
+    }
+
+    const metaintHeader = upstream.headers.get('icy-metaint');
+    const metaint = metaintHeader ? Number(metaintHeader) : 0;
+    if (!Number.isFinite(metaint) || metaint <= 0) {
+      return null;
+    }
+
+    const reader = upstream.body.getReader();
+    let timeoutId: NodeJS.Timeout | null = null;
+
+    const timeoutPromise = new Promise<null>((resolve) => {
+      timeoutId = setTimeout(() => resolve(null), this.metadataTimeoutMs);
+    });
+
+    try {
+      const metadataPromise = this.readIcyMetadata(reader, metaint);
+      return await Promise.race([metadataPromise, timeoutPromise]);
+    } finally {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    }
+  }
+
+  private async readIcyMetadata(
+    reader: ReadableStreamDefaultReader<Uint8Array>,
+    metaint: number,
+  ): Promise<string | null> {
+    let bytesUntilMetadata = metaint;
+    let buffer = Buffer.alloc(0);
+    let receivedBytes = 0;
+    const maxBytesToScan = 1024 * 256;
+
+    while (receivedBytes < maxBytesToScan) {
+      const { done, value } = await reader.read();
+      if (done || !value) {
+        return null;
+      }
+
+      receivedBytes += value.length;
+      buffer = Buffer.concat([buffer, Buffer.from(value)]);
+
+      while (buffer.length > 0) {
+        if (bytesUntilMetadata > 0) {
+          if (buffer.length < bytesUntilMetadata) {
+            bytesUntilMetadata -= buffer.length;
+            buffer = Buffer.alloc(0);
+            break;
+          }
+
+          buffer = buffer.subarray(bytesUntilMetadata);
+          bytesUntilMetadata = 0;
+        }
+
+        if (buffer.length < 1) {
+          break;
+        }
+
+        const metadataLength = buffer[0] * 16;
+        if (buffer.length < metadataLength + 1) {
+          break;
+        }
+
+        const metadataBlock = buffer.subarray(1, metadataLength + 1);
+        const parsedTitle = this.extractStreamTitle(metadataBlock);
+
+        if (parsedTitle) {
+          return parsedTitle;
+        }
+
+        buffer = buffer.subarray(metadataLength + 1);
+        bytesUntilMetadata = metaint;
+      }
+    }
+
+    return null;
+  }
+
+  private extractStreamTitle(metadata: Buffer): string | null {
+    const metadataText = metadata.toString('utf8').replace(/\0/g, '');
+    const match = metadataText.match(/StreamTitle='([^']*)';/i);
+    if (!match) {
+      return null;
+    }
+
+    const streamTitle = match[1].trim();
+    return streamTitle.length > 0 ? streamTitle : null;
   }
 
   @Roles(UserRole.ADMIN)
