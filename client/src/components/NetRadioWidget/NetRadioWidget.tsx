@@ -14,6 +14,11 @@ import {
   getRadioStreamUrl,
   RadioStation,
 } from '../../api/streamApi';
+import VolumeControl from './VolumeControl';
+
+const VOLUME_STORAGE_KEY = 'netradio_widget_volume';
+const STATION_STORAGE_KEY = 'netradio_widget_station_id';
+const VOLUME_STEP = 5;
 
 const NetRadioWidget: React.FC = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -23,6 +28,15 @@ const NetRadioWidget: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [streamTitle, setStreamTitle] = useState<string | null>(null);
+  const [volume, setVolume] = useState<number>(() => {
+    const stored = window.localStorage.getItem(VOLUME_STORAGE_KEY);
+    const parsed = stored ? Number(stored) : Number.NaN;
+    if (!Number.isFinite(parsed)) {
+      return 80;
+    }
+
+    return Math.min(100, Math.max(0, parsed));
+  });
 
   const selectedStation = useMemo(
     () => stations.find((station) => station.id === selectedStationId),
@@ -36,7 +50,16 @@ const NetRadioWidget: React.FC = () => {
         const response = await getRadioStations();
         setStations(response);
         if (response.length > 0) {
-          setSelectedStationId(response[0].id);
+          const savedStationId =
+            window.localStorage.getItem(STATION_STORAGE_KEY);
+          const savedStationExists = response.some(
+            (station) => station.id === savedStationId,
+          );
+          setSelectedStationId(
+            savedStationExists && savedStationId
+              ? savedStationId
+              : response[0].id,
+          );
         }
         setErrorMessage('');
       } catch {
@@ -48,6 +71,23 @@ const NetRadioWidget: React.FC = () => {
 
     void loadStations();
   }, []);
+
+  useEffect(() => {
+    if (!selectedStationId) {
+      return;
+    }
+
+    window.localStorage.setItem(STATION_STORAGE_KEY, selectedStationId);
+  }, [selectedStationId]);
+
+  useEffect(() => {
+    if (!audioRef.current) {
+      return;
+    }
+
+    audioRef.current.volume = volume / 100;
+    window.localStorage.setItem(VOLUME_STORAGE_KEY, String(volume));
+  }, [volume]);
 
   const playSelectedStation = async () => {
     const audio = audioRef.current;
@@ -129,6 +169,13 @@ const NetRadioWidget: React.FC = () => {
     };
   }, [isPlaying, selectedStationId, loadMetadata]);
 
+  const changeVolume = (delta: number) => {
+    setVolume((previous) => {
+      const next = previous + delta;
+      return Math.min(100, Math.max(0, next));
+    });
+  };
+
   return (
     <section
       style={{
@@ -154,6 +201,11 @@ const NetRadioWidget: React.FC = () => {
               alignItems: 'center',
             }}
           >
+            <VolumeControl
+              volume={volume}
+              onIncrease={() => changeVolume(VOLUME_STEP)}
+              onDecrease={() => changeVolume(-VOLUME_STEP)}
+            />
             <Dropdown
               inputId="radio-station-select"
               value={selectedStationId}
