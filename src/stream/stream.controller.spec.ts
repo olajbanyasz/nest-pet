@@ -124,13 +124,12 @@ describe('StreamController', () => {
   describe('getRadioStations', () => {
     it('should return radio station list with proxied url', () => {
       const result = controller.getRadioStations();
-      expect(result).toEqual([
-        {
-          id: 'radio-1',
-          name: 'Radio 1',
-          streamUrl: '/api/stream/radio/radio-1',
-        },
-      ]);
+      expect(result.length).toBeGreaterThan(1);
+      expect(result).toContainEqual({
+        id: 'radio-1',
+        name: 'Rádió 1',
+        streamUrl: '/api/stream/radio/radio-1',
+      });
     });
   });
 
@@ -229,7 +228,7 @@ describe('StreamController', () => {
       const result = await controller.getRadioMetadata('radio-1');
 
       expect(result.stationId).toBe('radio-1');
-      expect(result.stationName).toBe('Radio 1');
+      expect(result.stationName).toBe('Rádió 1');
       expect(result.streamTitle).toBeNull();
       expect(result.updatedAt).toBeTruthy();
     });

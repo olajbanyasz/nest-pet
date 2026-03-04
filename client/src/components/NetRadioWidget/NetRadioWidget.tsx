@@ -56,7 +56,9 @@ const NetRadioWidget: React.FC = () => {
     }
 
     try {
+      audio.pause();
       audio.src = getRadioStreamUrl(selectedStation.id);
+      audio.load();
       await audio.play();
       setIsPlaying(true);
       setErrorMessage('');
@@ -81,8 +83,24 @@ const NetRadioWidget: React.FC = () => {
     setStreamTitle(null);
 
     if (isPlaying && audioRef.current) {
-      audioRef.current.src = getRadioStreamUrl(nextStationId);
-      void audioRef.current.play();
+      const switchStation = async () => {
+        try {
+          const audio = audioRef.current;
+          if (!audio) {
+            return;
+          }
+          audio.pause();
+          audio.src = getRadioStreamUrl(nextStationId);
+          audio.load();
+          await audio.play();
+          setErrorMessage('');
+        } catch {
+          setIsPlaying(false);
+          setErrorMessage('This station is not supported in your browser.');
+        }
+      };
+
+      void switchStation();
     }
   };
 
@@ -152,6 +170,12 @@ const NetRadioWidget: React.FC = () => {
                     lineHeight: '22px',
                   },
                 },
+                item: {
+                  style: {
+                    padding: '4px 8px',
+                    fontSize: '12px',
+                  },
+                },
               }}
               style={{ minWidth: 240, height: 24 }}
             />
@@ -191,6 +215,10 @@ const NetRadioWidget: React.FC = () => {
         ref={audioRef}
         preload="none"
         onEnded={() => setIsPlaying(false)}
+        onError={() => {
+          setIsPlaying(false);
+          setErrorMessage('This station is not supported in your browser.');
+        }}
       />
     </section>
   );

@@ -25,17 +25,11 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { UserRole } from '../users/schemas/user.schema';
+import { RADIO_STATIONS } from './radio-stations.data';
 
 interface VideoItem {
   filename: string;
   url: string;
-}
-
-interface RadioStation {
-  id: string;
-  name: string;
-  sourcePage: string;
-  streamUrl: string;
 }
 
 interface RadioMetadataResponse {
@@ -51,14 +45,7 @@ export class StreamController {
   private readonly logger = new Logger(StreamController.name);
   private readonly mediaDir = path.join(process.cwd(), 'media');
   private readonly metadataTimeoutMs = 7000;
-  private readonly radioStations: RadioStation[] = [
-    {
-      id: 'radio-1',
-      name: 'Radio 1',
-      sourcePage: 'https://netradio.online/radio-1',
-      streamUrl: 'https://icast.connectmedia.hu/5201/live.mp3',
-    },
-  ];
+  private readonly radioStations = RADIO_STATIONS;
 
   @Get('video/:filename')
   streamVideo(
@@ -246,20 +233,16 @@ export class StreamController {
         updatedAt: new Date().toISOString(),
       };
     } catch (error: unknown) {
-      this.logger.error(
-        `Radio metadata lookup failed for "${station.id}"`,
+      this.logger.warn(
+        `Radio metadata lookup fallback for "${station.id}"`,
         error instanceof Error ? error.stack : undefined,
       );
-
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-
-      if (error instanceof BadGatewayException) {
-        throw error;
-      }
-
-      throw new ServiceUnavailableException('Radio metadata unavailable');
+      return {
+        stationId: station.id,
+        stationName: station.name,
+        streamTitle: null,
+        updatedAt: new Date().toISOString(),
+      };
     }
   }
 
