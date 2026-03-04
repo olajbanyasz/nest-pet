@@ -1,4 +1,5 @@
 import {
+  BadGatewayException,
   BadRequestException,
   Controller,
   Delete,
@@ -10,6 +11,7 @@ import {
   Param,
   Post,
   Res,
+  ServiceUnavailableException,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -29,11 +31,26 @@ interface VideoItem {
   url: string;
 }
 
+interface RadioStation {
+  id: string;
+  name: string;
+  sourcePage: string;
+  streamUrl: string;
+}
+
 @UseGuards(JwtAuthGuard)
 @Controller('stream')
 export class StreamController {
   private readonly logger = new Logger(StreamController.name);
   private readonly mediaDir = path.join(process.cwd(), 'media');
+  private readonly radioStations: RadioStation[] = [
+    {
+      id: 'radio-1',
+      name: 'Radio 1',
+      sourcePage: 'https://netradio.online/radio-1',
+      streamUrl: 'https://icast.connectmedia.hu/5201/live.mp3',
+    },
+  ];
 
   @Get('video/:filename')
   streamVideo(
@@ -114,6 +131,92 @@ export class StreamController {
         filename: file,
         url: `/api/stream/video/${file}`,
       }));
+  }
+
+  @Get('radio/stations')
+  getRadioStations(): Array<{
+    id: string;
+    name: string;
+    streamUrl: string;
+  }> {
+    return this.radioStations.map((station) => ({
+      id: station.id,
+      name: station.name,
+      streamUrl: `/api/stream/radio/${station.id}`,
+    }));
+  }
+
+  @Get('radio/:stationId')
+  async proxyRadioStream(
+    @Param('stationId') stationId: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    const station = this.radioStations.find((item) => item.id === stationId);
+
+    if (!station) {
+      throw new NotFoundException('Radio station not found');
+    }
+
+    try {
+      const upstream = await fetch(station.streamUrl, {
+        headers: {
+          Accept: 'audio/*,*/*;q=0.8',
+        },
+      });
+
+      if (!upstream.ok || !upstream.body) {
+        throw new BadGatewayException('Unable to connect to radio stream');
+      }
+
+      const contentType = upstream.headers.get('content-type') ?? 'audio/mpeg';
+      res.setHeader('Content-Type', contentType);
+
+      const icyName = upstream.headers.get('icy-name');
+      if (icyName) {
+        res.setHeader('Icy-Name', icyName);
+      }
+
+      const icyGenre = upstream.headers.get('icy-genre');
+      if (icyGenre) {
+        res.setHeader('Icy-Genre', icyGenre);
+      }
+
+      const icyBr = upstream.headers.get('icy-br');
+      if (icyBr) {
+        res.setHeader('Icy-Br', icyBr);
+      }
+
+      res.status(upstream.status);
+      const reader = upstream.body.getReader();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          break;
+        }
+
+        if (value) {
+          res.write(Buffer.from(value));
+        }
+      }
+
+      res.end();
+    } catch (error: unknown) {
+      this.logger.error(
+        `Radio stream proxy failed for "${station.id}"`,
+        error instanceof Error ? error.stack : undefined,
+      );
+
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      if (error instanceof BadGatewayException) {
+        throw error;
+      }
+
+      throw new ServiceUnavailableException('Radio stream unavailable');
+    }
   }
 
   @Roles(UserRole.ADMIN)
