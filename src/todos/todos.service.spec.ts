@@ -3,6 +3,7 @@ import { getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Types } from 'mongoose';
 
+import { AppEventBusService } from '../events/app-event-bus.service';
 import { CreateTodoDto } from './dto/create-todo.dto';
 import { Todo } from './schemas/todo.schema';
 import { TodosService } from './todos.service';
@@ -23,6 +24,7 @@ describe('TodosService', () => {
       completed: false,
       deleted: false,
       userId: USER_ID,
+      completionEventCounted: false,
     },
     {
       _id: TODO_ID_2,
@@ -30,6 +32,7 @@ describe('TodosService', () => {
       completed: true,
       deleted: false,
       userId: USER_ID,
+      completionEventCounted: false,
     },
     {
       _id: TODO_ID_3,
@@ -37,6 +40,7 @@ describe('TodosService', () => {
       completed: false,
       deleted: true,
       userId: USER_ID,
+      completionEventCounted: false,
     },
   ];
 
@@ -60,6 +64,9 @@ describe('TodosService', () => {
   );
 
   const todoModelMock = Object.assign(mockModelConstructor, mockModel);
+  const eventBusMock = {
+    emitAsync: jest.fn(),
+  };
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -70,6 +77,10 @@ describe('TodosService', () => {
         {
           provide: getModelToken(Todo.name),
           useValue: todoModelMock,
+        },
+        {
+          provide: AppEventBusService,
+          useValue: eventBusMock,
         },
       ],
     }).compile();
@@ -158,6 +169,7 @@ describe('TodosService', () => {
         ...dto,
         deleted: false,
         userId: USER_ID,
+        completionEventCounted: false,
       };
 
       saveMock.mockResolvedValue(savedTodo as Todo);
@@ -197,6 +209,29 @@ describe('TodosService', () => {
       expect(mockModel.findOne).toHaveBeenCalled();
       expect(mockModel.findOneAndUpdate).toHaveBeenCalled();
       expect(result.completed).toBe(true);
+      expect(eventBusMock.emitAsync).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not emit completion event when todo was already counted before', async () => {
+      mockModel.findOne.mockResolvedValue({
+        ...todos[0],
+        completionEventCounted: true,
+      } as Todo);
+
+      mockModel.findOneAndUpdate.mockReturnValue({
+        exec: jest.fn().mockResolvedValue({
+          ...todos[0],
+          completed: true,
+          completionEventCounted: true,
+          completedAt: new Date(),
+        }),
+      });
+
+      await service.update(TODO_ID_1.toHexString(), USER_ID.toHexString(), {
+        completed: true,
+      });
+
+      expect(eventBusMock.emitAsync).not.toHaveBeenCalled();
     });
 
     it('throws NotFoundException when missing', async () => {

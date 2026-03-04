@@ -7,6 +7,11 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { FilterQuery, isValidObjectId, Model, Types } from 'mongoose';
 
+import { AppEventBusService } from '../events/app-event-bus.service';
+import {
+  APP_EVENT_TODO_COMPLETED,
+  TodoCompletedEvent,
+} from '../events/events.types';
 import { CreateTodoDto } from './dto/create-todo.dto';
 import { UpdateTodoDto } from './dto/update-todo.dto';
 import { Todo, TodoDocument } from './schemas/todo.schema';
@@ -16,6 +21,10 @@ interface DailyStat {
   count: number;
 }
 
+type TodoUpdatePayload = Partial<UpdateTodoDto> & {
+  completionEventCounted?: boolean;
+};
+
 @Injectable()
 export class TodosService {
   private readonly logger = new Logger(TodosService.name);
@@ -23,6 +32,7 @@ export class TodosService {
   constructor(
     @InjectModel(Todo.name)
     private readonly todoModel: Model<TodoDocument>,
+    private readonly eventBus: AppEventBusService,
   ) {}
 
   async findAll(userId: string, completed?: boolean): Promise<Todo[]> {
@@ -95,13 +105,18 @@ export class TodosService {
       throw new NotFoundException(`Todo with id "${id}" not found`);
     }
 
-    if (typeof todoUpdate.completed === 'boolean') {
-      if (todoUpdate.completed && !existing.completed) {
-        todoUpdate.completedAt = new Date();
+    const updatePayload: TodoUpdatePayload = { ...todoUpdate };
+
+    if (typeof updatePayload.completed === 'boolean') {
+      if (updatePayload.completed && !existing.completed) {
+        updatePayload.completedAt = new Date();
+        if (!existing.completionEventCounted) {
+          updatePayload.completionEventCounted = true;
+        }
       }
 
-      if (!todoUpdate.completed && existing.completed) {
-        todoUpdate.completedAt = null;
+      if (!updatePayload.completed && existing.completed) {
+        updatePayload.completedAt = null;
       }
     }
 
@@ -111,10 +126,25 @@ export class TodosService {
           _id: existing._id,
           userId: existing.userId,
         },
-        todoUpdate,
+        updatePayload,
         { new: true },
       )
       .exec();
+
+    if (
+      updated &&
+      !existing.completed &&
+      updated.completed &&
+      !existing.completionEventCounted
+    ) {
+      const event: TodoCompletedEvent = {
+        todoId: updated._id.toString(),
+        userId: updated.userId.toString(),
+        completedAt: (updated.completedAt ?? new Date()).toISOString(),
+      };
+
+      this.eventBus.emitAsync(APP_EVENT_TODO_COMPLETED, event);
+    }
 
     return updated!;
   }
