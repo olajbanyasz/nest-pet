@@ -14,20 +14,24 @@ import {
   getRadioStreamUrl,
   RadioStation,
 } from '../../api/streamApi';
+import netRadioBackgroundImage from '../../assets/netradio-headphones.jpg';
 import VolumeControl from './VolumeControl';
 
 const VOLUME_STORAGE_KEY = 'netradio_widget_volume';
 const STATION_STORAGE_KEY = 'netradio_widget_station_id';
 const VOLUME_STEP = 5;
+const WIDGET_WIDTH = 180;
 
 const NetRadioWidget: React.FC = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const streamTitleRef = useRef<HTMLParagraphElement | null>(null);
   const [stations, setStations] = useState<RadioStation[]>([]);
   const [selectedStationId, setSelectedStationId] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [streamTitle, setStreamTitle] = useState<string | null>(null);
+  const [isStreamTitleTruncated, setIsStreamTitleTruncated] = useState(false);
   const [volume, setVolume] = useState<number>(() => {
     const stored = window.localStorage.getItem(VOLUME_STORAGE_KEY);
     const parsed = stored ? Number(stored) : Number.NaN;
@@ -176,19 +180,41 @@ const NetRadioWidget: React.FC = () => {
     });
   };
 
+  useEffect(() => {
+    const updateTruncation = () => {
+      const titleElement = streamTitleRef.current;
+      if (!titleElement || !streamTitle) {
+        setIsStreamTitleTruncated(false);
+        return;
+      }
+
+      setIsStreamTitleTruncated(
+        titleElement.scrollWidth > titleElement.clientWidth,
+      );
+    };
+
+    updateTruncation();
+    window.addEventListener('resize', updateTruncation);
+    return () => {
+      window.removeEventListener('resize', updateTruncation);
+    };
+  }, [streamTitle]);
+
   return (
     <section
       style={{
-        width: '100%',
-        maxWidth: 640,
+        width: WIDGET_WIDTH,
         margin: '0 auto 20px',
         border: '2px solid rgb(221, 221, 221)',
         borderRadius: 8,
-        padding: 16,
+        padding: '20px 5px',
         textAlign: 'center',
+        backgroundImage: `url(${netRadioBackgroundImage})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
       }}
     >
-      <h2 style={{ margin: '0 0 12px' }}>Netradio</h2>
       {isLoading ? (
         <p>Loading stations...</p>
       ) : (
@@ -196,9 +222,10 @@ const NetRadioWidget: React.FC = () => {
           <div
             style={{
               display: 'flex',
-              gap: 8,
-              justifyContent: 'center',
+              justifyContent: 'space-between',
               alignItems: 'center',
+              marginBottom: 8,
+              width: '100%',
             }}
           >
             <VolumeControl
@@ -206,8 +233,52 @@ const NetRadioWidget: React.FC = () => {
               onIncrease={() => changeVolume(VOLUME_STEP)}
               onDecrease={() => changeVolume(-VOLUME_STEP)}
             />
+            <div style={{ marginLeft: 8, marginRight: 8 }}>
+              {isPlaying ? (
+                <Button
+                  icon="pi pi-pause"
+                  rounded
+                  outlined
+                  severity="danger"
+                  aria-label="Pause"
+                  onClick={pausePlayback}
+                  size="small"
+                  style={{
+                    width: 20,
+                    height: 20,
+                    paddingRight: 9,
+                    borderColor: 'white',
+                  }}
+                />
+              ) : (
+                <Button
+                  icon="pi pi-play"
+                  rounded
+                  outlined
+                  severity="success"
+                  aria-label="Play"
+                  onClick={() => void playSelectedStation()}
+                  size="small"
+                  style={{
+                    width: 20,
+                    height: 20,
+                    paddingRight: 7,
+                    borderColor: 'white',
+                  }}
+                />
+              )}
+            </div>
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
             <Dropdown
               inputId="radio-station-select"
+              appendTo="self"
               value={selectedStationId}
               options={stations}
               optionLabel="name"
@@ -220,6 +291,7 @@ const NetRadioWidget: React.FC = () => {
                     paddingTop: 0,
                     paddingBottom: 0,
                     lineHeight: '22px',
+                    fontSize: '12px',
                   },
                 },
                 item: {
@@ -229,38 +301,27 @@ const NetRadioWidget: React.FC = () => {
                   },
                 },
               }}
-              style={{ minWidth: 240, height: 24 }}
+              style={{ width: '100%', height: 24 }}
             />
-            {isPlaying ? (
-              <Button
-                icon="pi pi-pause"
-                rounded
-                outlined
-                severity="danger"
-                aria-label="Pause"
-                onClick={pausePlayback}
-                size="small"
-                style={{ width: 20, height: 20, paddingRight: 9 }}
-              />
-            ) : (
-              <Button
-                icon="pi pi-play"
-                rounded
-                outlined
-                severity="success"
-                aria-label="Play"
-                onClick={() => void playSelectedStation()}
-                size="small"
-                style={{ width: 20, height: 20, paddingRight: 7 }}
-              />
-            )}
           </div>
         </>
       )}
       {errorMessage && (
         <p style={{ color: '#b42318', marginTop: 12 }}>{errorMessage}</p>
       )}
-      <p style={{ margin: '10px 0 0', minHeight: 20 }}>
+      <p
+        ref={streamTitleRef}
+        title={streamTitle && isStreamTitleTruncated ? streamTitle : undefined}
+        style={{
+          margin: '10px 0 0',
+          minHeight: 20,
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          color: 'white',
+          fontSize: 11,
+        }}
+      >
         {streamTitle ? `${streamTitle}` : '-:-'}
       </p>
       <audio

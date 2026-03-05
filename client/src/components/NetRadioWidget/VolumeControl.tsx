@@ -22,6 +22,7 @@ const VolumeControl: React.FC<VolumeControlProps> = ({
         border: '1px solid rgb(221, 221, 221)',
         borderRadius: 6,
         padding: '3px 4px',
+        margin: '0 8px',
       }}
     >
       <Button
@@ -35,9 +36,17 @@ const VolumeControl: React.FC<VolumeControlProps> = ({
           padding: 0,
           outline: 'none',
           boxShadow: 'none',
+          color: 'white',
         }}
       />
-      <span style={{ fontSize: 11, minWidth: 32, textAlign: 'center' }}>
+      <span
+        style={{
+          fontSize: 11,
+          minWidth: 32,
+          textAlign: 'center',
+          color: 'white',
+        }}
+      >
         {volume}%
       </span>
       <Button
@@ -51,6 +60,7 @@ const VolumeControl: React.FC<VolumeControlProps> = ({
           padding: 0,
           outline: 'none',
           boxShadow: 'none',
+          color: 'white',
         }}
       />
     </div>

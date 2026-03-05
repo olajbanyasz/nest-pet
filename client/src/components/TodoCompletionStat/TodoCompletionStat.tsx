@@ -18,6 +18,7 @@ const TodoCompletionStat: React.FC<{
         border: '1px solid #ccc',
         borderRadius: '8px',
         marginBottom: '0.5rem',
+        color: '#4b5563',
       }}
     >
       <h3 style={{ margin: 0 }}>Automation Stats</h3>
