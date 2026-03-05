@@ -146,9 +146,9 @@ function TodosPage() {
 
   return (
     <div className="todo-container">
+      <TodoCompletionStat {...completionStats} />
       <NewTodoForm onAdd={(title) => void addTodo(title)} />
       <h1 style={{ textAlign: 'center' }}>Todos</h1>
-      <TodoCompletionStat {...completionStats} />
       <TodoFilter todoFilter={todoFilter} setTodoFilter={setTodoFilter} />
       <TodoList
         todos={todos}

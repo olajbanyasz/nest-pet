@@ -12,7 +12,7 @@ type WidgetPosition = {
 
 const WIDGET_POSITION_STORAGE_KEY = 'netradio_widget_layout_position';
 const WIDGET_EDGE_GAP = 12;
-const WIDGET_TOP_MIN = 64;
+const WIDGET_TOP_MIN = 0;
 const DEFAULT_WIDGET_WIDTH = 420;
 const DEFAULT_WIDGET_HEIGHT = 220;
 
