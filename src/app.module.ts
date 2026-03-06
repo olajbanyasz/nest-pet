@@ -14,6 +14,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { AutomationModule } from './automation/automation.module';
 import { EventsModule } from './events/events.module';
+import { LogArchiveModule } from './log-archive/log-archive.module';
 import { StreamModule } from './stream/stream.module';
 import { TodosModule } from './todos/todos.module';
 
@@ -44,6 +45,7 @@ import { TodosModule } from './todos/todos.module';
     AdminModule,
     AutomationModule,
     StreamModule,
+    LogArchiveModule,
   ],
   controllers: [AppController],
   providers: [
