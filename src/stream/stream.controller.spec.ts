@@ -15,6 +15,9 @@ describe('StreamController', () => {
     status: jest.fn().mockReturnThis(),
     json: jest.fn().mockReturnThis(),
     pipe: jest.fn().mockReturnThis(),
+    setHeader: jest.fn(),
+    write: jest.fn(),
+    end: jest.fn(),
   } as unknown as Response;
 
   beforeEach(async () => {
@@ -115,6 +118,166 @@ describe('StreamController', () => {
       expect(fs.mkdirSync).toHaveBeenCalled();
       expect(fs.writeFileSync).toHaveBeenCalled();
       expect(result.message).toBe('Upload successful');
+    });
+  });
+
+  describe('getRadioStations', () => {
+    it('should return radio station list with proxied url', () => {
+      const result = controller.getRadioStations();
+      expect(result.length).toBeGreaterThan(1);
+      expect(result).toContainEqual({
+        id: 'radio-1',
+        name: 'Rádió 1',
+        streamUrl: '/api/stream/radio/radio-1',
+      });
+    });
+  });
+
+  describe('proxyRadioStream', () => {
+    it('should throw NotFoundException for unknown station', async () => {
+      await expect(
+        controller.proxyRadioStream('unknown-station', mockResponse),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should proxy radio stream chunks', async () => {
+      const fetchMock: jest.MockedFunction<typeof fetch> = jest.fn();
+      const chunk = new Uint8Array([1, 2, 3]);
+      const read = jest
+        .fn()
+        .mockResolvedValueOnce({ done: false, value: chunk })
+        .mockResolvedValueOnce({ done: true, value: undefined });
+
+      fetchMock.mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: {
+          get: (name: string) => {
+            const lowerName = name.toLowerCase();
+            if (lowerName === 'content-type') return 'audio/mpeg';
+            if (lowerName === 'icy-name') return 'Radio 1';
+            return null;
+          },
+        },
+        body: {
+          getReader: () => ({ read }),
+        },
+      } as unknown as globalThis.Response);
+      global.fetch = fetchMock as unknown as typeof fetch;
+
+      await controller.proxyRadioStream('radio-1', mockResponse);
+
+      expect(fetchMock).toHaveBeenCalled();
+      const firstCall = fetchMock.mock.calls[0] as [
+        string | URL | globalThis.Request,
+        RequestInit | undefined,
+      ];
+      const [fetchUrl, fetchOptions] = firstCall;
+      expect(fetchUrl).toBe('https://icast.connectmedia.hu/5201/live.mp3');
+      expect(fetchOptions).toEqual(
+        expect.objectContaining({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          headers: expect.objectContaining({
+            Accept: 'audio/*,*/*;q=0.8',
+          }),
+        }),
+      );
+
+      const responseWithMocks = mockResponse as unknown as {
+        setHeader: jest.Mock;
+        write: jest.Mock;
+        end: jest.Mock;
+      };
+      expect(responseWithMocks.setHeader).toHaveBeenCalledWith(
+        'Content-Type',
+        'audio/mpeg',
+      );
+      expect(responseWithMocks.setHeader).toHaveBeenCalledWith(
+        'Icy-Name',
+        'Radio 1',
+      );
+      expect(responseWithMocks.write).toHaveBeenCalledWith(Buffer.from(chunk));
+      expect(responseWithMocks.end).toHaveBeenCalled();
+    });
+  });
+
+  describe('getRadioMetadata', () => {
+    it('should throw NotFoundException for unknown station', async () => {
+      await expect(
+        controller.getRadioMetadata('unknown-station'),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should return null metadata when icy-metaint is missing', async () => {
+      const fetchMock: jest.MockedFunction<typeof fetch> = jest.fn();
+
+      fetchMock.mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: {
+          get: () => null,
+        },
+        body: {
+          getReader: () => ({
+            read: jest.fn().mockResolvedValue({ done: true, value: undefined }),
+          }),
+        },
+      } as unknown as globalThis.Response);
+      global.fetch = fetchMock as unknown as typeof fetch;
+
+      const result = await controller.getRadioMetadata('radio-1');
+
+      expect(result.stationId).toBe('radio-1');
+      expect(result.stationName).toBe('Rádió 1');
+      expect(result.streamTitle).toBeNull();
+      expect(result.updatedAt).toBeTruthy();
+    });
+
+    it('should parse and return stream title from icy metadata', async () => {
+      const fetchMock: jest.MockedFunction<typeof fetch> = jest.fn();
+      const metaint = 5;
+      const audioBytes = Buffer.from([1, 2, 3, 4, 5]);
+      const metadataText = "StreamTitle='Artist - Song';";
+      const metadataLength = Math.ceil(Buffer.byteLength(metadataText) / 16);
+      const metadataPayload = Buffer.alloc(metadataLength * 16);
+      metadataPayload.write(metadataText, 0, 'utf8');
+      const packet = Buffer.concat([
+        audioBytes,
+        Buffer.from([metadataLength]),
+        metadataPayload,
+      ]);
+
+      fetchMock.mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: {
+          get: (name: string) => {
+            if (name.toLowerCase() === 'icy-metaint') {
+              return String(metaint);
+            }
+            return null;
+          },
+        },
+        body: {
+          getReader: () => ({
+            read: jest
+              .fn()
+              .mockResolvedValueOnce({
+                done: false,
+                value: new Uint8Array(packet),
+              })
+              .mockResolvedValueOnce({
+                done: true,
+                value: undefined,
+              }),
+          }),
+        },
+      } as unknown as globalThis.Response);
+      global.fetch = fetchMock as unknown as typeof fetch;
+
+      const result = await controller.getRadioMetadata('radio-1');
+
+      expect(result.streamTitle).toBe('Artist - Song');
     });
   });
 });

@@ -8,6 +8,19 @@ export interface VideoItem {
   url: string;
 }
 
+export interface RadioStation {
+  id: string;
+  name: string;
+  streamUrl: string;
+}
+
+export interface RadioMetadata {
+  stationId: string;
+  stationName: string;
+  streamTitle: string | null;
+  updatedAt: string;
+}
+
 export const getVideos = async (): Promise<VideoItem[]> => {
   const res = await api.get<VideoItem[]>('/stream/videos');
   return res.data;
@@ -39,4 +52,22 @@ export const uploadVideo = async (
 
 export const deleteVideo = async (filename: string): Promise<void> => {
   await api.delete(`${STREAM_BASE_URL}/${encodeURIComponent(filename)}`);
+};
+
+export const getRadioStations = async (): Promise<RadioStation[]> => {
+  const res = await api.get<RadioStation[]>('/stream/radio/stations');
+  return res.data;
+};
+
+export const getRadioStreamUrl = (stationId: string): string => {
+  return `/api/stream/radio/${encodeURIComponent(stationId)}`;
+};
+
+export const getRadioMetadata = async (
+  stationId: string,
+): Promise<RadioMetadata> => {
+  const res = await api.get<RadioMetadata>(
+    `/stream/radio/${encodeURIComponent(stationId)}/metadata`,
+  );
+  return res.data;
 };

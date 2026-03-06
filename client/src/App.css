@@ -104,7 +104,38 @@ li span {
   background-color: lightgrey;
 }
 
+.p-dropdown-panel {
+  background-color: #ffffff;
+  z-index: 1200 !important;
+}
+
 .card {
   padding: 2rem;
   margin-bottom: 1rem;
+}
+
+.floating-netradio-widget {
+  position: fixed;
+  z-index: 1050;
+  width: 180px;
+  max-width: calc(100vw - 24px);
+}
+
+.floating-netradio-widget__drag-handle {
+  width: fit-content;
+  margin-left: auto;
+  margin-bottom: -26px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #f3f4f6;
+  color: #374151;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+
+.floating-netradio-widget__drag-handle:active {
+  cursor: grabbing;
 }
