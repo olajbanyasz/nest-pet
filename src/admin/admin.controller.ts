@@ -30,8 +30,16 @@ export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
   @Get('users')
-  getUsers(@Query('email') email?: string) {
-    return this.adminService.getUsers(email);
+  getUsers(@Query('email') email?: string, @Query('deleted') deleted?: string) {
+    let deletedFilter: boolean | 'all' = false;
+
+    if (deleted === 'true') {
+      deletedFilter = true;
+    } else if (deleted === 'all') {
+      deletedFilter = 'all';
+    }
+
+    return this.adminService.getUsers(email, deletedFilter);
   }
 
   @Get('users/:id')
@@ -61,6 +69,22 @@ export class AdminController {
       throw new ForbiddenException('Cannot demote self');
     }
     return this.adminService.demoteToUser(id);
+  }
+
+  @Patch('users/:id/restore')
+  async restoreUser(@Param('id') id: string, @Req() req: Request) {
+    if (req.user?.userId === id) {
+      throw new ForbiddenException('Cannot restore self');
+    }
+    return this.adminService.restoreUser(id);
+  }
+
+  @Patch('users/:id/reactivate')
+  async reactivateUser(@Param('id') id: string, @Req() req: Request) {
+    if (req.user?.userId === id) {
+      throw new ForbiddenException('Cannot reactivate self');
+    }
+    return this.adminService.reactivateUser(id);
   }
 
   @Get('details')

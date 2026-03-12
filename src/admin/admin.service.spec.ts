@@ -41,7 +41,6 @@ describe('AdminService', () => {
   const mockModel = {
     find: jest.fn().mockReturnValue(createQueryMock([USER1, USER2])),
     findById: jest.fn(),
-    findByIdAndDelete: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -60,22 +59,25 @@ describe('AdminService', () => {
   });
 
   describe('deleteUser', () => {
-    it('should delete user when found and not admin', async () => {
-      mockModel.findById.mockResolvedValue(USER1);
-      mockModel.findByIdAndDelete.mockReturnValue(createQueryMock(USER1));
+    it('should soft delete user when found and not admin', async () => {
+      const user = {
+        ...USER1,
+        save: jest.fn().mockResolvedValue(true),
+        deleted: false,
+        deletedAt: null,
+        deletedReason: null,
+      };
+      mockModel.findById.mockResolvedValue(user);
 
       const result = await service.deleteUser('507f1f77bcf86cd799439011');
       expect(result).toEqual({
         message: 'User 507f1f77bcf86cd799439011 deleted',
       });
 
-      expect(mockTodosService.deleteTodosByUser).toHaveBeenCalledWith(
-        '507f1f77bcf86cd799439011',
-      );
-
-      expect(mockModel.findByIdAndDelete).toHaveBeenCalledWith(
-        '507f1f77bcf86cd799439011',
-      );
+      expect(user.deleted).toBe(true);
+      expect(user.deletedAt).toBeInstanceOf(Date);
+      expect(user.deletedReason).toBe('Admin soft delete');
+      expect(user.save).toHaveBeenCalled();
     });
 
     it('should throw NotFoundException if user not found', async () => {
@@ -193,6 +195,7 @@ describe('AdminService', () => {
       await service.getUsers('abc');
 
       expect(mockModel.find).toHaveBeenCalledWith({
+        deleted: false,
         email: { $regex: 'abc', $options: 'i' },
       });
     });

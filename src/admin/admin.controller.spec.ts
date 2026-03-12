@@ -49,6 +49,7 @@ describe('AdminController', () => {
       deleteUser: jest.fn(),
       promoteToAdmin: jest.fn(),
       demoteToUser: jest.fn(),
+      restoreUser: jest.fn(),
       getApplicationDetails: jest.fn(),
     };
 
@@ -74,6 +75,12 @@ describe('AdminController', () => {
       const result = await controller.getUsers();
       expect(result).toEqual(users);
       expect(service['getUsers']).toHaveBeenCalled();
+    });
+
+    it('should pass deleted filter when provided', async () => {
+      (service.getUsers as jest.Mock).mockResolvedValue(users);
+      await controller.getUsers(undefined, 'true');
+      expect(service['getUsers']).toHaveBeenCalledWith(undefined, true);
     });
   });
 
@@ -169,6 +176,31 @@ describe('AdminController', () => {
       };
       await expect(
         controller.demoteUser('2', reqMock as unknown as Request),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+  });
+
+  describe('restoreUser', () => {
+    it('should restore a user if not self', async () => {
+      const reqMock: AuthRequestMock = {
+        user: { userId: '2', role: UserRole.ADMIN },
+      };
+      (service.restoreUser as jest.Mock).mockResolvedValue(USER1);
+
+      const result = await controller.restoreUser(
+        '1',
+        reqMock as unknown as Request,
+      );
+      expect(result).toEqual(USER1);
+      expect(service['restoreUser']).toHaveBeenCalledWith('1');
+    });
+
+    it('should throw ForbiddenException if trying to restore self', async () => {
+      const reqMock: AuthRequestMock = {
+        user: { userId: '1', role: UserRole.ADMIN },
+      };
+      await expect(
+        controller.restoreUser('1', reqMock as unknown as Request),
       ).rejects.toBeInstanceOf(ForbiddenException);
     });
   });

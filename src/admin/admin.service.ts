@@ -28,8 +28,13 @@ export class AdminService {
 
   async getUsers(
     email?: string,
+    deleted: boolean | 'all' = false,
   ): Promise<(User & { lastLogin?: Date; todoCount: number })[]> {
-    const cacheKey = email ? `users_email_${email}` : 'users_all';
+    const deletedKey =
+      deleted === 'all' ? 'all' : deleted ? 'deleted' : 'active';
+    const cacheKey = email
+      ? `users_email_${email}_${deletedKey}`
+      : `users_all_${deletedKey}`;
 
     const cached =
       await this.cacheManager.get<
@@ -42,6 +47,10 @@ export class AdminService {
     }
 
     const filter: FilterQuery<UserDocument> = {};
+
+    if (deleted !== 'all') {
+      filter.deleted = deleted === true ? true : { $ne: true };
+    }
 
     if (email && email.trim().length > 2) {
       filter.email = {
@@ -85,6 +94,43 @@ export class AdminService {
     return user;
   }
 
+  async reactivateUser(id: string): Promise<User> {
+    const user = await this.userModel.findById(id);
+
+    if (!user) {
+      this.logger.warn(`Reactivate failed, user not found: ${id}`);
+      throw new NotFoundException('User not found');
+    }
+
+    if (!user.inactive) {
+      this.logger.warn(`User already active: ${id}`);
+      return this.userModel
+        .findById(id)
+        .select('-password')
+        .exec() as Promise<User>;
+    }
+
+    user.inactive = false;
+    user.inactiveAt = undefined;
+    user.inactiveReason = undefined;
+    user.reactivatedAt = new Date();
+    await user.save();
+
+    this.logger.log(`User reactivated: ${id}`);
+
+    await this.cacheManager.del(`users_email_${user.email}_active`);
+    await this.cacheManager.del(`users_email_${user.email}_deleted`);
+    await this.cacheManager.del(`users_email_${user.email}_all`);
+    await this.cacheManager.del('users_all_active');
+    await this.cacheManager.del('users_all_deleted');
+    await this.cacheManager.del('users_all_all');
+
+    return this.userModel
+      .findById(id)
+      .select('-password')
+      .exec() as Promise<User>;
+  }
+
   async deleteUser(id: string): Promise<{ message: string }> {
     const user = await this.userModel.findById(id);
 
@@ -98,16 +144,57 @@ export class AdminService {
       throw new ForbiddenException('Admin users cannot be deleted');
     }
 
-    await this.todoService.deleteTodosByUser(id);
+    user.deleted = true;
+    user.deletedAt = new Date();
+    user.deletedReason = 'Admin soft delete';
+    await user.save();
 
-    await this.userModel.findByIdAndDelete(id).exec();
+    this.logger.log(`User soft-deleted: ${id}`);
 
-    this.logger.log(`User deleted: ${id}`);
-
-    await this.cacheManager.del(`users_email_${user.email}`);
-    await this.cacheManager.del('users_all');
+    await this.cacheManager.del(`users_email_${user.email}_active`);
+    await this.cacheManager.del(`users_email_${user.email}_deleted`);
+    await this.cacheManager.del(`users_email_${user.email}_all`);
+    await this.cacheManager.del('users_all_active');
+    await this.cacheManager.del('users_all_deleted');
+    await this.cacheManager.del('users_all_all');
 
     return { message: `User ${id} deleted` };
+  }
+
+  async restoreUser(id: string): Promise<User> {
+    const user = await this.userModel.findById(id);
+
+    if (!user) {
+      this.logger.warn(`Restore failed, user not found: ${id}`);
+      throw new NotFoundException('User not found');
+    }
+
+    if (!user.deleted) {
+      this.logger.warn(`User already active: ${id}`);
+      return this.userModel
+        .findById(id)
+        .select('-password')
+        .exec() as Promise<User>;
+    }
+
+    user.deleted = false;
+    user.deletedAt = undefined;
+    user.deletedReason = undefined;
+    await user.save();
+
+    this.logger.log(`User restored: ${id}`);
+
+    await this.cacheManager.del(`users_email_${user.email}_active`);
+    await this.cacheManager.del(`users_email_${user.email}_deleted`);
+    await this.cacheManager.del(`users_email_${user.email}_all`);
+    await this.cacheManager.del('users_all_active');
+    await this.cacheManager.del('users_all_deleted');
+    await this.cacheManager.del('users_all_all');
+
+    return this.userModel
+      .findById(id)
+      .select('-password')
+      .exec() as Promise<User>;
   }
 
   async promoteToAdmin(id: string): Promise<User> {
@@ -128,8 +215,12 @@ export class AdminService {
 
     this.logger.log(`User promoted to admin: ${id}`);
 
-    await this.cacheManager.del(`users_email_${user.email}`);
-    await this.cacheManager.del('users_all');
+    await this.cacheManager.del(`users_email_${user.email}_active`);
+    await this.cacheManager.del(`users_email_${user.email}_deleted`);
+    await this.cacheManager.del(`users_email_${user.email}_all`);
+    await this.cacheManager.del('users_all_active');
+    await this.cacheManager.del('users_all_deleted');
+    await this.cacheManager.del('users_all_all');
 
     return this.userModel
       .findById(id)
@@ -155,8 +246,12 @@ export class AdminService {
 
     this.logger.log(`Admin demoted to user: ${id}`);
 
-    await this.cacheManager.del(`users_email_${user.email}`);
-    await this.cacheManager.del('users_all');
+    await this.cacheManager.del(`users_email_${user.email}_active`);
+    await this.cacheManager.del(`users_email_${user.email}_deleted`);
+    await this.cacheManager.del(`users_email_${user.email}_all`);
+    await this.cacheManager.del('users_all_active');
+    await this.cacheManager.del('users_all_deleted');
+    await this.cacheManager.del('users_all_all');
 
     return this.userModel
       .findById(id)
@@ -174,9 +269,11 @@ export class AdminService {
   }> {
     const totalUsers = await this.userModel.countDocuments({
       role: UserRole.USER,
+      deleted: { $ne: true },
     });
     const totalAdmins = await this.userModel.countDocuments({
       role: UserRole.ADMIN,
+      deleted: { $ne: true },
     });
     const totalTodos = await this.todoService.countAllTodos();
     const totalCompletedTodos = await this.todoService.countCompletedTodos();

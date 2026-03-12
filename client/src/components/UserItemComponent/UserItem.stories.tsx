@@ -10,6 +10,7 @@ const meta: Meta<typeof UserItem> = {
     onPromote: { action: 'promoted' },
     onDemote: { action: 'demoted' },
     onDelete: { action: 'deleted' },
+    onRestore: { action: 'restored' },
   },
 };
 

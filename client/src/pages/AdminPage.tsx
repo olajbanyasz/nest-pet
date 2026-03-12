@@ -7,6 +7,7 @@ import {
   demoteAdminToUser,
   getUsers,
   promoteUserToAdmin,
+  restoreUser,
   User,
 } from '../api/adminApi';
 import UserFilter from '../components/UserFilter/UserFilter';
@@ -25,11 +26,15 @@ const AdminPage: React.FC = () => {
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [userFilter, setUserFilter] = useState<string>('');
   const isValidFilter = userFilter.trim().length >= 3;
+  const [showDeletedOnly, setShowDeletedOnly] = useState<boolean>(false);
 
   const loadUsersWithNotification = useCallback(async () => {
     show();
     try {
-      const data = await getUsers(isValidFilter ? userFilter : undefined);
+      const data = await getUsers(
+        isValidFilter ? userFilter : undefined,
+        showDeletedOnly ? true : false,
+      );
       if (isValidFilter) {
         setFilteredUsers(data);
       } else {
@@ -41,7 +46,7 @@ const AdminPage: React.FC = () => {
     } finally {
       hide();
     }
-  }, [isValidFilter]);
+  }, [isValidFilter, showDeletedOnly]);
 
   useEffect(() => {
     if (!initialized) return;
@@ -113,6 +118,24 @@ const AdminPage: React.FC = () => {
     }
   };
 
+  const handleRestore = async (id: string) => {
+    show();
+    try {
+      await restoreUser(id);
+      notify('User restored successfully', 'success', 3000);
+      if (showDeletedOnly) {
+        setUsers((prev) => prev.filter((u) => u.id !== id));
+        setFilteredUsers((prev) => prev.filter((u) => u.id !== id));
+      } else {
+        void loadUsersWithNotification();
+      }
+    } catch {
+      notify('Failed to restore user', 'error', 5000);
+    } finally {
+      hide();
+    }
+  };
+
   if (authLoading) return null;
 
   if (!user || user.role !== 'admin') {
@@ -126,6 +149,8 @@ const AdminPage: React.FC = () => {
         userFilter={userFilter}
         setUserFilter={setUserFilter}
         isValidFilter={isValidFilter}
+        showDeletedOnly={showDeletedOnly}
+        setShowDeletedOnly={setShowDeletedOnly}
       />
       <UserList
         users={isValidFilter ? filteredUsers : users}
@@ -133,6 +158,7 @@ const AdminPage: React.FC = () => {
         onPromote={(id) => void handlePromote(id)}
         onDemote={(id) => void handleDemote(id)}
         onDelete={(id) => void handleDelete(id)}
+        onRestore={(id) => void handleRestore(id)}
       />
     </div>
   );
