@@ -124,6 +124,7 @@ export class AdminService {
     await this.cacheManager.del('users_all_active');
     await this.cacheManager.del('users_all_deleted');
     await this.cacheManager.del('users_all_all');
+    await this.cacheManager.del('admin_details');
 
     return this.userModel
       .findById(id)
@@ -157,6 +158,7 @@ export class AdminService {
     await this.cacheManager.del('users_all_active');
     await this.cacheManager.del('users_all_deleted');
     await this.cacheManager.del('users_all_all');
+    await this.cacheManager.del('admin_details');
 
     return { message: `User ${id} deleted` };
   }
@@ -190,6 +192,7 @@ export class AdminService {
     await this.cacheManager.del('users_all_active');
     await this.cacheManager.del('users_all_deleted');
     await this.cacheManager.del('users_all_all');
+    await this.cacheManager.del('admin_details');
 
     return this.userModel
       .findById(id)
@@ -221,6 +224,7 @@ export class AdminService {
     await this.cacheManager.del('users_all_active');
     await this.cacheManager.del('users_all_deleted');
     await this.cacheManager.del('users_all_all');
+    await this.cacheManager.del('admin_details');
 
     return this.userModel
       .findById(id)
@@ -267,6 +271,21 @@ export class AdminService {
     totalActiveTodos: number;
     totalDeletedTodos: number;
   }> {
+    const cacheKey = 'admin_details';
+    const cached = await this.cacheManager.get<{
+      totalUsers: number;
+      totalAdmins: number;
+      totalTodos: number;
+      totalCompletedTodos: number;
+      totalActiveTodos: number;
+      totalDeletedTodos: number;
+    }>(cacheKey);
+
+    if (cached !== undefined) {
+      this.logger.log(`Returning cached admin details for key: ${cacheKey}`);
+      return cached;
+    }
+
     const totalUsers = await this.userModel.countDocuments({
       role: UserRole.USER,
       deleted: { $ne: true },
@@ -280,7 +299,7 @@ export class AdminService {
     const totalActiveTodos = await this.todoService.countActiveTodos();
     const totalDeletedTodos = await this.todoService.countDeletedTodos();
 
-    return {
+    const details = {
       totalUsers,
       totalAdmins,
       totalTodos,
@@ -288,5 +307,10 @@ export class AdminService {
       totalActiveTodos,
       totalDeletedTodos,
     };
+
+    await this.cacheManager.set(cacheKey, details, 60 * 1000);
+    this.logger.log(`Cached admin details for key: ${cacheKey}`);
+
+    return details;
   }
 }
