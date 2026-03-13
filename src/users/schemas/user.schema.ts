@@ -27,6 +27,27 @@ export class User {
 
   @Prop({ type: Date })
   lastLoginAt?: Date;
+
+  @Prop({ type: Boolean, default: false })
+  inactive: boolean;
+
+  @Prop({ type: Date })
+  inactiveAt?: Date;
+
+  @Prop({ type: String })
+  inactiveReason?: string;
+
+  @Prop({ type: Date })
+  reactivatedAt?: Date;
+
+  @Prop({ type: Boolean, default: false })
+  deleted: boolean;
+
+  @Prop({ type: Date })
+  deletedAt?: Date;
+
+  @Prop({ type: String })
+  deletedReason?: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

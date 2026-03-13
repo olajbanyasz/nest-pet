@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   Logger,
   UnauthorizedException,
@@ -81,6 +82,16 @@ export class AuthService {
     if (!user || !(await bcrypt.compare(password, user.password))) {
       this.logger.warn(`Invalid login attempt for email: ${email}`);
       throw new UnauthorizedException('Invalid credentials');
+    }
+
+    if (user.deleted) {
+      this.logger.warn(`Login blocked for deleted user: ${email}`);
+      throw new ForbiddenException('User is deleted');
+    }
+
+    if (user.inactive) {
+      this.logger.warn(`Login blocked for inactive user: ${email}`);
+      throw new ForbiddenException('User is inactive');
     }
 
     user.lastLoginAt = new Date();
@@ -171,6 +182,26 @@ export class AuthService {
     const user = await this.userModel.findById(matchedToken.userId);
     if (!user) {
       throw new UnauthorizedException('User not found');
+    }
+
+    if (user.deleted) {
+      await this.refreshTokenModel.deleteMany({
+        userId: user._id,
+      });
+      this.logger.warn(
+        `Refresh blocked for deleted user: ${user._id.toString()}`,
+      );
+      throw new ForbiddenException('User is deleted');
+    }
+
+    if (user.inactive) {
+      await this.refreshTokenModel.deleteMany({
+        userId: user._id,
+      });
+      this.logger.warn(
+        `Refresh blocked for inactive user: ${user._id.toString()}`,
+      );
+      throw new ForbiddenException('User is inactive');
     }
 
     const newAccessToken = await this.generateAccessToken(user);

@@ -5,13 +5,19 @@ import { TodosModule } from '../todos/todos.module';
 import { User, UserSchema } from '../users/schemas/user.schema';
 import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
+import { AdminCacheWarmupService } from './admin-cache-warmup.service';
+import { InactiveUserCleanupService } from './inactive-user-cleanup.service';
 
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
     TodosModule,
   ],
-  providers: [AdminService],
+  providers: [
+    AdminService,
+    InactiveUserCleanupService,
+    AdminCacheWarmupService,
+  ],
   controllers: [AdminController],
 })
 export class AdminModule {}

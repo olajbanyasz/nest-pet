@@ -10,6 +10,7 @@ interface UserItemProps {
   onPromote: (id: string) => void;
   onDemote: (id: string) => void;
   onDelete: (id: string) => void;
+  onRestore: (id: string) => void;
 }
 
 const UserItem: React.FC<UserItemProps> = ({
@@ -18,11 +19,14 @@ const UserItem: React.FC<UserItemProps> = ({
   onPromote,
   onDemote,
   onDelete,
+  onRestore,
 }) => {
   const isAdmin = user.role === 'admin';
   const isSelf = user.id === currentUserId;
+  const isDeleted = !!user.deleted;
 
   const handlePromoteChange = () => {
+    if (isDeleted) return;
     if (isSelf) return;
 
     if (isAdmin) {
@@ -33,8 +37,14 @@ const UserItem: React.FC<UserItemProps> = ({
   };
 
   const handleDelete = () => {
+    if (isDeleted) return;
     if (isAdmin || isSelf) return;
     onDelete(user.id);
+  };
+
+  const handleRestore = () => {
+    if (!isDeleted) return;
+    onRestore(user.id);
   };
 
   return (
@@ -63,6 +73,28 @@ const UserItem: React.FC<UserItemProps> = ({
       <div style={{ flexGrow: 1 }}>
         <div style={{ fontWeight: 600 }}>
           {user.name || '—'} {isSelf && '(you)'}
+          {user.inactive && (
+            <span
+              style={{
+                marginLeft: '8px',
+                fontSize: '0.75em',
+                color: '#6b7280',
+              }}
+            >
+              Inactive
+            </span>
+          )}
+          {isDeleted && (
+            <span
+              style={{
+                marginLeft: '8px',
+                fontSize: '0.75em',
+                color: '#b91c1c',
+              }}
+            >
+              Deleted
+            </span>
+          )}
         </div>
         <div style={{ fontSize: '0.9em', color: '#666' }}>{user.email}</div>
       </div>
@@ -90,10 +122,16 @@ const UserItem: React.FC<UserItemProps> = ({
       </div>
 
       <Button
-        label="Delete"
-        onClick={handleDelete}
-        disabled={isAdmin || isSelf}
-        className={isAdmin || isSelf ? 'p-button-secondary' : 'p-button-danger'}
+        label={isDeleted ? 'Restore' : 'Delete'}
+        onClick={isDeleted ? handleRestore : handleDelete}
+        disabled={(isDeleted && isSelf) || (!isDeleted && (isAdmin || isSelf))}
+        className={
+          isDeleted
+            ? 'p-button-success'
+            : isAdmin || isSelf
+              ? 'p-button-secondary'
+              : 'p-button-danger'
+        }
         style={{ width: '80px' }}
       />
     </div>

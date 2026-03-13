@@ -21,6 +21,7 @@ const UserFilterStoryWrapper: React.FC<{
 }> = ({ initialFilter, onFilterChange }) => {
   const [userFilter, setUserFilter] = React.useState(initialFilter);
   const isValidFilter = userFilter.trim().length >= 3;
+  const [showDeletedOnly, setShowDeletedOnly] = React.useState(false);
 
   const handleFilterChange = (nextFilter: string) => {
     setUserFilter(nextFilter);
@@ -33,6 +34,8 @@ const UserFilterStoryWrapper: React.FC<{
         userFilter={userFilter}
         setUserFilter={handleFilterChange}
         isValidFilter={isValidFilter}
+        showDeletedOnly={showDeletedOnly}
+        setShowDeletedOnly={setShowDeletedOnly}
       />
       <div style={{ fontSize: '12px', color: '#6b7280' }}>
         AdminPage simulation: isValidFilter = {String(isValidFilter)}
