@@ -12,6 +12,10 @@ export interface User {
   createdAt?: string;
   lastLoginAt?: string;
   todoCount?: number;
+  inactive?: boolean;
+  inactiveAt?: string;
+  deleted?: boolean;
+  deletedAt?: string;
 }
 
 interface BackendUser {
@@ -22,6 +26,10 @@ interface BackendUser {
   createdAt?: string;
   lastLoginAt?: string;
   todoCount?: number;
+  inactive?: boolean;
+  inactiveAt?: string;
+  deleted?: boolean;
+  deletedAt?: string;
 }
 
 function mapBackendUser(user: BackendUser): User {
@@ -33,11 +41,27 @@ function mapBackendUser(user: BackendUser): User {
     createdAt: user.createdAt,
     lastLoginAt: user.lastLoginAt,
     todoCount: user.todoCount,
+    inactive: user.inactive,
+    inactiveAt: user.inactiveAt,
+    deleted: user.deleted,
+    deletedAt: user.deletedAt,
   };
 }
 
-export const getUsers = async (email?: string): Promise<User[]> => {
-  const query = email ? `?email=${encodeURIComponent(email)}` : '';
+export const getUsers = async (
+  email?: string,
+  deleted?: boolean | 'all',
+): Promise<User[]> => {
+  const params = new URLSearchParams();
+  if (email) {
+    params.set('email', email);
+  }
+  if (deleted === true) {
+    params.set('deleted', 'true');
+  } else if (deleted === 'all') {
+    params.set('deleted', 'all');
+  }
+  const query = params.size > 0 ? `?${params.toString()}` : '';
   const res = await api.get<BackendUser[]>(`${ADMIN_BASE_URL}/users${query}`);
   return res.data.map(mapBackendUser);
 };
@@ -61,6 +85,13 @@ export const promoteUserToAdmin = async (id: string): Promise<User> => {
 export const demoteAdminToUser = async (id: string): Promise<User> => {
   const res = await api.patch<BackendUser>(
     `${ADMIN_BASE_URL}/users/${id}/demote`,
+  );
+  return mapBackendUser(res.data);
+};
+
+export const restoreUser = async (id: string): Promise<User> => {
+  const res = await api.patch<BackendUser>(
+    `${ADMIN_BASE_URL}/users/${id}/restore`,
   );
   return mapBackendUser(res.data);
 };

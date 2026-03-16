@@ -12,6 +12,7 @@ const meta: Meta<typeof UserList> = {
     onPromote: { action: 'promoted' },
     onDemote: { action: 'demoted' },
     onDelete: { action: 'deleted' },
+    onRestore: { action: 'restored' },
   },
 };
 
@@ -51,7 +52,8 @@ const UserListStoryWrapper: React.FC<{
   onPromote?: (id: string) => void;
   onDemote?: (id: string) => void;
   onDelete?: (id: string) => void;
-}> = ({ initialData, currentUserId, onPromote, onDemote, onDelete }) => {
+  onRestore?: (id: string) => void;
+}> = ({ initialData, currentUserId, onPromote, onDemote, onDelete, onRestore }) => {
   const [users, setUsers] = React.useState<User[]>(initialData);
 
   const handlePromote = (id: string) => {
@@ -73,6 +75,15 @@ const UserListStoryWrapper: React.FC<{
     onDelete?.(id);
   };
 
+  const handleRestore = (id: string) => {
+    setUsers((prev) =>
+      prev.map((user) =>
+        user.id === id ? { ...user, deleted: false } : user,
+      ),
+    );
+    onRestore?.(id);
+  };
+
   return (
     <div style={{ maxWidth: '980px' }}>
       <UserList
@@ -81,6 +92,7 @@ const UserListStoryWrapper: React.FC<{
         onPromote={handlePromote}
         onDemote={handleDemote}
         onDelete={handleDelete}
+        onRestore={handleRestore}
       />
     </div>
   );
@@ -94,6 +106,7 @@ export const Interactive: Story = {
       onPromote={args.onPromote as ((id: string) => void) | undefined}
       onDemote={args.onDemote as ((id: string) => void) | undefined}
       onDelete={args.onDelete as ((id: string) => void) | undefined}
+      onRestore={args.onRestore as ((id: string) => void) | undefined}
     />
   ),
 };

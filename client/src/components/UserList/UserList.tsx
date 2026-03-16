@@ -9,6 +9,7 @@ interface UserListProps {
   onPromote: (id: string) => void;
   onDemote: (id: string) => void;
   onDelete: (id: string) => void;
+  onRestore: (id: string) => void;
 }
 
 const UserList: React.FC<UserListProps> = ({
@@ -17,6 +18,7 @@ const UserList: React.FC<UserListProps> = ({
   onPromote,
   onDemote,
   onDelete,
+  onRestore,
 }) => {
   return (
     <div>
@@ -28,6 +30,7 @@ const UserList: React.FC<UserListProps> = ({
           onPromote={onPromote}
           onDemote={onDemote}
           onDelete={onDelete}
+          onRestore={onRestore}
         />
       ))}
     </div>

@@ -8,6 +8,7 @@ import { AuthController } from './auth.controller';
 import { AuthGateway } from './auth.gateway';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
+import { RefreshTokenCleanupService } from './refresh-token-cleanup.service';
 import {
   RefreshToken,
   RefreshTokenSchema,
@@ -27,7 +28,13 @@ import { TokenExpiryService } from './token-expiry.service';
     ]),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, AuthGateway, TokenExpiryService],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    AuthGateway,
+    TokenExpiryService,
+    RefreshTokenCleanupService,
+  ],
   exports: [AuthService, AuthGateway],
 })
 export class AuthModule {}

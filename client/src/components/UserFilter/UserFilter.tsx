@@ -1,16 +1,21 @@
 import { InputText } from 'primereact/inputtext';
+import { InputSwitch } from 'primereact/inputswitch';
 import React from 'react';
 
 interface UserFilterProps {
   userFilter: string;
   setUserFilter: (filter: string) => void;
   isValidFilter: boolean;
+  showDeletedOnly: boolean;
+  setShowDeletedOnly: (value: boolean) => void;
 }
 
 function UserFilter({
   userFilter,
   setUserFilter,
   isValidFilter,
+  showDeletedOnly,
+  setShowDeletedOnly,
 }: UserFilterProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setUserFilter(e.target.value.trim());
@@ -41,6 +46,15 @@ function UserFilter({
         style={{ flexGrow: 1, marginRight: '10px' }}
         placeholder="Filter users by email"
       />
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '135px'}}>
+        <span style={{ fontSize: '0.85rem', color: '#666' }}>
+          {showDeletedOnly ? 'Deleted only' : 'Active only'}
+        </span>
+        <InputSwitch
+          checked={showDeletedOnly}
+          onChange={(e) => setShowDeletedOnly(!!e.value)}
+        />
+      </div>
     </div>
   );
 }
