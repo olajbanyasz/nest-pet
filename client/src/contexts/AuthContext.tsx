@@ -177,6 +177,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     });
 
     onTokenExpiring(() => {
+      // #region agent log
+      fetch('http://127.0.0.1:7862/ingest/8ae7c5b4-3a5e-4c05-8757-84b8a9d6bd29',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'db7918'},body:JSON.stringify({sessionId:'db7918',runId:'pre',hypothesisId:'D',location:'client/src/contexts/AuthContext.tsx:onTokenExpiring',message:'TOKEN_EXPIRING callback invoked -> showRefreshModal=true',data:{hasUser:Boolean(user)},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion agent log
       setShowRefreshModal(true);
     });
 
