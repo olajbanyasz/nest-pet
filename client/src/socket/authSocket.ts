@@ -30,6 +30,12 @@ export const onTokenExpiring = (cb: () => void) => {
   socket.on('TOKEN_EXPIRING', cb);
 };
 
+export const onForceLogout = (cb: () => void) => {
+  if (!socket) return;
+  socket.off('FORCE_LOGOUT');
+  socket.on('FORCE_LOGOUT', cb);
+};
+
 export const onOnlineUsersUpdate = (
   callback: (data: { users: string[]; count: number }) => void,
 ) => {

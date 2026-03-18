@@ -1,8 +1,8 @@
-import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import axios, { AxiosError, AxiosRequestConfig } from 'axios';
 
 import { refreshAccessToken } from './authApi';
 
-interface RetryAxiosRequestConfig extends InternalAxiosRequestConfig {
+interface RetryAxiosRequestConfig extends AxiosRequestConfig {
   _retry?: boolean;
 }
 
@@ -51,8 +51,9 @@ export const setCsrfToken = (token: string | null) => {
 
 api.interceptors.request.use(
   (config) => {
+    config.headers = config.headers ?? {};
     if (accessToken) {
-      config.headers.Authorization = `Bearer ${accessToken}`;
+      (config.headers as any).Authorization = `Bearer ${accessToken}`;
     }
 
     const method = config.method?.toUpperCase();
@@ -63,7 +64,7 @@ api.interceptors.request.use(
       method !== 'OPTIONS'
     ) {
       if (csrfToken) {
-        config.headers['X-CSRF-Token'] = csrfToken;
+        (config.headers as any)['X-CSRF-Token'] = csrfToken;
       }
     }
 
@@ -87,7 +88,7 @@ api.interceptors.response.use(
     }
 
     if (error.response?.status === 401 && !originalRequest._retry) {
-      if (originalRequest.headers['X-Skip-Interceptor']) {
+      if ((originalRequest.headers as any)?.['X-Skip-Interceptor']) {
         return Promise.reject(error);
       }
 
@@ -96,7 +97,8 @@ api.interceptors.response.use(
           failedQueue.push({ resolve, reject });
         })
           .then((token) => {
-            originalRequest.headers.Authorization = `Bearer ${token as string}`;
+            originalRequest.headers = originalRequest.headers ?? {};
+            (originalRequest.headers as any).Authorization = `Bearer ${token as string}`;
             return api(originalRequest);
           })
           .catch((err) => {
@@ -114,7 +116,8 @@ api.interceptors.response.use(
         if (success) {
           const newToken = accessToken;
           processQueue(null, newToken);
-          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          originalRequest.headers = originalRequest.headers ?? {};
+          (originalRequest.headers as any).Authorization = `Bearer ${newToken}`;
           return api(originalRequest);
         } else {
           throw new Error('Refresh failed');

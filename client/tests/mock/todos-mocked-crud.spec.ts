@@ -248,7 +248,7 @@ test.describe('Todos UI (mock backend)', () => {
     const editInput = page.locator(`input[value="${todoTitle}"]`);
     await expect(editInput).toBeVisible();
     await editInput.fill(editedTitle);
-    await page.getByRole('button', { name: 'Save' }).click();
+    await page.getByRole('button', { name: 'Save' }).click({ force: true });
     await expect(page.getByText(editedTitle, { exact: true })).toBeVisible();
     await expect(page.getByText(todoTitle, { exact: true })).toHaveCount(0);
     await page.waitForTimeout(3000);

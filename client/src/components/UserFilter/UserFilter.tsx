@@ -18,7 +18,8 @@ function UserFilter({
   setShowDeletedOnly,
 }: UserFilterProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setUserFilter(e.target.value.trim());
+    const next = e.target.value.trim();
+    setUserFilter(next);
   };
 
   return (
@@ -52,7 +53,9 @@ function UserFilter({
         </span>
         <InputSwitch
           checked={showDeletedOnly}
-          onChange={(e) => setShowDeletedOnly(!!e.value)}
+          onChange={(e) => {
+            setShowDeletedOnly(!!e.value);
+          }}
         />
       </div>
     </div>

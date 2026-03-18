@@ -19,6 +19,7 @@ import { setAuthLogoutCallback, setCsrfToken } from '../api/axios';
 import {
   connectAuthSocket,
   disconnectAuthSocket,
+  onForceLogout,
   onOnlineUsersUpdate,
   onTokenExpiring,
 } from '../socket/authSocket';
@@ -101,13 +102,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const performLogout = useCallback((options?: { skipApi?: boolean }) => {
     setLogoutMarker();
 
-    // isLoggingOut ref might not be needed anymore if we simplified axios
-    // but keeping a local guard is fine
-
-    // const token = api.defaults.headers.common['Authorization']; // Check if we have token?
-    // Actually we use setAccessToken, so we can't check api.defaults easily if we use interceptors.
-    // irrelevant, just call logout.
-
     if (!options?.skipApi) {
       apiLogout().catch(() => {});
     }
@@ -180,11 +174,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setShowRefreshModal(true);
     });
 
+    onForceLogout(() => {
+      performLogout();
+    });
+
     return () => {
       disconnectAuthSocket();
       socketInitialized.current = false;
     };
-  }, [initialized, user]);
+  }, [initialized, user, performLogout]);
 
   const login = async (
     email: string,

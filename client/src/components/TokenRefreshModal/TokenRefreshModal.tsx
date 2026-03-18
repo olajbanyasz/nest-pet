@@ -1,6 +1,6 @@
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useAuth } from '../../contexts/AuthContext';
 import { useLoading } from '../../contexts/LoadingProvider';
@@ -11,6 +11,7 @@ const TokenRefreshModal: React.FC = () => {
   const { showRefreshModal, setShowRefreshModal, refresh, logout } = useAuth();
   const { show, hide } = useLoading();
   const [remainingSeconds, setRemainingSeconds] = useState(COUNTDOWN_SECONDS);
+  const deadlineRef = useRef<number>(0);
 
   const onConfirm = async () => {
     try {
@@ -32,10 +33,15 @@ const TokenRefreshModal: React.FC = () => {
   useEffect(() => {
     if (!showRefreshModal) return;
 
+    deadlineRef.current = Date.now() + COUNTDOWN_SECONDS * 1000;
     setRemainingSeconds(COUNTDOWN_SECONDS);
 
     const intervalId = window.setInterval(() => {
-      setRemainingSeconds((prev) => Math.max(prev - 1, 0));
+      const remaining = Math.max(
+        0,
+        Math.ceil((deadlineRef.current - Date.now()) / 1000),
+      );
+      setRemainingSeconds(remaining);
     }, 1000);
 
     return () => {

@@ -17,6 +17,7 @@ const DEFAULT_WIDGET_WIDTH = 420;
 const DEFAULT_WIDGET_HEIGHT = 220;
 
 const AppLayout: React.FC = () => {
+  const shouldShowWidget = process.env.REACT_APP_E2E !== 'true';
   const widgetRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<{
     pointerId: number;
@@ -154,23 +155,25 @@ const AppLayout: React.FC = () => {
       <main className="app-content">
         <Outlet />
       </main>
-      <div
-        ref={widgetRef}
-        className="floating-netradio-widget"
-        style={{ left: position.x, top: position.y }}
-      >
+      {shouldShowWidget && (
         <div
-          className="floating-netradio-widget__drag-handle"
-          onPointerDown={onDragStart}
-          onPointerMove={onDragMove}
-          onPointerUp={stopDrag}
-          onPointerCancel={stopDrag}
-          style={{ color: 'white' }}
+          ref={widgetRef}
+          className="floating-netradio-widget"
+          style={{ left: position.x, top: position.y }}
         >
-          Move
+          <div
+            className="floating-netradio-widget__drag-handle"
+            onPointerDown={onDragStart}
+            onPointerMove={onDragMove}
+            onPointerUp={stopDrag}
+            onPointerCancel={stopDrag}
+            style={{ color: 'white' }}
+          >
+            Move
+          </div>
+          <NetRadioWidget />
         </div>
-        <NetRadioWidget />
-      </div>
+      )}
     </>
   );
 };

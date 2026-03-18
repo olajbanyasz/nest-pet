@@ -46,7 +46,7 @@ function mapBackendUser(user: BackendUser): User {
 
 function isAxiosError(
   err: unknown,
-): err is { response?: { data?: { message?: string } } } {
+): err is { response?: { status?: number; data?: { message?: string } } } {
   return typeof err === 'object' && err !== null && 'response' in err;
 }
 

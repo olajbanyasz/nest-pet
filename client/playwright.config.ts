@@ -7,7 +7,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: [['html', { open: 'never' }], ['list']],
   use: {
-    baseURL: 'http://127.0.0.1:8000',
+    baseURL: 'http://127.0.0.1:8001',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -20,8 +20,13 @@ export default defineConfig({
   ],
   webServer: {
     command: 'npm start',
-    port: 8000,
-    reuseExistingServer: !process.env.CI,
+    port: 8001,
+    reuseExistingServer: false,
     timeout: 120 * 1000,
+    env: {
+      PORT: '8001',
+      BROWSER: 'none',
+      REACT_APP_E2E: 'true',
+    },
   },
 });

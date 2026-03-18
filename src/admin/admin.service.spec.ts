@@ -195,7 +195,7 @@ describe('AdminService', () => {
       await service.getUsers('abc');
 
       expect(mockModel.find).toHaveBeenCalledWith({
-        deleted: false,
+        deleted: { $ne: true },
         email: { $regex: 'abc', $options: 'i' },
       });
     });

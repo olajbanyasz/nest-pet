@@ -130,6 +130,8 @@ export class AuthService {
     refreshToken?: string,
   ): Promise<{ message: string }> {
     if (userId) {
+      this.tokenExpiryService.cancelForceLogout(userId);
+
       await this.refreshTokenModel.deleteMany({
         userId: new Types.ObjectId(userId),
       });
@@ -203,6 +205,8 @@ export class AuthService {
       );
       throw new ForbiddenException('User is inactive');
     }
+
+    this.tokenExpiryService.cancelForceLogout(user._id.toString());
 
     const newAccessToken = await this.generateAccessToken(user);
     const newRefreshToken = await this.generateRefreshToken(user._id);
