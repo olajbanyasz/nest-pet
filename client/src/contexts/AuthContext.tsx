@@ -19,6 +19,7 @@ import { setAuthLogoutCallback, setCsrfToken } from '../api/axios';
 import {
   connectAuthSocket,
   disconnectAuthSocket,
+  onForceLogout,
   onOnlineUsersUpdate,
   onTokenExpiring,
 } from '../socket/authSocket';
@@ -101,13 +102,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const performLogout = useCallback((options?: { skipApi?: boolean }) => {
     setLogoutMarker();
 
-    // isLoggingOut ref might not be needed anymore if we simplified axios
-    // but keeping a local guard is fine
-
-    // const token = api.defaults.headers.common['Authorization']; // Check if we have token?
-    // Actually we use setAccessToken, so we can't check api.defaults easily if we use interceptors.
-    // irrelevant, just call logout.
-
     if (!options?.skipApi) {
       apiLogout().catch(() => {});
     }
@@ -177,17 +171,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     });
 
     onTokenExpiring(() => {
-      // #region agent log
-      fetch('http://127.0.0.1:7862/ingest/8ae7c5b4-3a5e-4c05-8757-84b8a9d6bd29',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'db7918'},body:JSON.stringify({sessionId:'db7918',runId:'pre',hypothesisId:'D',location:'client/src/contexts/AuthContext.tsx:onTokenExpiring',message:'TOKEN_EXPIRING callback invoked -> showRefreshModal=true',data:{hasUser:Boolean(user)},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion agent log
       setShowRefreshModal(true);
+    });
+
+    onForceLogout(() => {
+      performLogout();
     });
 
     return () => {
       disconnectAuthSocket();
       socketInitialized.current = false;
     };
-  }, [initialized, user]);
+  }, [initialized, user, performLogout]);
 
   const login = async (
     email: string,

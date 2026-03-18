@@ -107,6 +107,10 @@ export class AuthGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.server.to(userId).emit('TOKEN_EXPIRING');
   }
 
+  emitForceLogout(userId: string): void {
+    this.server.to(userId).emit('FORCE_LOGOUT');
+  }
+
   private broadcastOnlineUsers(): void {
     this.server.emit('ONLINE_USERS_UPDATE', {
       users: Array.from(this.onlineUsers.keys()),

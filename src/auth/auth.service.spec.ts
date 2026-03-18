@@ -66,6 +66,7 @@ describe('AuthService', () => {
 
   const mockTokenExpiryService = {
     scheduleTokenExpiryWarning: jest.fn(),
+    cancelForceLogout: jest.fn(),
   };
 
   beforeEach(async () => {

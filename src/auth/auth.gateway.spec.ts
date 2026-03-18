@@ -149,4 +149,12 @@ describe('AuthGateway', () => {
       expect(emitSpy).toHaveBeenCalledWith('TOKEN_EXPIRING');
     });
   });
+
+  describe('emitForceLogout', () => {
+    it('should emit FORCE_LOGOUT event to user room', () => {
+      gateway.emitForceLogout('user-456');
+      expect(toSpy).toHaveBeenCalledWith('user-456');
+      expect(emitSpy).toHaveBeenCalledWith('FORCE_LOGOUT');
+    });
+  });
 });
