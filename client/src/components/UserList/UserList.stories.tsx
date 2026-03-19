@@ -53,7 +53,14 @@ const UserListStoryWrapper: React.FC<{
   onDemote?: (id: string) => void;
   onDelete?: (id: string) => void;
   onRestore?: (id: string) => void;
-}> = ({ initialData, currentUserId, onPromote, onDemote, onDelete, onRestore }) => {
+}> = ({
+  initialData,
+  currentUserId,
+  onPromote,
+  onDemote,
+  onDelete,
+  onRestore,
+}) => {
   const [users, setUsers] = React.useState<User[]>(initialData);
 
   const handlePromote = (id: string) => {
@@ -77,9 +84,7 @@ const UserListStoryWrapper: React.FC<{
 
   const handleRestore = (id: string) => {
     setUsers((prev) =>
-      prev.map((user) =>
-        user.id === id ? { ...user, deleted: false } : user,
-      ),
+      prev.map((user) => (user.id === id ? { ...user, deleted: false } : user)),
     );
     onRestore?.(id);
   };
