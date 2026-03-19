@@ -1,5 +1,5 @@
-import { InputText } from 'primereact/inputtext';
 import { InputSwitch } from 'primereact/inputswitch';
+import { InputText } from 'primereact/inputtext';
 import React from 'react';
 
 interface UserFilterProps {
@@ -47,7 +47,14 @@ function UserFilter({
         style={{ flexGrow: 1, marginRight: '10px' }}
         placeholder="Filter users by email"
       />
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '135px'}}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          width: '135px',
+        }}
+      >
         <span style={{ fontSize: '0.85rem', color: '#666' }}>
           {showDeletedOnly ? 'Deleted only' : 'Active only'}
         </span>

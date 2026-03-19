@@ -40,6 +40,11 @@ const NavigationBar: React.FC = () => {
       command: () => navigate('/stream'),
       className: isActive('/stream') ? 'active-menu-item' : '',
     },
+    {
+      label: 'AI Agent',
+      command: () => navigate('/mcp'),
+      className: isActive('/mcp') ? 'active-menu-item' : '',
+    },
   ];
 
   const adminItems = [
@@ -62,6 +67,11 @@ const NavigationBar: React.FC = () => {
       label: 'Stream',
       command: () => navigate('/stream'),
       className: isActive('/stream') ? 'active-menu-item' : '',
+    },
+    {
+      label: 'AI Agent',
+      command: () => navigate('/mcp'),
+      className: isActive('/mcp') ? 'active-menu-item' : '',
     },
   ];
 

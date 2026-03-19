@@ -98,7 +98,8 @@ api.interceptors.response.use(
         })
           .then((token) => {
             originalRequest.headers = originalRequest.headers ?? {};
-            (originalRequest.headers as any).Authorization = `Bearer ${token as string}`;
+            (originalRequest.headers as any).Authorization =
+              `Bearer ${token as string}`;
             return api(originalRequest);
           })
           .catch((err) => {

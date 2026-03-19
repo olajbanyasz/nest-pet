@@ -5,6 +5,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { McpModule } from '@rekog/mcp-nest';
 import { CacheableMemory } from 'cacheable';
 import { Keyv } from 'keyv';
 
@@ -12,9 +13,11 @@ import { AdminModule } from './admin/admin.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
+import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { AutomationModule } from './automation/automation.module';
 import { EventsModule } from './events/events.module';
 import { LogArchiveModule } from './log-archive/log-archive.module';
+import { McpFeatureModule } from './mcp/mcp-feature.module';
 import { StreamModule } from './stream/stream.module';
 import { TodosModule } from './todos/todos.module';
 
@@ -46,6 +49,12 @@ import { TodosModule } from './todos/todos.module';
     AutomationModule,
     StreamModule,
     LogArchiveModule,
+    McpModule.forRoot({
+      name: 'todo-mcp-server',
+      version: '1.0.0',
+      guards: [JwtAuthGuard],
+    }),
+    McpFeatureModule,
   ],
   controllers: [AppController],
   providers: [

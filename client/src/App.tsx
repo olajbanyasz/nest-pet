@@ -19,6 +19,7 @@ import { NotificationProvider } from './contexts/NotificationContext';
 import AdminPage from './pages/AdminPage';
 import DashBoard from './pages/DashBoard';
 import Login from './pages/Login';
+import McpClientPage from './pages/McpClientPage';
 import StreamPage from './pages/StreamPage';
 import TodosPage from './pages/TodosPage';
 
@@ -69,6 +70,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <StreamPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/mcp"
+                element={
+                  <ProtectedRoute>
+                    <McpClientPage />
                   </ProtectedRoute>
                 }
               />

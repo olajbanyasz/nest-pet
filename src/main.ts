@@ -48,6 +48,8 @@ async function bootstrap() {
       '/api/auth/register',
       '/api/auth/refresh',
       '/api/auth/logout',
+      '/api/sse',
+      '/api/messages',
     ];
 
     const isBypassed = bypassPaths.some((path) => req.path.startsWith(path));
